@@ -12,6 +12,7 @@ namespace chemfem{
     class SparseMatrix
     {
       friend class IdentityMatrix;
+      friend class SparseMatrixInserter;
       
     public:
       /**
