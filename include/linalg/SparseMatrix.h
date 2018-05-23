@@ -1,6 +1,8 @@
 #ifndef _SPARSE_MATRIX_H_
 #define _SPARSE_MATRIX_H_
 
+#include <iostream>
+
 namespace chemfem{
   namespace linalg{
 
@@ -9,24 +11,50 @@ namespace chemfem{
      */
     class SparseMatrix
     {
-    private:
-      size_t *Col, *Row;
-      double *Entry;
-      size_t m, n;
+      friend class IdentityMatrix;
       
     public:
       /**
        * Creates an empty matrix of dimension m-n
        */
-      void SparseMatrix(size_t, size_t);
+      SparseMatrix(size_t, size_t);
 
       /**
        * Generates a hard copy of a matrix
        */
-      void SparseMatrix(const SparseMatrix&);
-      
+      SparseMatrix(const SparseMatrix&);
+
+      /**
+       *
+       */
+      friend std::ostream& operator<<(std::ostream&, const SparseMatrix&);
+
+    private:
+      size_t *Col = NULL, *Row = NULL;
+      double *Entry = NULL;
+      size_t m=0, n=0, nnz=0;
+
     };
-  }
-}
+
+    /**
+     * Returns an Identity Matrix of size n-n
+     */
+    class IdentityMatrix : public SparseMatrix{
+    public:
+      /**
+       * Initializes an identity matrix with dimension n-n
+       */
+      IdentityMatrix(size_t);
+    };
+    
+    /**
+     * Prints the matrix to the console
+     */
+    std::ostream& operator<<(std::ostream&, const SparseMatrix&);
+    
+  };
+};
+
+
 
 #endif
