@@ -3,8 +3,16 @@
 namespace chemfe{
   namespace linalg{
 
-    Vector::Vector(const size_t n) : n(n), data(std::vector<double>(n)) {}
+    Vector::Vector(const size_t n) : n(n)
+    {
+      data = new double[n];
+    }
 
+    Vector::~Vector()
+    {
+      delete[] data;
+    }
+    
     size_t Vector::size()
     {
       return n;
@@ -12,7 +20,7 @@ namespace chemfe{
 
     double& Vector::operator[](const size_t i)
     {
-      return data.at(i);
+      return data[i];
     }
   }
 }

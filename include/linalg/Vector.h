@@ -1,7 +1,7 @@
 #ifndef _VECTOR_H_
 #define _VECTOR_H_
 
-#include <vector>
+#include <iostream>
 
 namespace chemfe{
   namespace linalg{
@@ -18,6 +18,11 @@ namespace chemfe{
       Vector(const size_t);
 
       /**
+       * Destructor, deletes used memory.
+       */
+      ~Vector();
+      
+      /**
        * Returns the length of the vector.
        */
       size_t size();
@@ -30,7 +35,8 @@ namespace chemfe{
     private:
       /// Dimension of the vector
       const int n;
-      std::vector<double> data;
+      // Data vector
+      double* data;
     };    
     
   };
