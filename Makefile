@@ -1,7 +1,8 @@
 CPP_INCLUDE = -Iinclude
 CPP_FLAGS   = -g
 
-OBJ = 	src/linalg/SparseMatrix.o	\
+OBJ = 	src/linalg/Vector.o	\
+	src/linalg/SparseMatrix.o	\
 	src/linalg/SparseMatrixInserter.o
 
 %.o: %.cpp
