@@ -4,6 +4,12 @@
 #include <iostream>
 
 namespace chemfem{
+	namespace fem{
+		class FESpace;
+	}
+}
+
+namespace chemfem{
   namespace mesh{
 
     /**
@@ -12,7 +18,8 @@ namespace chemfem{
     class Node
     {
       friend class Mesh;
-      
+      friend class chemfem::fem::FESpace;
+
     public:
       /**
        * Constructor which initializes the node by its coordinates.

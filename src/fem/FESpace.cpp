@@ -22,7 +22,7 @@ namespace chemfem{
 		  cell != mesh.Cells.end(); ++cell, ++i)
 		{
 		  for(int j=0; j<DofPerCell; ++j)
-		    std::copy(cell->LocIndex, cell->LocIndex+DofPerCell, &(Dof[DofPerCell*i]));
+	  	    Dof[i*DofPerCell+j] = cell->LocNode[j]->Index;
 		}
 	    }
 	  else
