@@ -1,6 +1,8 @@
 #ifndef _NODE_H_
 #define _NODE_H_
 
+#include <iostream>
+
 namespace chemfem{
   namespace mesh{
 
@@ -15,7 +17,7 @@ namespace chemfem{
       /**
        * Constructor which initializes the node by its coordinates.
        */
-      Node(double, double);
+      Node(size_t, double, double);
 
       /**
        * Returns the x-coordinate
@@ -29,6 +31,7 @@ namespace chemfem{
       
     private:
       double x, y;
+      size_t Index;
     };
     
   };

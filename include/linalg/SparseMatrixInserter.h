@@ -18,12 +18,12 @@ namespace chemfem{
       /**
        * Build up the matrix
        */
-      void build();
+      void Build();
 
       /**
        * Insert an entry in the specified row and column. Double entries are added up
        */
-      void insert(size_t, size_t, double);
+      void Insert(size_t, size_t, double);
 
     private:
       /**

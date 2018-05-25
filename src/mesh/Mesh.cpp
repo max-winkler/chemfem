@@ -5,8 +5,8 @@
 namespace chemfem{
   namespace mesh{
 
-    size_t Mesh::NrCells() { return Cells.size(); }
-    size_t Mesh::NrNodes() { return Nodes.size(); }    
+    size_t Mesh::NrCells() const { return Cells.size(); }
+    size_t Mesh::NrNodes() const { return Nodes.size(); }    
 
     void Mesh::WriteVtk(const std::string& filename)
     {
@@ -26,8 +26,8 @@ namespace chemfem{
       
       ofs << "CELLS " << nr_cells << " " << 4*nr_cells << std::endl;
       for (std::vector<Cell>::const_iterator it = Cells.begin(); it != Cells.end(); ++it)	
-	ofs << "3 " <<  it->LocIndex[0] << " " << it->LocIndex[1]
-	    << " " << it->LocIndex[2] << std::endl;
+	ofs << "3 " <<  it->LocNode[0]->Index << " " << it->LocNode[1]->Index
+	    << " " << it->LocNode[2]->Index << std::endl;
       
       ofs << "CELL_TYPES " << nr_cells << std::endl;
       for (std::vector<Cell>::const_iterator it = Cells.begin(); it != Cells.end(); ++it)	

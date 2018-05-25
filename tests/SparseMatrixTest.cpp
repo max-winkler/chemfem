@@ -14,12 +14,12 @@ int main()
   SparseMatrix custom(3, 5);
   SparseMatrixInserter ins(custom);
 
-  ins.insert(0,0,1);
-  ins.insert(0,1,2);
-  ins.insert(1,2,3);
-  ins.insert(2,2,4);
-  ins.insert(2,4,5);
-  ins.build();
+  ins.Insert(0,0,1);
+  ins.Insert(0,1,2);
+  ins.Insert(1,2,3);
+  ins.Insert(2,2,4);
+  ins.Insert(2,4,5);
+  ins.Build();
 
   std::cout << " curstom = \n" << custom << std::endl;
   

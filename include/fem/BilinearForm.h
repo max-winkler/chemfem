@@ -3,6 +3,9 @@
 
 #include "linalg/SparseMatrix.h"
 #include "fem/FESpace.h"
+#include "fem/FEExpression.h"
+
+using chemfem::linalg::SparseMatrix;
 
 namespace chemfem{
   namespace fem{
@@ -19,7 +22,7 @@ namespace chemfem{
        * Constructor which initializes an empty bilinear form for a given 
        * trial and test space.
        */
-      BilinearForm(FESpace&, FESpace&);
+      BilinearForm(const FESpace&, const FESpace&);
 
       /// Adds a Laplace term (\nabla u,\nabla v) to the bilinear form
       void AddLaplaceTerm();
@@ -30,13 +33,13 @@ namespace chemfem{
        * In case of a(x)=1 this corresponds to the Laplace operator. In this case
        * the function AddLaplaceTerm should be used.
        */
-      void AddDiffusionTerm(double (*ReactionCoeff)(double, double));
+      void AddDiffusionTerm(double (*)(double, double));
 
       /**
        * Adds a reaction term (c u,v) to the bilinear form. The reaction parameter
        * is given as a function pointer.
        */      
-      void AddReactionTerm(double (*ReactionCoeff)(double, double));
+      void AddReactionTerm(double (*)(double, double));
 
       /**
        * Assembles the finite element matrix. 
@@ -50,6 +53,7 @@ namespace chemfem{
       SparseMatrix& GetMatrix();
       
     private:
+      FESpace TrialSpace, TestSpace;
       SparseMatrix Matrix;
       std::vector<FEExpression> Terms;
     };

@@ -7,6 +7,12 @@
 #include "mesh/Node.h"
 #include "mesh/Cell.h"
 
+// Forward declarations of friend classes
+namespace chemfem::fem{
+  class FESpace;
+  class BilinearForm;
+}
+
 namespace chemfem{
   namespace mesh{
 
@@ -16,12 +22,13 @@ namespace chemfem{
     class Mesh
     {
       friend class UnitSquareMesh;
-      
+      friend class chemfem::fem::FESpace;
+      friend class chemfem::fem::BilinearForm;
     public:
       /// Returns the number of cells
-      size_t NrCells();
+      size_t NrCells() const;
       /// Returns the number of nodes
-      size_t NrNodes();
+      size_t NrNodes() const;
 
       void WriteVtk(const std::string&);
       

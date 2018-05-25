@@ -9,6 +9,7 @@ OBJ = 	src/linalg/Vector.o \
 	src/mesh/Mesh.o \
 	src/mesh/UnitSquareMesh.o \
 	src/fem/FESpace.o \
+	src/fem/FEExpression.o \
 	src/fem/BilinearForm.o
 
 %.o: %.cpp
@@ -24,4 +25,4 @@ tests: tests/SparseMatrixTest.cpp tests/MeshTest.cpp $(OBJ)
 	g++ tests/MeshTest.o $(OBJ) -o tests/MeshTest
 
 clean:
-	rm src/linalg/*.o src/mesh/*.o tests/*.o
+	rm -f src/linalg/*.o src/mesh/*.o tests/*.o

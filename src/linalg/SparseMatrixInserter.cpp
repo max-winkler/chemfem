@@ -7,12 +7,12 @@ namespace chemfem{
 
     SparseMatrixInserter::SparseMatrixInserter(SparseMatrix& M) : M(M) {};
 
-    void SparseMatrixInserter::insert(size_t i, size_t j, double a)
+    void SparseMatrixInserter::Insert(size_t i, size_t j, double a)
     {
       Entries.push_back(MatrixEntry(i, j, a));
     }
     
-    void SparseMatrixInserter::build()
+    void SparseMatrixInserter::Build()
     {
       // Sort entries
       std::sort(Entries.begin(), Entries.end());

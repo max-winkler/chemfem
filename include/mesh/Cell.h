@@ -3,6 +3,13 @@
 
 #include <iostream>
 
+#include "Node.h"
+
+// Forward declarations for friend classes
+namespace chemfem::fem{
+  class FESpace;
+}
+
 namespace chemfem{
   namespace mesh{
 
@@ -12,15 +19,22 @@ namespace chemfem{
     class Cell
     {
       friend class Mesh;
+      friend class chemfem::fem::FESpace;
       
     public:
       /**
        * Constructor creating a new cell by its given vertices.
        */
-      Cell(size_t, size_t, size_t);
+      Cell(Node&, Node&, Node&);
+
+      /**
+       * Returns the volume of the parallelogram which is spanned by the vertices of the cell.
+       */
+      double Determinant() const;
+     
     private:
       /// Stores the 3 vertices of the triangle
-      size_t LocIndex[3];
+      Node *LocNode[3];
     };
     
   };
