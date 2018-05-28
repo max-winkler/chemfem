@@ -3,6 +3,7 @@
 
 #include <iostream>
 
+#include "linalg/DenseMatrix.h"
 #include "Node.h"
 
 // Forward declarations for friend classes
@@ -31,7 +32,12 @@ namespace chemfem{
        * Returns the volume of the parallelogram which is spanned by the vertices of the cell.
        */
       double Determinant() const;
-     
+
+      /**
+       * Returns the Jacobian of the reference transformation.
+       */
+      chemfem::linalg::DenseMatrix Jacobian() const;
+      
     private:
       /// Stores the 3 vertices of the triangle
       Node *LocNode[3];
