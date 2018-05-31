@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-namespace chemfe{
+namespace chemfem{
   namespace linalg{
 
     /**
@@ -12,6 +12,12 @@ namespace chemfe{
     class Vector
     {
     public:
+
+      /**
+       * Create an empty vector with 0 components.
+       */
+      Vector();
+      
       /**
        * Constructor initalizing a vector with n components. The initial value is zero.
        */
@@ -25,16 +31,21 @@ namespace chemfe{
       /**
        * Returns the length of the vector.
        */
-      size_t size();
+      size_t size() const;
 
       /**
        * Access a single element of a vector.
        */
       double& operator[](const size_t);
+
+      /** 
+       * Copy an instance of the class Vector.
+       */
+      Vector& operator=(const Vector&);
       
     private:
       /// Dimension of the vector
-      const int n;
+      int n;
       // Data vector
       double* data;
     };    

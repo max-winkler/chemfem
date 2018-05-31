@@ -1,6 +1,10 @@
 #ifndef _QUAD_FORMULA_H_
 #define _QUAD_FORMULA_H_
 
+#include "linalg/Vector.h"
+
+using chemfem::linalg::Vector;
+
 namespace chemfem{
   namespace quadrature{
 
@@ -34,12 +38,12 @@ namespace chemfem{
        * The first argument are the weights, the second and third argument are the the 
        * coordinates of quadrature points. For a 1D quadrature formula the third argument is ignored.
        */
-      void FormulaData(double*&, double*&, double*&);
+      void FormulaData(Vector&, Vector&, Vector&);
       
     private:
-      int points;
-      double *weights;
-      double *xi, *eta;
+      int Points;
+      Vector Weights;
+      Vector Xi, Eta;
     };
   };
 };

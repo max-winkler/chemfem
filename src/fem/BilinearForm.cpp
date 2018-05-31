@@ -45,7 +45,8 @@ namespace chemfem{
     {
       Matrix = SparseMatrix(TestSpace.NrDof(), TrialSpace.NrDof());
       SparseMatrixInserter Ins(Matrix);
-
+      
+      
       // Iterate over all cells
       for(std::vector<Cell>::const_iterator cell = TestSpace.mesh.Cells.begin();
 	  cell != TestSpace.mesh.Cells.end(); ++cell)

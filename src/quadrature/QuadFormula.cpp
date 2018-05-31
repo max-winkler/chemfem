@@ -3,6 +3,8 @@
 
 #include "quadrature/QuadFormula.h"
 
+using chemfem::linalg::Vector;
+
 namespace chemfem{
   namespace quadrature{
 
@@ -11,14 +13,14 @@ namespace chemfem{
       switch(formula)
 	{
 	case MIDPOINT:
-	  points = 1;
-	  weights = new double[1];
-	  xi = new double[1];
-	  eta = new double[1];
+	  Points = 1;
+	  Weights = Vector(1);
+	  Xi = Vector(1);
+	  Eta = Vector(1);
 
-	  xi[0] = 1./3;
-	  eta[0] = 1./3;
-	  weights[0] = 1.;
+	  Xi[0] = 1./3;
+	  Eta[0] = 1./3;
+	  Weights[0] = 1.;
 	  
 	  break;
 	default:
@@ -33,14 +35,14 @@ namespace chemfem{
 
     size_t QuadratureFormula::NrQuadPoints()
     {
-      return points;
+      return Points;
     }
     
-    void QuadratureFormula::FormulaData(double*& weights_in, double*& xi_in, double*& eta_in)
+    void QuadratureFormula::FormulaData(Vector& weights, Vector& xi, Vector& eta)
     {
-      weights_in = weights;
-      xi_in = xi;
-      eta_in = eta;
+      weights = Weights;
+      xi = Xi;
+      eta = Eta;
     }
 
   }
