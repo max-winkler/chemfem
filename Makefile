@@ -9,9 +9,10 @@ OBJ = 	src/linalg/Vector.o \
 	src/mesh/Cell.o \
 	src/mesh/Mesh.o \
 	src/mesh/UnitSquareMesh.o \
+	src/quadrature/QuadFormula.o \
 	src/fem/FESpace.o \
 	src/fem/FEExpression.o \
-	src/fem/BilinearForm.o
+	src/fem/BilinearForm.o 
 
 %.o: %.cpp
 	g++ -c $< ${CPP_INCLUDE} ${CPP_FLAGS} -o $@

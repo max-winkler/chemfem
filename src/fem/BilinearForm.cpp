@@ -1,7 +1,9 @@
 #include "fem/BilinearForm.h"
 #include "linalg/SparseMatrixInserter.h"
+#include "linalg/DenseMatrix.h"
 #include "mesh/Mesh.h"
 
+using chemfem::linalg::DenseMatrix;
 using chemfem::linalg::SparseMatrix;
 using chemfem::linalg::SparseMatrixInserter;
 
@@ -49,6 +51,10 @@ namespace chemfem{
 	  cell != TestSpace.mesh.Cells.end(); ++cell)
 	{
 	  double det = cell->Determinant();
+	  DenseMatrix Jac = cell->Jacobian();
+	  DenseMatrix InvJac(Jac.Invert());
+
+	  
 	}
 
       Ins.Build();
