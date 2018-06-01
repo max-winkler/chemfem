@@ -8,7 +8,7 @@ using chemfem::linalg::Vector;
 namespace chemfem{
   namespace quadrature{
 
-    enum QUAD_FORMULA {MIDPOINT};
+    enum QUAD_FORMULA {MIDPOINT, VERTEX};
     
     /**
      * This class stores all information on a certain quadratue formula.      

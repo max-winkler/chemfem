@@ -42,7 +42,11 @@ namespace chemfem{
        * Copy an instance of the class Vector.
        */
       Vector& operator=(const Vector&);
-      
+
+      /**
+       * Copy the values of an array to the vector
+       */
+      Vector& operator=(const double*);
     private:
       /// Dimension of the vector
       int n;

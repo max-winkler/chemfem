@@ -37,5 +37,10 @@ namespace chemfem{
       std::copy(v.data, v.data+n, data);
       return *this;
     }
+
+    Vector& Vector::operator=(const double* data_in)
+    {
+      std::copy(data_in, data_in+n, data);
+    }
   }
 }

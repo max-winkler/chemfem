@@ -23,6 +23,21 @@ namespace chemfem{
 	  Weights[0] = 1.;
 	  
 	  break;
+	case VERTEX:
+	  Points = 3;
+
+	  Weights = Vector(3);
+	  Xi = Vector(3);
+	  Eta = Vector(3);
+
+	  for(int i=0; i<Points; ++i)
+	    Weights[i] = 1./3;
+	  
+	  Xi[0] = 0.; Eta[0] = 0.;
+	  Xi[1] = 1.; Eta[1] = 0.;
+	  Xi[2] = 0.; Eta[2] = 1.;  	    
+
+	  break;
 	default:
 	  std::cerr << "Quadrature formula not implemented yet\n";
 	}
