@@ -31,6 +31,11 @@ namespace chemfem{
       delete[] data;
     }
 
+    void DenseMatrix::Init(const double* entries)
+    {
+      std::copy(entries, entries + m*n, data);
+    }
+    
     double DenseMatrix::Determinant() const
     {
       if(m != 2 || n != 2)
@@ -74,7 +79,7 @@ namespace chemfem{
       for(int i=0; i<m; ++i)
 	{
 	  y[i] = 0.;
-	  for(int j=0; j<n; ++i)
+	  for(int j=0; j<n; ++j)
 	    y[i] += data[n*i+j]*x[j];
 	}
 

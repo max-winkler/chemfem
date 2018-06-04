@@ -1,3 +1,5 @@
+#include <math.h>
+
 #include "linalg/Vector.h"
 
 namespace chemfem{
@@ -23,7 +25,7 @@ namespace chemfem{
     {
       ++cur;
     }
-    const double Vector::const_iterator::operator*() const
+    const double& Vector::const_iterator::operator*() const
     {
       return *cur;
     }
@@ -93,6 +95,16 @@ namespace chemfem{
 	x[i] = a*data[i] + b[i];
     }
 
+    double Vector::Norm(double b) const
+    {
+      double norm = 0.;
+      for(Vector::const_iterator it = begin(); it != end(); ++it)
+	{
+	  norm += pow(*it, b);
+	}
+      norm = pow(norm, 1./b);
+    }
+    
     Vector::const_iterator Vector::begin() const
     {
       return const_iterator(data);

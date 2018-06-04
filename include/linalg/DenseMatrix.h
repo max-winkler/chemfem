@@ -43,6 +43,11 @@ namespace chemfem{
       ~DenseMatrix();
 
       /**
+       * Writes the entries row-wise into the matrix
+       */
+      void Init(const double*);
+      
+      /**
        * Returns the determinant of the matrix. Only implemented for 2x2 matrices.
        */
       double Determinant() const;

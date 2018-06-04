@@ -17,13 +17,12 @@ OBJ = 	src/linalg/Vector.o \
 %.o: %.cpp
 	g++ -c $< ${CPP_INCLUDE} ${CPP_FLAGS} -o $@
 
-src/linalg/SparseMatrixInserter.o: src/linalg/SparseMatrixInserter.cpp
-	g++ -c src/linalg/SparseMatrixInserter.cpp ${CPP_INCLUDE} ${CPP_FLAGS} -o src/linalg/SparseMatrixInserter.o
-
-tests: tests/SparseMatrixTest.cpp tests/MeshTest.cpp $(OBJ)
-	g++ -c tests/MeshTest.cpp ${CPP_INCLUDE} ${CPP_FLAGS} -o tests/MeshTest.o
+tests: tests/SparseMatrixTest.cpp tests/MeshTest.cpp tests/DenseMatrixTest.cpp $(OBJ)
 	g++ -c tests/SparseMatrixTest.cpp ${CPP_INCLUDE} ${CPP_FLAGS} -o tests/SparseMatrixTest.o
+	g++ -c tests/DenseMatrixTest.cpp ${CPP_INCLUDE} ${CPP_FLAGS} -o tests/DenseMatrixTest.o
+	g++ -c tests/MeshTest.cpp ${CPP_INCLUDE} ${CPP_FLAGS} -o tests/MeshTest.o
 	g++ tests/SparseMatrixTest.o $(OBJ) -o tests/SparseMatrixTest
+	g++ tests/DenseMatrixTest.o $(OBJ) -o tests/DenseMatrixTest
 	g++ tests/MeshTest.o $(OBJ) -o tests/MeshTest
 
 clean:

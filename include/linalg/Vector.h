@@ -25,7 +25,7 @@ namespace chemfem{
 	bool operator==(const const_iterator&);
 	bool operator!=(const const_iterator&);
 	const_iterator& operator++();
-	const double operator*() const;
+	const double& operator*() const;
       private:
 	const double *cur;
       };
@@ -75,6 +75,11 @@ namespace chemfem{
        */
       Vector operator+(const Vector&) const;
 
+      /**
+       * Computes the p-norm of the vector. If the argument if neglected, the two-norm is returned.
+       */
+      double Norm(double b = 2.) const;
+      
       /**
        * Returns an iterator pointing to the beginning of the vector.
        */
