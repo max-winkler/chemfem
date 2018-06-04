@@ -9,6 +9,7 @@
 // Forward declarations for friend classes
 namespace chemfem::fem{
   class FESpace;
+  class BilinearForm;
 }
 
 namespace chemfem{
@@ -21,6 +22,7 @@ namespace chemfem{
     {
       friend class Mesh;
       friend class chemfem::fem::FESpace;
+      friend class chemfem::fem::BilinearForm;
       
     public:
       /**

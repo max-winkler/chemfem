@@ -31,7 +31,7 @@ namespace chemfem{
       delete[] data;
     }
 
-    double DenseMatrix::Determinant()
+    double DenseMatrix::Determinant() const
     {
       if(m != 2 || n != 2)
 	{
@@ -42,7 +42,7 @@ namespace chemfem{
       return data[0]*data[3] - data[1]*data[2]; 
     }
     
-    DenseMatrix DenseMatrix::Invert()
+    DenseMatrix DenseMatrix::Invert() const
     {
       DenseMatrix Inverse(m, m);
       
@@ -60,6 +60,25 @@ namespace chemfem{
       Inverse.data[3] = data[0]/Det;
 
       return Inverse;
+    }
+
+    Vector DenseMatrix::operator*(const Vector& x) const
+    {
+      if(x.size() != n)
+	{
+	  std::cerr << "The matrix and the vector are incompatible for multiplication.\n";
+	  return Vector(0);
+	}
+
+      Vector y(m);
+      for(int i=0; i<m; ++i)
+	{
+	  y[i] = 0.;
+	  for(int j=0; j<n; ++i)
+	    y[i] += data[n*i+j]*x[j];
+	}
+
+      return y;
     }
   }
 }
