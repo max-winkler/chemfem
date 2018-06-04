@@ -5,10 +5,10 @@ namespace chemfem{
 
     using chemfem::mesh::Cell;
     
-    FESpace::FESpace(const Mesh& mesh, FEType type, int degree)
-      : mesh(mesh), type(type), Degree(degree)
+    FESpace::FESpace(const Mesh& mesh, Element& element, int degree)
+      : mesh(mesh), refElement(element), Degree(degree)
     {
-      if(type == Lagrange)
+      if(element.Type() == Lagrange)
 	{
 	  
 	  if(degree == 1)
@@ -39,11 +39,15 @@ namespace chemfem{
 
     size_t FESpace::NrDof()
     {
-      if(type == Lagrange && Degree == 1)
+      if(refElement.Type() == Lagrange && Degree == 1)
 	return mesh.NrNodes();
       else
 	return -1;
     }
-    
+
+    const Element& FESpace::RefElement() const
+    {
+      return refElement;
+    }
   }
 }

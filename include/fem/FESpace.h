@@ -22,7 +22,7 @@ namespace chemfem{
        * Initialize the finite element space by a reference to the mesh, the finite element 
        * type and the polynomial degree.
        */
-      FESpace(const Mesh&, FEType, int);
+      FESpace(const Mesh&, Element&, int);
 
       /**
        * Returns the number of degrees of freedom.
@@ -34,14 +34,20 @@ namespace chemfem{
        * is the index of the cell, the second one the local index.
        */
       size_t GetGlobalIndex(size_t, size_t);
+
+      /**
+       * Returns the reference element.
+       */
+      const Element& RefElement() const;
+      
     private:
       size_t *Dof;
 
       int Degree;
       int DofPerCell;
       
-      FEType type;
-      const Mesh& mesh;      
+      Element& refElement;
+      const Mesh& mesh;
     };
     
   };

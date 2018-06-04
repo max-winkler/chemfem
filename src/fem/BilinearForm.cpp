@@ -57,6 +57,9 @@ namespace chemfem{
       size_t NrQuadPoints = QuadFormula.NrQuadPoints();
       Vector Xi, Eta, Weights;
       QuadFormula.FormulaData(Weights, Xi, Eta);
+
+      Vector *GradTest = new Vector[TestSpace.DofPerCell];
+      Vector *GradTrial = new Vector[TrialSpace.DofPerCell];
       
       // Iterate over all cells
       for(std::vector<Cell>::const_iterator cell = TestSpace.mesh.Cells.begin();
@@ -88,13 +91,20 @@ namespace chemfem{
 		  Term != Terms.end(); ++Term)
 		{
 		  double CoeffVal = Term->Coeff(XYq[0], XYq[1]);
-
+		  
+		  for(int k=0; k<TestSpace.DofPerCell; ++k)
+		    GradTest[k] = TestSpace.RefElement().Gradient(k, XYq[0], XYq[1]);
+		  for(int l=0; l<TestSpace.DofPerCell; ++l)
+		    GradTrial[l] = TrialSpace.RefElement().Gradient(l, XYq[0], XYq[1]);
 		  
 		}
 	    }
 	}
 
       Ins.Build();
+
+      delete[] GradTest;
+      delete[] GradTrial;
     }
   }
 }

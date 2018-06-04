@@ -20,7 +20,10 @@ namespace chemfem{
       /**
        * Returns the function value of the ansatz function on the reference element.
        */
-      double Value(int, double, double);
+      double Value(int, double, double) const;
+
+      Vector Gradient(int, double, double) const;
+	    
     };    
   };
 };
