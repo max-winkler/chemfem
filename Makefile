@@ -11,6 +11,8 @@ OBJ = 	src/linalg/Vector.o \
 	src/mesh/UnitSquareMesh.o \
 	src/quadrature/QuadFormula.o \
 	src/fem/FESpace.o \
+	src/fem/Element.o \
+	src/fem/LagrangeElement.o \
 	src/fem/FEExpression.o \
 	src/fem/BilinearForm.o 
 

@@ -17,6 +17,8 @@ namespace chemfem{
      */
     class FEExpression
     {
+      friend class BilinearForm;
+      
     public:
       FEExpression(ExpressionType, ScalarFunction); 
     private:

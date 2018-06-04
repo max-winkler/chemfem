@@ -1,15 +1,13 @@
 #ifndef _FE_SPACE_H_
 #define _FE_SPACE_H_
 
+#include "fem/Element.h"
 #include "mesh/Mesh.h"
 
 using chemfem::mesh::Mesh;
 
 namespace chemfem{
   namespace fem{   
-
-    /// Finite element type.
-    enum FEType {Lagrange};
 
     /**
      * This class represents a finite element space which is characterized by 
