@@ -5,13 +5,13 @@ namespace chemfem{
 
     using chemfem::mesh::Cell;
     
-    FESpace::FESpace(const Mesh& mesh, Element& element, int degree)
-      : mesh(mesh), refElement(element), Degree(degree)
+    FESpace::FESpace(const Mesh& mesh, Element& element)
+      : mesh(mesh), refElement(element)
     {
       if(element.Type() == Lagrange)
 	{
 	  
-	  if(degree == 1)
+	  if(element.Degree() == 1)
 	    {
 	      DofPerCell = 3;
 	      
@@ -26,7 +26,7 @@ namespace chemfem{
 		}
 	    }
 	  else
-	    std::cerr << "Error: Lagrange elements of order " << degree << " not implemented yet\n";
+	    std::cerr << "Error: Lagrange elements of order " << element.Degree() << " not implemented yet\n";
 	}
       else
 	std::cerr << "Error: Only Lagrange elements are implemented yet.\n";
@@ -39,7 +39,7 @@ namespace chemfem{
 
     size_t FESpace::NrDof()
     {
-      if(refElement.Type() == Lagrange && Degree == 1)
+      if(refElement.Type() == Lagrange && refElement.Degree() == 1)
 	return mesh.NrNodes();
       else
 	return -1;

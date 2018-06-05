@@ -14,6 +14,10 @@ namespace chemfem{
     {
       return type;
     }
-    
+
+    int Element::Degree() const
+    {
+      return degree;
+    }
   }
 }

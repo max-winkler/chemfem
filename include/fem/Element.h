@@ -33,6 +33,11 @@ namespace chemfem{
        * Returns the type of the finite element.
        */
       FEType Type() const;
+
+      /**
+       * Returns the degree of the finite element.
+       */
+      int Degree() const;
       
       /**
        * Return the function value of the trial functions
