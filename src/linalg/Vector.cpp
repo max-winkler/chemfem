@@ -38,9 +38,16 @@ namespace chemfem{
       data = new double[n];
     }
 
+    Vector::Vector(const Vector& other) : n(other.n)
+    {
+      data = new double[n];
+      std::copy(other.data, other.data+n, data);
+    }
+    
     Vector::~Vector()
     {
-      delete[] data;
+      if(data != NULL)
+	delete[] data;
     }
     
     size_t Vector::size() const

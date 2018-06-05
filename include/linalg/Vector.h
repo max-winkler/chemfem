@@ -41,6 +41,11 @@ namespace chemfem{
       Vector(const size_t);
 
       /**
+       * Copy constructor.
+       */
+      Vector(const Vector&);
+      
+      /**
        * Destructor, deletes used memory.
        */
       ~Vector();
