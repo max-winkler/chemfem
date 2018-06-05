@@ -100,7 +100,10 @@ namespace chemfem{
        * Computes expressions like a*x+y for real values a and vectors x and y.
        */
       void axpy(double a, const Vector&, Vector&) const;
-    };    
+    };
+
+    // Free methods
+    double dot(const Vector&, const Vector&);
     
   };
 };

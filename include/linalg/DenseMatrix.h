@@ -20,6 +20,15 @@ namespace chemfem{
     class DenseMatrix
     {
       friend class chemfem::mesh::Cell;
+
+      class DenseMatrixRow
+      {
+      public:
+	DenseMatrixRow(double*);
+	double& operator[](const int);
+      private:
+	double* RowPtr;
+      };
       
     public:
       /**
@@ -62,6 +71,12 @@ namespace chemfem{
        */
       Vector operator*(const Vector&) const;
 
+      /**
+       * Returns a row of the matrix. DenseMatrixRow is just used to allow the entry of a 
+       * single element of the matrix by means of [i][j].
+       */
+      DenseMatrixRow operator[](const int);
+      
     private:
       size_t m, n;
       double* data;

@@ -73,6 +73,8 @@ namespace chemfem{
 	  DenseMatrix Jac = cell->Jacobian();
 	  DenseMatrix InvJac(Jac.Invert());
 
+	  DenseMatrix LocMatrix(TestSpace.DofPerCell, TrialSpace.DofPerCell);
+
 	  // Iterate over all quadrature points
 	  Vector::const_iterator Wq, Xiq, Etaq;
 	  
@@ -90,16 +92,52 @@ namespace chemfem{
 	      for(std::vector<FEExpression>::const_iterator Term = Terms.begin();
 		  Term != Terms.end(); ++Term)
 		{
-		  double CoeffVal = Term->Coeff(XYq[0], XYq[1]);
-		  
-		  for(int k=0; k<TestSpace.DofPerCell; ++k)
-		    GradTest[k] = TestSpace.RefElement().Gradient(k, XYq[0], XYq[1]);
-		  for(int l=0; l<TestSpace.DofPerCell; ++l)
-		    GradTrial[l] = TrialSpace.RefElement().Gradient(l, XYq[0], XYq[1]);
-		  
-		}
-	    }
-	}
+		  if(&TestSpace.mesh == &TrialSpace.mesh)
+		    {
+		      double CoeffVal = Term->Coeff(XYq[0], XYq[1]);
+		      
+		      for(int k=0; k<TestSpace.DofPerCell; ++k)
+			GradTest[k] = TestSpace.RefElement().Gradient(k, XYq[0], XYq[1]);
+		      for(int l=0; l<TestSpace.DofPerCell; ++l)
+			GradTrial[l] = TrialSpace.RefElement().Gradient(l, XYq[0], XYq[1]);
+		      
+		      switch(Term->Type)
+			{
+			case SECOND_ORDER:
+			  
+			  for(int k=0; k<TestSpace.DofPerCell; ++k)
+			    for(int l=0; l<TrialSpace.DofPerCell; ++l)
+			      LocMatrix[k][l] += 
+				(*Wq) * CoeffVal * dot(InvJac*GradTest[k], InvJac*GradTrial[l]) * det;
+			  break;
+			  /*
+			case FIRST_ORDER:
+
+			  break;
+			case ZERO_ORDER:
+
+			  break;
+			  */
+			default:
+			  std::cerr << "Assembly of FE expressions of type " << Term->Type
+				    << " not implemented yet.\n";
+			  return;
+			}
+		      
+		    }
+		  else
+		    {
+		      std::cerr << "Assembly routine for different meshes in trial and test space "
+				<< "not implemented yet\n";
+		      return;
+		    }		  
+		} // loop over Terms
+	    } // loop over quadrature points
+
+	  // Insert local Matrix into global one
+	  
+	  
+	} // loop over cells
 
       Ins.Build();
 

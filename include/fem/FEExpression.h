@@ -22,7 +22,7 @@ namespace chemfem{
     public:
       FEExpression(ExpressionType, ScalarFunction); 
     private:
-      ExpressionType type;
+      ExpressionType Type;
       ScalarFunction Coeff;
     };
     

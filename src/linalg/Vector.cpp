@@ -114,5 +114,24 @@ namespace chemfem{
     {
       return const_iterator(data+n);
     }
+
+    double dot(const Vector& a, const Vector& b)
+    {
+      double val = 0.;
+      Vector::const_iterator it_a = a.begin();
+      Vector::const_iterator it_b = b.begin();
+
+      for(; it_a != a.end(), it_b != b.end(); ++it_a, ++it_b)
+	val += (*it_a) * (*it_b);
+
+      if(it_a != a.end() || it_b != b.end())
+	{
+	  std::cerr << "Error computing the dot product. Dimension of the vectors not equal.\n";
+	  return 0;
+	}
+      return val;
+    }
+
+    
   }
 }

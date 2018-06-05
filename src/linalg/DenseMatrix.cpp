@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "linalg/DenseMatrix.h"
 
 namespace chemfem{
@@ -6,6 +8,7 @@ namespace chemfem{
     DenseMatrix::DenseMatrix(size_t m, size_t n) : m(m), n(n)
     {
       data = new double[m*n];
+      std::fill(data, data+m*n, 0.);
     }
 
     DenseMatrix::DenseMatrix(const DenseMatrix& Matrix)
@@ -84,6 +87,18 @@ namespace chemfem{
 	}
 
       return y;
+    }
+
+    DenseMatrix::DenseMatrixRow DenseMatrix::operator[](const int i)
+    {
+      return DenseMatrixRow(&(data[n*i]));
+    }
+
+    DenseMatrix::DenseMatrixRow::DenseMatrixRow(double* RowPtr) : RowPtr(RowPtr) {}
+
+    double& DenseMatrix::DenseMatrixRow::operator[](const int j)
+    {
+      return RowPtr[j];
     }
   }
 }
