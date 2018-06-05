@@ -50,7 +50,7 @@ namespace chemfem{
        * Returns the matrix which corresponds to the bilinear form. Before calling this function
        * the assemble routine has to be invoked. Otherwise, an empty matrix is returned.
        */
-      SparseMatrix& GetMatrix();
+      SparseMatrix& SystemMatrix();
       
     private:
       FESpace TrialSpace, TestSpace;

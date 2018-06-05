@@ -20,9 +20,9 @@ namespace chemfem{
     public:
       /**
        * Initialize the finite element space by a reference to the mesh, the finite element 
-       * type and the polynomial degree.
+       * type.
        */
-      FESpace(const Mesh&, Element&, int);
+      FESpace(const Mesh&, Element&);
 
       /**
        * Returns the number of degrees of freedom.
@@ -43,7 +43,6 @@ namespace chemfem{
     private:
       size_t *Dof;
 
-      int Degree;
       int DofPerCell;
       
       Element& refElement;

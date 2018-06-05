@@ -41,7 +41,7 @@ namespace chemfem{
       Terms.push_back(expression);
     }
 
-    SparseMatrix& BilinearForm::GetMatrix()
+    SparseMatrix& BilinearForm::SystemMatrix()
     {
       return Matrix;
     }
@@ -62,8 +62,10 @@ namespace chemfem{
       Vector *GradTrial = new Vector[TrialSpace.DofPerCell];
       
       // Iterate over all cells
-      for(std::vector<Cell>::const_iterator cell = TestSpace.mesh.Cells.begin();
-	  cell != TestSpace.mesh.Cells.end(); ++cell)
+      int CellInd;
+      std::vector<Cell>::const_iterator cell;
+      for(cell = TestSpace.mesh.Cells.begin(), CellInd=0;
+	  cell != TestSpace.mesh.Cells.end(); ++cell, ++CellInd)
 	{
 	  double det = cell->Determinant();
 
@@ -135,7 +137,13 @@ namespace chemfem{
 	    } // loop over quadrature points
 
 	  // Insert local Matrix into global one
-	  
+	  for(int k=0; k<TestSpace.DofPerCell; ++k)
+	    for(int l=0; l<TestSpace.DofPerCell; ++l)
+	      {
+		Ins.Insert(TestSpace.GetGlobalIndex(CellInd, k),
+			   TrialSpace.GetGlobalIndex(CellInd, l),
+			   LocMatrix[k][l]);
+	      }
 	  
 	} // loop over cells
 
