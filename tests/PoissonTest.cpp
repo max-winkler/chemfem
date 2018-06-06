@@ -22,7 +22,7 @@ int main()
 
   SparseMatrix& Matrix = Laplace.SystemMatrix();
   
-  //std::cout << "The finite element system matrix is " << Matrix << std::endl;
+  std::cout << "The finite element system matrix is:\n" << Matrix << std::endl;
 
   return 0;
 }
