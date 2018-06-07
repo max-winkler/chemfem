@@ -19,7 +19,7 @@ namespace chemfem{
 	  y[k] = LocNode[k]->getY();
 	}
       
-      return (x[1] - x[0])*(y[2]-y[0]) - (x[2]-x[0])*(y[1]-y[0]);
+      return (x[1]-x[0])*(y[2]-y[0]) - (x[2]-x[0])*(y[1]-y[0]);
     }
 
     using chemfem::linalg::DenseMatrix;

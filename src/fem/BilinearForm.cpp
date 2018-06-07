@@ -31,8 +31,8 @@ namespace chemfem{
 
     void BilinearForm::AddLaplaceTerm()
     {
-
       FEExpression expression(SECOND_ORDER, Identity);
+      Terms.push_back(expression);
     }
 
     void BilinearForm::AddReactionTerm(double (*ReactionCoeff)(double, double))
