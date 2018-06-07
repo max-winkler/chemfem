@@ -14,17 +14,22 @@ int main()
   b[0] = 1.;
   b[1] = -1.;
 
+  // Matrix vector product test
   Vector c(2);
   c = A*b;
 
-  std::cout << "A*b is\n";
-  
+  std::cout << "A*b is\n";  
   for(Vector::const_iterator it = c.begin(); it != c.end(); ++it)
     std::cout << " " << *it << std::endl;
 
+  // Transpose test
+  DenseMatrix B(A.Transpose());
+  std::cout << "A   = \n" << A << std::endl;
+  std::cout << "A^T = \n" << B << std::endl;
+  
   Vector d(2);
-  d[0] = 0;
-  d[1] = 1;
+  d[0] = 1.;
+  d[1] = 1.;
 
   Vector e(2);
   e = c+d;

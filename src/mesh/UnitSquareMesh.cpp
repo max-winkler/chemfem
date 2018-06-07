@@ -19,8 +19,8 @@ namespace chemfem{
 	    //Cells.push_back(Cell(i*n+j, i*n+j+1, (i+1)*n+j+1));
 	    //Cells.push_back(Cell(i*n+j, (i+1)*n+j+1, (i+1)*n+j));
 	    
-	    Cells.push_back(Cell(Nodes[i*(n-1)+j], Nodes[i*(n-1)+j+1], Nodes[(i+1)*(n-1)+j]));
-	    Cells.push_back(Cell(Nodes[i*(n-1)+j+1], Nodes[(i+1)*(n-1)+j+1], Nodes[(i+1)*(n-1)+j]));
+	    Cells.push_back(Cell(Nodes[i*n+j], Nodes[i*n+j+1], Nodes[(i+1)*n+j]));
+	    Cells.push_back(Cell(Nodes[i*n+j+1], Nodes[(i+1)*n+j+1], Nodes[(i+1)*n+j]));
 	  }
     }
     

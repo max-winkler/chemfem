@@ -21,11 +21,14 @@ namespace chemfem{
     {
       friend class chemfem::mesh::Cell;
 
+      friend std::ostream& operator<<(std::ostream&, const DenseMatrix&);
+      
       class DenseMatrixRow
       {
       public:
 	DenseMatrixRow(double*);
-	double& operator[](const int);
+	double& operator[](const size_t);
+	const double& operator[](const size_t) const;
       private:
 	double* RowPtr;
       };
@@ -65,6 +68,11 @@ namespace chemfem{
        * Returns the inverse of the matrix. Only implemented for 2x2 matrices.
        */
       DenseMatrix Invert() const;
+
+      /**
+       * Returns the transposed of the matrix.
+       */
+      DenseMatrix Transpose() const;
       
       /**
        * Computes a matrix vector product and returns its result.
@@ -75,7 +83,13 @@ namespace chemfem{
        * Returns a row of the matrix. DenseMatrixRow is just used to allow the entry of a 
        * single element of the matrix by means of [i][j].
        */
-      DenseMatrixRow operator[](const int);
+      DenseMatrixRow operator[](const size_t);
+
+      /**
+       * Returns a row of the matrix. DenseMatrixRow is just used to allow the entry of a 
+       * single element of the matrix by means of [i][j].
+       */
+      const DenseMatrixRow operator[](const size_t) const;
       
     private:
       size_t m, n;
@@ -83,7 +97,6 @@ namespace chemfem{
 
       void copy(const DenseMatrix&);
     };
-    
   };
 };
 

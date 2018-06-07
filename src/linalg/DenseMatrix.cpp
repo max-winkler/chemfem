@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 
 #include "linalg/DenseMatrix.h"
 
@@ -49,6 +50,17 @@ namespace chemfem{
       
       return data[0]*data[3] - data[1]*data[2]; 
     }
+
+    DenseMatrix DenseMatrix::Transpose() const
+    {
+      DenseMatrix Transposed(n, m);
+
+      for(size_t i=0; i<n; ++i)
+	for(size_t j=0; j<m; ++j)
+	  Transposed.data[i*n+j] = data[j*m+i];
+      
+      return Transposed;
+    }
     
     DenseMatrix DenseMatrix::Invert() const
     {
@@ -89,14 +101,39 @@ namespace chemfem{
       return y;
     }
 
-    DenseMatrix::DenseMatrixRow DenseMatrix::operator[](const int i)
+    std::ostream& operator<<(std::ostream& os, const DenseMatrix& M)
+    {
+      for(size_t i=0; i<M.m; ++i)
+	{
+	  os << " [ ";
+	  	
+	  for(size_t j=0; j<M.n; ++j)
+	    os << std::setw(5) << M[i][j] << " ";
+
+	  os << "]\n";
+	}
+      
+      return os;
+    }    
+    
+    DenseMatrix::DenseMatrixRow DenseMatrix::operator[](const size_t i)
+    {
+      return DenseMatrixRow(&(data[n*i]));
+    }
+
+    const DenseMatrix::DenseMatrixRow DenseMatrix::operator[](const size_t i) const
     {
       return DenseMatrixRow(&(data[n*i]));
     }
 
     DenseMatrix::DenseMatrixRow::DenseMatrixRow(double* RowPtr) : RowPtr(RowPtr) {}
 
-    double& DenseMatrix::DenseMatrixRow::operator[](const int j)
+    double& DenseMatrix::DenseMatrixRow::operator[](const size_t j)
+    {
+      return RowPtr[j];
+    }
+
+    const double& DenseMatrix::DenseMatrixRow::operator[](const size_t j) const
     {
       return RowPtr[j];
     }

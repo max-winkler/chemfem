@@ -11,7 +11,7 @@ using namespace chemfem::mesh;
 
 int main()
 {
-  UnitSquareMesh mesh(3);
+  UnitSquareMesh mesh(4);
 
   std::cout << "Nr of nodes : " << mesh.NrNodes() << std::endl;
   std::cout << "Nr of cells : " << mesh.NrCells() << std::endl;

@@ -73,7 +73,7 @@ namespace chemfem{
 	  Vector b(2); b[0] = x0->getX(); x0->getY();
 	  
 	  DenseMatrix Jac = cell->Jacobian();
-	  DenseMatrix InvJac(Jac.Invert());
+	  DenseMatrix InvJac(Jac.Transpose().Invert());
 
 	  DenseMatrix LocMatrix(TestSpace.DofPerCell, TrialSpace.DofPerCell);
 
