@@ -20,6 +20,21 @@ namespace chemfem{
       std::copy(M.Entry, M.Entry+nnz, Entry);
     }
 
+    Vector SparseMatrix::operator*(const Vector& x) const
+    {
+      Vector y(m);
+      size_t *row;
+      size_t* col;
+      double* entry = Entry;
+      size_t i=0;
+      
+      for(row = Row, col = Col; row!=Row+m; ++row, ++i)
+	for(; col != Col+*(row+1); ++col, ++entry)	
+	  y[i] += (*entry)*x[*col];
+
+      return y;
+    }
+    
     IdentityMatrix::IdentityMatrix(size_t m) : SparseMatrix(m, m)
     {
       nnz = m;

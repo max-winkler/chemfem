@@ -5,6 +5,7 @@ OBJ = 	src/linalg/Vector.o \
 	src/linalg/SparseMatrix.o \
 	src/linalg/SparseMatrixInserter.o \
 	src/linalg/DenseMatrix.o \
+	src/linalg/IterativeSolver.o \
 	src/mesh/Node.o \
 	src/mesh/Cell.o \
 	src/mesh/Mesh.o \

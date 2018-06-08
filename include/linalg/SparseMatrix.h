@@ -3,6 +3,8 @@
 
 #include <iostream>
 
+#include "linalg/Vector.h"
+
 namespace chemfem{
   namespace linalg{
 
@@ -26,17 +28,31 @@ namespace chemfem{
       SparseMatrix(const SparseMatrix&);
 
       /**
-       *
+       * Used to print the matrix to the console or write into a file.
        */
       friend std::ostream& operator<<(std::ostream&, const SparseMatrix&);
 
+      /**
+       * Multiplication with a vector.
+       */
+      Vector operator*(const Vector&) const;
+      
+      /**
+       * Solves the linear equation system
+       */
+      Vector Solve(const Vector&);
+      
     private:
       size_t *Col = NULL, *Row = NULL;
       double *Entry = NULL;
       size_t m=0, n=0, nnz=0;
 
+      /**
+       * Solve equation system with a CG method.
+       */
+      void Solve_CG(const Vector&, Vector&);
     };
-
+    
     /**
      * Returns an Identity Matrix of size n-n
      */
@@ -52,7 +68,7 @@ namespace chemfem{
      * Prints the matrix to the console
      */
     std::ostream& operator<<(std::ostream&, const SparseMatrix&);
-    
+
   };
 };
 

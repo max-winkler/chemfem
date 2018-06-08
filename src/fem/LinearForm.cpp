@@ -45,7 +45,7 @@ namespace chemfem{
       Vector Xi, Eta, Weights;
       QuadFormula.FormulaData(Weights, Xi, Eta);
 
-      double *TestFuncValue = new double[TestSpace.RefElement().NrDof()];
+      double *TestFuncValue = new double[TestSpace.DofPerCell];
       
       // Iterate over all cells
       int CellInd;
@@ -74,7 +74,7 @@ namespace chemfem{
 	      Vector XYq = b + Jac*XiEtaq;
 
 	      // Function value of test functions
-	      for(int k=0; k<TestSpace.RefElement().NrDof(); ++k)
+	      for(int k=0; k<TestSpace.DofPerCell; ++k)
 		TestFuncValue[k] = TestSpace.RefElement().Value(k, XYq[0], XYq[1]);
 	      
 	      // Iterate over all terms

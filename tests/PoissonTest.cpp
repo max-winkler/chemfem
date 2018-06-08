@@ -40,6 +40,8 @@ int main()
   Vector& Vec = F.LoadVector();
 
   std::cout << "The load vector is:\n" << Vec << std::endl;
+
+  Vector X(Matrix.Solve(Vec));
   
   return 0;
 }

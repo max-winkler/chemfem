@@ -31,13 +31,12 @@ namespace chemfem{
     {
       return *cur;
     }
-    
-    
+        
     Vector::Vector() : n(0), data(NULL) {};
     
     Vector::Vector(const size_t n) : n(n)
     {
-      data = new double[n];
+      data = new double[n]();      
     }
 
     Vector::Vector(const Vector& other) : n(other.n)
