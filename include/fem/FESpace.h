@@ -16,6 +16,7 @@ namespace chemfem{
     class FESpace
     {
       friend class BilinearForm;
+      friend class LinearForm;
       
     public:
       /**
@@ -27,13 +28,13 @@ namespace chemfem{
       /**
        * Returns the number of degrees of freedom.
        */
-      size_t NrDof();
+      size_t NrDof() const;
 
       /**
        * Returns the global index of a local degree of freedom. The first argument 
        * is the index of the cell, the second one the local index.
        */
-      size_t GetGlobalIndex(size_t, size_t);
+      size_t GetGlobalIndex(size_t, size_t) const;
 
       /**
        * Returns the reference element.

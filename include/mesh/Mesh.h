@@ -11,6 +11,7 @@
 namespace chemfem::fem{
   class FESpace;
   class BilinearForm;
+  class LinearForm;
 }
 
 namespace chemfem{
@@ -24,6 +25,7 @@ namespace chemfem{
       friend class UnitSquareMesh;
       friend class chemfem::fem::FESpace;
       friend class chemfem::fem::BilinearForm;
+      friend class chemfem::fem::LinearForm;
     public:
       /// Returns the number of cells
       size_t NrCells() const;

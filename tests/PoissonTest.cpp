@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "fem/LinearForm.h"
 #include "fem/BilinearForm.h"
 #include "fem/LagrangeElement.h"
 #include "mesh/UnitSquareMesh.h"
@@ -8,6 +9,11 @@
 using namespace chemfem::fem;
 using namespace chemfem::linalg;
 using namespace chemfem::mesh;
+
+double f(double x, double y)
+{
+  return 1.;
+}
 
 int main()
 {
@@ -27,5 +33,13 @@ int main()
   
   std::cout << "The finite element system matrix is:\n" << Matrix << std::endl;
 
+  LinearForm F(Space);
+  F.AddVolumeForce(f);
+  F.Assemble();
+
+  Vector& Vec = F.LoadVector();
+
+  std::cout << "The load vector is:\n" << Vec << std::endl;
+  
   return 0;
 }

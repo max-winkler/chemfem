@@ -1,3 +1,5 @@
+#include <iostream>
+#include <iomanip>
 #include <math.h>
 
 #include "linalg/Vector.h"
@@ -139,6 +141,15 @@ namespace chemfem{
       return val;
     }
 
+    std::ostream& operator<<(std::ostream& os, const Vector& Vec)
+    {
+      os << "[ ";
+      for(Vector::const_iterator it = Vec.begin(); it != Vec.end(); ++it)	
+	os << std::setw(5) << *it << " ";	  
+
+      os << "]";
+      return os;
+    }
     
   }
 }

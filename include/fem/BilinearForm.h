@@ -53,7 +53,7 @@ namespace chemfem{
       SparseMatrix& SystemMatrix();
       
     private:
-      FESpace TrialSpace, TestSpace;
+      const FESpace& TrialSpace, TestSpace;
       SparseMatrix Matrix;
       std::vector<FEExpression> Terms;
     };

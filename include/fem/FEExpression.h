@@ -8,7 +8,7 @@ namespace chemfem{
 
     typedef double (*ScalarFunction)(double, double);
     
-    enum ExpressionType {SECOND_ORDER, FIRST_ORDER, ZERO_ORDER};
+    enum ExpressionType {SECOND_ORDER, FIRST_ORDER, ZERO_ORDER, VOLUME_FORCE, NEUMANN_BC};
 
     /**
      * This class is used to store a single term in a partial differential equation.
@@ -18,6 +18,7 @@ namespace chemfem{
     class FEExpression
     {
       friend class BilinearForm;
+      friend class LinearForm;
       
     public:
       FEExpression(ExpressionType, ScalarFunction); 

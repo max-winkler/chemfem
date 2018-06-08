@@ -81,6 +81,11 @@ namespace chemfem{
       Vector operator+(const Vector&) const;
 
       /**
+       * For console or file output.
+       */
+      friend std::ostream& operator<<(std::ostream&, const Vector&);
+      
+      /**
        * Computes the p-norm of the vector. If the argument if neglected, the two-norm is returned.
        */
       double Norm(double b = 2.) const;

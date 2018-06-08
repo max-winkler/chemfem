@@ -32,7 +32,7 @@ namespace chemfem{
 	std::cerr << "Error: Only Lagrange elements are implemented yet.\n";
     }
 
-    size_t FESpace::GetGlobalIndex(size_t cell, size_t index)
+    size_t FESpace::GetGlobalIndex(size_t cell, size_t index) const
     {
       if(Dof[DofPerCell*cell + index] > 20)
 	std::cout << "Something went wrong.\n";
@@ -40,7 +40,7 @@ namespace chemfem{
       return Dof[DofPerCell*cell + index];
     }
 
-    size_t FESpace::NrDof()
+    size_t FESpace::NrDof() const
     {
       if(refElement.Type() == Lagrange && refElement.Degree() == 1)
 	return mesh.NrNodes();

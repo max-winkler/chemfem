@@ -10,6 +10,7 @@
 namespace chemfem::fem{
   class FESpace;
   class BilinearForm;
+  class LinearForm;
 }
 
 namespace chemfem{
@@ -23,6 +24,7 @@ namespace chemfem{
       friend class Mesh;
       friend class chemfem::fem::FESpace;
       friend class chemfem::fem::BilinearForm;
+      friend class chemfem::fem::LinearForm;
       
     public:
       /**
