@@ -34,9 +34,6 @@ namespace chemfem{
 
     size_t FESpace::GetGlobalIndex(size_t cell, size_t index) const
     {
-      if(Dof[DofPerCell*cell + index] > 20)
-	std::cout << "Something went wrong.\n";
-
       return Dof[DofPerCell*cell + index];
     }
 

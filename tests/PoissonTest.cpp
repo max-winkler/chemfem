@@ -13,7 +13,7 @@ using namespace chemfem::mesh;
 
 double f(double x, double y)
 {
-  return sin(x)+cos(y);
+  return sin(2*x*M_PI)+cos(2*y*M_PI);
 }
 
 double c(double x, double y)
