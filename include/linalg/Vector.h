@@ -81,6 +81,16 @@ namespace chemfem{
       Vector operator+(const Vector&) const;
 
       /**
+       * Computes the difference of 2 vectors.
+       */
+      Vector operator-(const Vector&) const;
+
+      /**
+       * Computes expressions like a*x+y for real values a and vectors x and y.
+       */
+      void axpy(double a, const Vector&, Vector&) const;
+      
+      /**
        * For console or file output.
        */
       friend std::ostream& operator<<(std::ostream&, const Vector&);
@@ -106,10 +116,6 @@ namespace chemfem{
       // Data vector
       double* data;
 
-      /**
-       * Computes expressions like a*x+y for real values a and vectors x and y.
-       */
-      void axpy(double a, const Vector&, Vector&) const;
     };
 
     // Free methods

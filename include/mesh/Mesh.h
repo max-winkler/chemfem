@@ -7,6 +7,10 @@
 #include "mesh/Node.h"
 #include "mesh/Cell.h"
 
+#include "linalg/Vector.h"
+
+using chemfem::linalg::Vector;
+
 // Forward declarations of friend classes
 namespace chemfem::fem{
   class FESpace;
@@ -31,8 +35,8 @@ namespace chemfem{
       size_t NrCells() const;
       /// Returns the number of nodes
       size_t NrNodes() const;
-
-      void WriteVtk(const std::string&);
+      /// Write Mesh to a VTK file
+      void WriteVtk(const std::string&, const Vector& x);
       
     private:
       std::vector<Cell> Cells;

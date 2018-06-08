@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "linalg/SparseMatrix.h"
 
 namespace chemfem{
@@ -13,14 +15,49 @@ namespace chemfem{
 
       Vector x(m);
       Solve_CG(b, x);
+
+      return x;
     }
 
     void SparseMatrix::Solve_CG(const Vector& b, Vector& x)
     {
-      Vector resid(m);
+      Vector res(m);
 
-      // resid = b - (*this)*x;
+      res = b - (*this)*x;
+
+      Vector d(res);
+
+      const int max_iter = 100;
+      const double a_tol = 1.e-8;
+
+      int iter = 0;
+
+      double eps, eps_old;
+      
+      while(iter < max_iter)
+	{
+	  Vector z((*this)*d);
+	  eps = dot(res, res);
+
+	  std::cout << "CG it " << iter << ", resid = " << sqrt(eps) << std::endl;
+	  
+	  double alpha = eps / dot(d, z);
+	  d.axpy(alpha, x, x);
+	  z.axpy(-alpha, res, res);
+
+	  eps_old = eps;
+	  eps = dot(res, res);
+	  double beta = eps / eps_old;
+
+	  d.axpy(beta, res, d);
+
+	  if(sqrt(eps) < a_tol)
+	    break;
+
+	  ++iter;
+	}	
     }
+    
     
   }
 }

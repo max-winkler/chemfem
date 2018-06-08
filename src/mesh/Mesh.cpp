@@ -2,13 +2,17 @@
 
 #include "mesh/Mesh.h"
 
+#include "linalg/Vector.h"
+
+using chemfem::linalg::Vector;
+
 namespace chemfem{
   namespace mesh{
 
     size_t Mesh::NrCells() const { return Cells.size(); }
     size_t Mesh::NrNodes() const { return Nodes.size(); }    
 
-    void Mesh::WriteVtk(const std::string& filename)
+    void Mesh::WriteVtk(const std::string& filename, const Vector& x)
     {
       std::ofstream ofs(filename);
 
@@ -39,8 +43,9 @@ namespace chemfem{
       ofs <<  "SCALARS nodes float" << std::endl;
       ofs <<  "LOOKUP_TABLE default"  << std::endl;
 
-      for (std::vector<Node>::const_iterator it = Nodes.begin(); it != Nodes.end(); ++it)
-	ofs << "0" << std::endl;
+      // TODO: Works only for P1 elements
+      for (Vector::const_iterator it = x.begin(); it != x.end(); ++it)
+	ofs << *it << std::endl;
     }
     
   };

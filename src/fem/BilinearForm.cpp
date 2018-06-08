@@ -60,6 +60,9 @@ namespace chemfem{
 
       Vector *GradTest = new Vector[TestSpace.DofPerCell];
       Vector *GradTrial = new Vector[TrialSpace.DofPerCell];
+
+      double *ValueTest = new double[TestSpace.DofPerCell];
+      double *ValueTrial = new double[TrialSpace.DofPerCell];
       
       // Iterate over all cells
       int CellInd;
@@ -89,7 +92,15 @@ namespace chemfem{
 	      XiEtaq[1] = *Etaq;
 
 	      Vector XYq = b + Jac*XiEtaq;
-	      	      
+
+	      for(int k=0; k<TestSpace.DofPerCell; ++k)
+		{
+		  GradTest[k] = TestSpace.RefElement().Gradient(k, XYq[0], XYq[1]);		  
+		  GradTrial[k] = TrialSpace.RefElement().Gradient(k, XYq[0], XYq[1]);
+		  ValueTest[k] = TestSpace.RefElement().Value(k, XYq[0], XYq[1]);
+		  ValueTrial[k] = TrialSpace.RefElement().Value(k, XYq[0], XYq[1]);
+		}
+	      
 	      // Iterate over all terms
 	      for(std::vector<FEExpression>::const_iterator Term = Terms.begin();
 		  Term != Terms.end(); ++Term)
@@ -97,12 +108,7 @@ namespace chemfem{
 		  if(&TestSpace.mesh == &TrialSpace.mesh)
 		    {
 		      double CoeffVal = Term->Coeff(XYq[0], XYq[1]);
-		      
-		      for(int k=0; k<TestSpace.DofPerCell; ++k)
-			GradTest[k] = TestSpace.RefElement().Gradient(k, XYq[0], XYq[1]);
-		      for(int l=0; l<TestSpace.DofPerCell; ++l)
-			GradTrial[l] = TrialSpace.RefElement().Gradient(l, XYq[0], XYq[1]);
-		      
+		      		      
 		      switch(Term->Type)
 			{
 			case SECOND_ORDER:
@@ -116,10 +122,14 @@ namespace chemfem{
 			case FIRST_ORDER:
 
 			  break;
-			case ZERO_ORDER:
-
-			  break;
 			  */
+			case ZERO_ORDER:
+			  for(int k=0; k<TestSpace.DofPerCell; ++k)
+			    for(int l=0; l<TrialSpace.DofPerCell; ++l)
+			      LocMatrix[k][l] += (*Wq) * CoeffVal * ValueTest[k] * ValueTrial[l] * det;
+			  			
+			  break;
+			  
 			default:
 			  std::cerr << "Assembly of FE expressions of type " << Term->Type
 				    << " not implemented yet.\n";
@@ -151,6 +161,8 @@ namespace chemfem{
 
       delete[] GradTest;
       delete[] GradTrial;
+      delete[] ValueTest;
+      delete[] ValueTrial;
     }
   }
 }

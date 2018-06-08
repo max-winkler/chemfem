@@ -71,7 +71,7 @@ namespace chemfem{
       size_t n_ = v.size();
 
       n = n_;
-      if(data != NULL)
+      if(data != NULL) // TODO: Reuse memory if possible
 	delete[] data;
       data = new double[n];
       
@@ -90,6 +90,19 @@ namespace chemfem{
       axpy(1, b, x);
       return x;
     }
+
+    Vector Vector::operator-(const Vector& b) const
+    {
+      Vector x(n);
+
+      Vector::const_iterator it_a, it_b;
+      size_t i;
+      
+      for(i=0, it_a = begin(), it_b = b.begin(); it_a != end(); ++it_a, ++it_b, ++i)
+	x[i] = (*it_a) - (*it_b);
+
+      return x;
+    }
         
     void Vector::axpy(double a, const Vector& b, Vector& x) const
     {
@@ -99,8 +112,11 @@ namespace chemfem{
 	  return;
 	}
 
-      for(int i=0; i<n; ++i)
-	x[i] = a*data[i] + b[i];
+      Vector::const_iterator it_a, it_b;
+      size_t i;
+      
+      for(i=0, it_a = begin(), it_b = b.begin(); it_a != end(); ++it_a, ++it_b, ++i)
+	x[i] = a*(*it_a) + (*it_b);
     }
 
     double Vector::Norm(double b) const

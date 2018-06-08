@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cmath>
 
 #include "fem/LinearForm.h"
 #include "fem/BilinearForm.h"
@@ -12,12 +13,17 @@ using namespace chemfem::mesh;
 
 double f(double x, double y)
 {
+  return sin(x)+cos(y);
+}
+
+double c(double x, double y)
+{
   return 1.;
 }
 
 int main()
 {
-  UnitSquareMesh mesh(4);
+  UnitSquareMesh mesh(20);
 
   std::cout << "Nr of nodes : " << mesh.NrNodes() << std::endl;
   std::cout << "Nr of cells : " << mesh.NrCells() << std::endl;
@@ -27,11 +33,10 @@ int main()
 
   BilinearForm Laplace(Space, Space);
   Laplace.AddLaplaceTerm();
+  Laplace.AddReactionTerm(c);
   Laplace.Assemble();
 
   SparseMatrix& Matrix = Laplace.SystemMatrix();
-  
-  std::cout << "The finite element system matrix is:\n" << Matrix << std::endl;
 
   LinearForm F(Space);
   F.AddVolumeForce(f);
@@ -39,9 +44,12 @@ int main()
 
   Vector& Vec = F.LoadVector();
 
-  std::cout << "The load vector is:\n" << Vec << std::endl;
-
   Vector X(Matrix.Solve(Vec));
+
+  Vector Res(Matrix*X - Vec);
+  std::cout << "Error of equation system: " << Res.Norm() << std::endl;
+
+  mesh.WriteVtk("solution.vtk", X);
   
   return 0;
 }
