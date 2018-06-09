@@ -8,23 +8,25 @@ namespace chemfem{
     FESpace::FESpace(const Mesh& mesh, Element& element)
       : mesh(mesh), refElement(element)
     {
+      DofPerCell = element.NrDof();
+      Dof = new size_t[mesh.NrCells()*DofPerCell];
+      
       if(element.Type() == Lagrange)
 	{
-	  
-	  if(element.Degree() == 1)
+	  // Dofs in the vertices
+	  int i; std::vector<Cell>::const_iterator cell;
+	  for(i=0, cell=mesh.Cells.begin();
+	      cell != mesh.Cells.end(); ++cell, ++i)
 	    {
-	      DofPerCell = 3;
-	      
-	      Dof = new size_t[mesh.NrCells()*DofPerCell];
-
-	      int i; std::vector<Cell>::const_iterator cell;
-	      for(i=0, cell=mesh.Cells.begin();
-		  cell != mesh.Cells.end(); ++cell, ++i)
-		{
-		  for(int j=0; j<DofPerCell; ++j)
-	  	    Dof[i*DofPerCell+j] = cell->LocNode[j]->Index;
-		}
+	      for(int j=0; j<3; ++j)
+		Dof[i*DofPerCell+j] = cell->LocNode[j]->Index;
 	    }
+
+	  size_t NodeDofs = mesh.NrNodes();
+	  
+	  // Dofs at the edges
+	  
+	  
 	  else
 	    std::cerr << "Error: Lagrange elements of order " << element.Degree() << " not implemented yet\n";
 	}
