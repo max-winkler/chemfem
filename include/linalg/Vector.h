@@ -86,6 +86,11 @@ namespace chemfem{
       Vector operator-(const Vector&) const;
 
       /**
+       * Returns the scalar vector product a*v.
+       */
+      friend Vector operator*(const double&, const& Vector);
+      
+      /**
        * Computes expressions like a*x+y for real values a and vectors x and y.
        */
       void axpy(double a, const Vector&, Vector&) const;
@@ -120,7 +125,6 @@ namespace chemfem{
 
     // Free methods
     double dot(const Vector&, const Vector&);
-    
   };
 };
   

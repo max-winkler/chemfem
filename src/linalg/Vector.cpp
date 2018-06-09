@@ -119,6 +119,19 @@ namespace chemfem{
 	x[i] = a*(*it_a) + (*it_b);
     }
 
+    Vector operator*(const double& a, const Vector& v)
+    {
+      Vector x(v.size());
+      
+      Vector::const_ierator it;
+      int index;
+      
+      for(it = v.begin(), index=0; it != v.end(); ++it, ++index)
+	x[index] = a*(*it);
+
+      return x;
+    }
+    
     double Vector::Norm(double b) const
     {
       double norm = 0.;
