@@ -9,10 +9,10 @@ namespace chemfem{
     class Edge
     {
     public:
-      Edge(const Cell&, const& Cell);
+      Edge(Cell&, Cell&);
       
     private:
-      const Cell *Neigh0, *Neigh1;
+      Cell *Neigh0, *Neigh1;
       Node *Node0 = NULL, *Node1 = NULL;
     };
     

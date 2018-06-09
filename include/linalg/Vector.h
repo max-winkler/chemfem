@@ -88,7 +88,7 @@ namespace chemfem{
       /**
        * Returns the scalar vector product a*v.
        */
-      friend Vector operator*(const double&, const& Vector);
+      friend Vector operator*(const double&, const Vector&);
       
       /**
        * Computes expressions like a*x+y for real values a and vectors x and y.

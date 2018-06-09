@@ -26,10 +26,7 @@ namespace chemfem{
 	  
 	  // Dofs at the edges
 	  
-	  
-	  else
-	    std::cerr << "Error: Lagrange elements of order " << element.Degree() << " not implemented yet\n";
-	}
+	}      
       else
 	std::cerr << "Error: Only Lagrange elements are implemented yet.\n";
     }

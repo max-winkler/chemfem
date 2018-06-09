@@ -21,6 +21,7 @@ namespace chemfem{
      */
     class Cell
     {
+      friend class Edge;
       friend class Mesh;
       friend class chemfem::fem::FESpace;
       friend class chemfem::fem::BilinearForm;

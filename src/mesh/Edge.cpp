@@ -3,10 +3,10 @@
 namespace chemfem{
   namespace mesh{
 
-    Edge::Edge(const Cell& Neigh0, const Cell& Neigh0) : Neigh0(&Neigh0), Neigh1(&Neigh1)
+    Edge::Edge(Cell& Neigh0, Cell& Neigh1) : Neigh0(&Neigh0), Neigh1(&Neigh1)
     {
-      for(Node* Node0 = Neigh0.LocNode; Node0 != Neigh0.LocNode+3; ++Node0)
-	for(Node* Node1 = Neigh1.LocNode; Node1 != Neigh1.LocNode+3; ++Node1)
+      for(Node* Node0 = Neigh0.LocNode[0]; Node0 != Neigh0.LocNode[3]; ++Node0)
+	for(Node* Node1 = Neigh1.LocNode[0]; Node1 != Neigh1.LocNode[3]; ++Node1)
 	  {
 	    if(Node0 == Node1)
 	      {

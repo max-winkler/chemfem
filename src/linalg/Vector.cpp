@@ -123,7 +123,7 @@ namespace chemfem{
     {
       Vector x(v.size());
       
-      Vector::const_ierator it;
+      Vector::const_iterator it;
       int index;
       
       for(it = v.begin(), index=0; it != v.end(); ++it, ++index)
