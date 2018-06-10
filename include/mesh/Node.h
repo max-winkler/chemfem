@@ -4,9 +4,9 @@
 #include <iostream>
 
 namespace chemfem{
-	namespace fem{
-		class FESpace;
-	}
+  namespace fem{
+    class FESpace;
+  }
 }
 
 namespace chemfem{
@@ -35,10 +35,14 @@ namespace chemfem{
        * Returns the y-coordinate
        */
       double getY() const;
-      
+
+      /**
+       * Returns the index of the node.
+       */
+      size_t Index() const;
     private:
       double x, y;
-      size_t Index;
+      size_t index;
     };
     
   };

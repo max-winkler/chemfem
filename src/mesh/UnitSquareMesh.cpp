@@ -22,6 +22,8 @@ namespace chemfem{
 	    Cells.push_back(Cell(Nodes[i*n+j], Nodes[i*n+j+1], Nodes[(i+1)*n+j]));
 	    Cells.push_back(Cell(Nodes[i*n+j+1], Nodes[(i+1)*n+j+1], Nodes[(i+1)*n+j]));
 	  }
+
+      CreateEdgeList();
     }
     
   }

@@ -2,10 +2,12 @@
 #define _MESH_H_
 
 #include <vector>
+#include <set>
 #include <string>
 
 #include "mesh/Node.h"
 #include "mesh/Cell.h"
+#include "mesh/Edge.h"
 
 #include "linalg/Vector.h"
 
@@ -31,6 +33,12 @@ namespace chemfem{
       friend class chemfem::fem::BilinearForm;
       friend class chemfem::fem::LinearForm;
     public:
+
+      /**
+       * Destructor which frees all allocated memory by cells, nodes and edges.
+       */
+      ~Mesh();
+      
       /// Returns the number of cells
       size_t NrCells() const;
       /// Returns the number of nodes
@@ -41,6 +49,10 @@ namespace chemfem{
     private:
       std::vector<Cell> Cells;
       std::vector<Node> Nodes;
+      std::set<Edge> Edges;
+      
+      void CreateEdgeList();
+      
     };
     
   };
