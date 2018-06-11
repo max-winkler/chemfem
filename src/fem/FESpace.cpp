@@ -28,7 +28,7 @@ namespace chemfem{
 	    }
 
 	  size_t NodeDofs = mesh.NrNodes();
-	  
+	  size_t EdgeDofCtr = 0;
 	  // Dofs at the edges	  
 	  std::set<Edge>::iterator edge;
 	  for(edge = mesh.Edges.begin(); edge != mesh.Edges.end(); ++edge)
@@ -38,9 +38,31 @@ namespace chemfem{
 		  Cell& cur_cell = edge->GetNeighbor(loc_ind);
 		  int cell_ind = cur_cell.Index();
 
+		  int edge_ind;
+		  for(edge_ind=0; edge_ind<3; ++edge_ind)
+		    if(cur_cell.LocEdge[edge_ind] == &(*edge)) break;
+		  if(edge_ind == 3)
+		    {
+		      std::cerr << "Edge not found but it should belong to the element. "
+				<< "Maybe the mesh format is corrupt.\n";
+		      return;
+		    }
+
+		  bool orientation;
+		  if(edge->Node0 == cur_cell.LocNode[edge_ind]
+		     && edge->Node1 == cur_cell.LocNode[(edge_ind+1)%3])
+		    orientation = true;
+		  else if(edge->Node1 == cur_cell.LocNode[edge_ind]
+			  && edge->Node0 == cur_cell.LocNode[(edge_ind+1)%3])
+		    orientation = false;
+		  else
+		    std::cerr << "An unexpected error occured. Maybe the mesh format is corrupt.\n";
+		  
 		  for(int k=0; k<DofPerEdge; ++k)
-		    Dof[cell_ind*DofPerCell + 3 + k] = 10000; // TODO: Continue here.
+		    Dof[cell_ind*DofPerCell + 3 + k] = NodeDofs + EdgeDofCtr + k;
+		  // TODO: DOF depends on local edge index and orientation.
 		}
+	      EdgeDofCtr += DofPerEdge;
 	    }	  
 	}      
       else

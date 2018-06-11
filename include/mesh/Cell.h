@@ -4,7 +4,9 @@
 #include <iostream>
 
 #include "linalg/DenseMatrix.h"
-#include "Node.h"
+
+#include "mesh/Node.h"
+#include "mesh/Edge.h"
 
 // Forward declarations for friend classes
 namespace chemfem::fem{
@@ -16,6 +18,9 @@ namespace chemfem::fem{
 namespace chemfem{
   namespace mesh{
 
+    // Forward declaration to dependent classes
+    class Edge;
+    
     /**
      * Class which represents a single cell (triangle/tetrahedron) of a finite element triangulation.
      */
@@ -56,6 +61,9 @@ namespace chemfem{
     private:
       /// Stores the 3 vertices of the triangle
       Node *LocNode[3];
+      /// Store pointers to the 3 edges of the triangle
+      const Edge *LocEdge[3];
+      
       /// Stores the index of the cell. Merely used as temporary variable during FESpace::FESpace()
       size_t index;
     };

@@ -64,9 +64,14 @@ namespace chemfem{
 	      // If edge already exists update the neighbor
 	      if (! it_pair.second)
 		{
+		  delete NewEdge;
 		  const Edge& CurEdge = *(it_pair.first);
 		  CurEdge.SetNeighbor(*cell);
+		  cell->LocEdge[i] = &CurEdge;
 		}
+	      else
+		cell->LocEdge[i] = NewEdge;
+	      
 	    }
 	}
     }
