@@ -42,10 +42,22 @@ namespace chemfem{
        * Returns the Jacobian of the reference transformation.
        */
       chemfem::linalg::DenseMatrix Jacobian() const;
+
+      /**
+       * Returns the index Variable
+       */
+      size_t Index() const;
+
+      /**
+       * Set the index variable.
+       */
+      void SetIndex(size_t);
       
     private:
       /// Stores the 3 vertices of the triangle
       Node *LocNode[3];
+      /// Stores the index of the cell. Merely used as temporary variable during FESpace::FESpace()
+      size_t index;
     };
     
   };

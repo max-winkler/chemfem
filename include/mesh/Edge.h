@@ -39,7 +39,11 @@ namespace chemfem{
        * The neighbor is sometimes found later when iterating over all cells.
        */
       void SetNeighbor(Cell&) const;
-      
+
+      /**
+       * Returns a reference to the cells meeting in the edge.
+       */
+      Cell& GetNeighbor(int) const;
     private:
       mutable Cell *Neigh0, *Neigh1;
       Node *Node0 = NULL, *Node1 = NULL;

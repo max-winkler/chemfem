@@ -52,5 +52,13 @@ namespace chemfem{
 
       Neigh1 = &other;
     }
+
+    Cell& Edge::GetNeighbor(int i) const
+    {
+      if(i==0) return *Neigh0;
+      else if(i==1) return *Neigh1;
+      else
+	std::cerr << "Requested " << i << "th neighbor of an edge. This makes no sense.\n";
+    }
   }
 }

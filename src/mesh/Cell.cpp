@@ -41,6 +41,16 @@ namespace chemfem{
 
       return Jac;
     }
+
+    size_t Cell::Index() const
+    {
+      return index;
+    }
+
+    void Cell::SetIndex(size_t index)
+    {
+      this->index = index;
+    }
     
   };
 };
