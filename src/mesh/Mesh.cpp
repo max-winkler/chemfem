@@ -70,8 +70,7 @@ namespace chemfem{
 		  cell->LocEdge[i] = &CurEdge;
 		}
 	      else
-		cell->LocEdge[i] = NewEdge;
-	      
+		cell->LocEdge[i] = NewEdge;	      
 	    }
 	}
     }

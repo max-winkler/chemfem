@@ -44,6 +44,8 @@ namespace chemfem{
        * Returns a reference to the cells meeting in the edge.
        */
       Cell& GetNeighbor(int) const;
+
+      const Node& GetNode(int) const;
     private:
       mutable Cell *Neigh0, *Neigh1;
       Node *Node0 = NULL, *Node1 = NULL;

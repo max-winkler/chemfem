@@ -49,21 +49,24 @@ namespace chemfem{
 		    }
 
 		  bool orientation;
-		  if(edge->Node0 == cur_cell.LocNode[edge_ind]
-		     && edge->Node1 == cur_cell.LocNode[(edge_ind+1)%3])
+		  if(&(edge->GetNode(0)) == cur_cell.LocNode[edge_ind]
+		     && &(edge->GetNode(1)) == cur_cell.LocNode[(edge_ind+1)%3])
 		    orientation = true;
-		  else if(edge->Node1 == cur_cell.LocNode[edge_ind]
-			  && edge->Node0 == cur_cell.LocNode[(edge_ind+1)%3])
+		  else if(&(edge->GetNode(1)) == cur_cell.LocNode[edge_ind]
+			  && &(edge->GetNode(0)) == cur_cell.LocNode[(edge_ind+1)%3])
 		    orientation = false;
 		  else
-		    std::cerr << "An unexpected error occured. Maybe the mesh format is corrupt.\n";
+		    std::cerr << "An unexpected error occured. Maybe the mesh data structure "
+			      << "is broken.\n";
 		  
 		  for(int k=0; k<DofPerEdge; ++k)
-		    Dof[cell_ind*DofPerCell + 3 + k] = NodeDofs + EdgeDofCtr + k;
-		  // TODO: DOF depends on local edge index and orientation.
+		    Dof[cell_ind*DofPerCell + edge_ind*DofPerEdge + k]
+		      = NodeDofs + EdgeDofCtr + (orientation ? k : DofPerEdge - k - 1) ;
 		}
 	      EdgeDofCtr += DofPerEdge;
-	    }	  
+	    }
+
+	  nr_dof = NodeDofs + EdgeDofCtr;
 	}      
       else
 	std::cerr << "Error: Only Lagrange elements are implemented yet.\n";
@@ -76,10 +79,7 @@ namespace chemfem{
 
     size_t FESpace::NrDof() const
     {
-      if(refElement.Type() == Lagrange && refElement.Degree() == 1)
-	return mesh.NrNodes();
-      else
-	return -1;
+      return nr_dof;
     }
 
     const Element& FESpace::RefElement() const

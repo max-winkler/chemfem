@@ -60,5 +60,10 @@ namespace chemfem{
       else
 	std::cerr << "Requested " << i << "th neighbor of an edge. This makes no sense.\n";
     }
+
+    const Node& Edge::GetNode(int i) const
+    {
+      return i==0 ? *Node0 : *Node1;
+    }
   }
 }

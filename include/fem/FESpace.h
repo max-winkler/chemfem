@@ -44,6 +44,8 @@ namespace chemfem{
     private:
       size_t *Dof;
 
+      size_t nr_dof;
+      
       int DofPerCell, DofPerEdge;
       
       Element& refElement;
