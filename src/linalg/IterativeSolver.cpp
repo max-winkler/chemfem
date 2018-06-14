@@ -27,7 +27,7 @@ namespace chemfem{
 
       Vector d(res);
 
-      const int max_iter = 100;
+      const int max_iter = 1000;
       const double a_tol = 1.e-8;
 
       int iter = 0;
@@ -39,7 +39,12 @@ namespace chemfem{
 	  Vector z((*this)*d);
 	  eps = dot(res, res);
 
-	  std::cout << "CG it " << iter << ", resid = " << sqrt(eps) << std::endl;
+	  if(iter % 100 == 0)
+	    {
+	      std::cout << "CG it " << iter << ", resid = " << sqrt(eps) << "                ";
+	      std::cout.flush();
+	      std::cout << "\r";
+	    }
 	  
 	  double alpha = eps / dot(d, z);
 	  d.axpy(alpha, x, x);

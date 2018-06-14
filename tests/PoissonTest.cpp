@@ -23,7 +23,7 @@ double c(double x, double y)
 
 int main()
 {
-  UnitSquareMesh mesh(2);
+  UnitSquareMesh mesh(10);
 
   std::cout << "Nr of nodes : " << mesh.NrNodes() << std::endl;
   std::cout << "Nr of cells : " << mesh.NrCells() << std::endl;

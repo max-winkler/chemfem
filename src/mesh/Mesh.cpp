@@ -57,20 +57,16 @@ namespace chemfem{
 	  for(int i=0; i<3; ++i)
 	    {
 	      Node *Node0 = cell->LocNode[i], *Node1 = cell->LocNode[(i+1)%3];
-	      Edge *NewEdge = new Edge(*cell, *Node0, *Node1);
+	      Edge NewEdge(*cell, *Node0, *Node1);
 	      
-	      std::pair<std::set<Edge>::iterator, bool> it_pair = Edges.insert(*NewEdge);
-
+	      std::pair<std::set<Edge>::iterator, bool> it_pair = Edges.insert(NewEdge);
+	      const Edge& CurEdge = *(it_pair.first);
+	      
 	      // If edge already exists update the neighbor
 	      if (! it_pair.second)
-		{
-		  delete NewEdge;
-		  const Edge& CurEdge = *(it_pair.first);
-		  CurEdge.SetNeighbor(*cell);
-		  cell->LocEdge[i] = &CurEdge;
-		}
-	      else
-		cell->LocEdge[i] = NewEdge;	      
+		CurEdge.SetNeighbor(*cell);		
+
+	      cell->LocEdge[i] = &CurEdge;
 	    }
 	}
     }

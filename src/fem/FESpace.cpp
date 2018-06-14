@@ -5,6 +5,7 @@ namespace chemfem{
 
     using chemfem::mesh::Cell;
     using chemfem::mesh::Edge;
+    using chemfem::mesh::EdgeType;
     
     FESpace::FESpace(Mesh& mesh, Element& element)
       : mesh(mesh), refElement(element)
@@ -33,7 +34,8 @@ namespace chemfem{
 	  std::set<Edge>::iterator edge;
 	  for(edge = mesh.Edges.begin(); edge != mesh.Edges.end(); ++edge)
 	    {
-	      for(int loc_ind=0; loc_ind < 2; ++loc_ind)
+	      int NrNeighs = edge->Type() == EdgeType::BOUNDARY_EDGE ? 1:2;
+	      for(int loc_ind=0; loc_ind < NrNeighs; ++loc_ind)
 		{
 		  Cell& cur_cell = edge->GetNeighbor(loc_ind);
 		  int cell_ind = cur_cell.Index();
@@ -60,7 +62,7 @@ namespace chemfem{
 			      << "is broken.\n";
 		  
 		  for(int k=0; k<DofPerEdge; ++k)
-		    Dof[cell_ind*DofPerCell + edge_ind*DofPerEdge + k]
+		    Dof[cell_ind*DofPerCell + 3 + edge_ind*DofPerEdge + k]
 		      = NodeDofs + EdgeDofCtr + (orientation ? k : DofPerEdge - k - 1) ;
 		}
 	      EdgeDofCtr += DofPerEdge;

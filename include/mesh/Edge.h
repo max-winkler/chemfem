@@ -6,13 +6,16 @@
 namespace chemfem{
   namespace mesh{
 
+    enum EdgeType {BOUNDARY_EDGE, INTERFACE_EDGE};
+    
     /**
      * Each instance of this class represents an interface between two cells 
      * of the finite element mesh. Moreover, the endpoints of the edge are stored.
      */
     class Edge
-    {
-    public:
+    {           
+    public:     
+      
       /**
        * Constructor which initializes an edge by the two cells which meet in the edge.
        */
@@ -23,11 +26,7 @@ namespace chemfem{
        * The neighbor of the edge should be set later.
        */
       Edge(Cell&, Node&, Node&);
-      /**
-       * Comparison operator. Two edges are equal when the endpoints are the same.
-       */
-      bool operator==(const Edge&) const;
-
+      
       /**
        * The operator< is used in the mesh class as all edges are stored in an sorted
        * set. An edge is less than another edge if the indices of the nodes fulfill such a relation.
@@ -45,10 +44,17 @@ namespace chemfem{
        */
       Cell& GetNeighbor(int) const;
 
+      /**
+       * Returns the edge type.
+       */
+      EdgeType Type() const;
+      
       const Node& GetNode(int) const;
     private:
-      mutable Cell *Neigh0, *Neigh1;
       Node *Node0 = NULL, *Node1 = NULL;
+      
+      mutable Cell *Neigh0, *Neigh1;
+      mutable EdgeType type;      
     };
     
   };

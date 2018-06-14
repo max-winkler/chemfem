@@ -3,7 +3,7 @@
 namespace chemfem{
   namespace mesh{
 
-    Edge::Edge(Cell& Neigh0, Cell& Neigh1) : Neigh0(&Neigh0), Neigh1(&Neigh1)
+    Edge::Edge(Cell& Neigh0, Cell& Neigh1) : Neigh0(&Neigh0), Neigh1(&Neigh1), type(INTERFACE_EDGE)
     {
       for(Node* Node0 = Neigh0.LocNode[0]; Node0 != Neigh0.LocNode[3]; ++Node0)
 	for(Node* Node1 = Neigh1.LocNode[0]; Node1 != Neigh1.LocNode[3]; ++Node1)
@@ -24,16 +24,10 @@ namespace chemfem{
     }
 
     Edge::Edge(Cell& Neigh0, Node& Node0, Node& Node1)
-      : Neigh0(&Neigh0), Neigh1(NULL), Node0(&Node0), Node1(&Node1)    
+      : Neigh0(&Neigh0), Neigh1(NULL), Node0(&Node0), Node1(&Node1), type(BOUNDARY_EDGE)
     {
       if(this->Node0->Index() > this->Node1->Index())
 	std::swap(this->Node0, this->Node1);
-    }
-    
-    bool Edge::operator==(const Edge& other) const
-    {
-      return (Node0 == other.Node0 && Node1 == other.Node1)
-	|| (Node0 == other.Node1 && Node1 == other.Node0);
     }
 
     bool Edge::operator<(const Edge& other) const
@@ -42,6 +36,7 @@ namespace chemfem{
 	return true;
       if(Node0->Index() == other.Node0->Index() && Node1->Index() < other.Node1->Index())
 	return true;
+
       return false;
     }
 
@@ -51,6 +46,7 @@ namespace chemfem{
 	std::cerr << "All neighbors of the edge are already set. This seems to be a mistake.\n";
 
       Neigh1 = &other;
+      type = INTERFACE_EDGE;
     }
 
     Cell& Edge::GetNeighbor(int i) const
@@ -65,5 +61,11 @@ namespace chemfem{
     {
       return i==0 ? *Node0 : *Node1;
     }
+
+    EdgeType Edge::Type() const
+    {
+      return type;
+    }
+
   }
 }

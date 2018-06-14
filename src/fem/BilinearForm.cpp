@@ -52,7 +52,7 @@ namespace chemfem{
       SparseMatrixInserter Ins(Matrix);     
 
       // TODO: Select correct quadrature formula once it is implemented
-      QuadratureFormula QuadFormula(QUAD_FORMULA::VERTEX);
+      QuadratureFormula QuadFormula(QUAD_FORMULA::GAUSS_EDGE);
 
       size_t NrQuadPoints = QuadFormula.NrQuadPoints();
       Vector Xi, Eta, Weights;

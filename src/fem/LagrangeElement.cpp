@@ -55,7 +55,7 @@ namespace chemfem{
 	  return grad;
 	case 2:
 	  if(i<3)
-	    return (2*lambda[i]-1.)*gradLambda[0] + 2*lambda[i]*gradLambda[i];
+	    return (2*lambda[i]-1.)*gradLambda[i] + 2*lambda[i]*gradLambda[i];
 	  else
 	    return 4*(lambda[i-3]*gradLambda[(i-2)%3] + lambda[(i-2)%3]*gradLambda[i-3]);
 	}
