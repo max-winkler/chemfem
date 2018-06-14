@@ -8,7 +8,7 @@ namespace chemfem{
     using chemfem::mesh::EdgeType;
     
     FESpace::FESpace(Mesh& mesh, Element& element)
-      : mesh(mesh), refElement(element)
+      : refElement(element), mesh(mesh)
     {
       DofPerCell = element.NrDof();
       DofPerEdge = element.Degree() - 1;

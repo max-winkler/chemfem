@@ -117,7 +117,7 @@ namespace chemfem{
       
     private:
       /// Dimension of the vector
-      int n;
+      size_t n;
       // Data vector
       double* data;
 

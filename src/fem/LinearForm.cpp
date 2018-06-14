@@ -41,7 +41,6 @@ namespace chemfem{
       // TODO: Select correct quadrature formula once it is implemented
       QuadratureFormula QuadFormula(QUAD_FORMULA::GAUSS_7);
 
-      size_t NrQuadPoints = QuadFormula.NrQuadPoints();
       Vector Xi, Eta, Weights;
       QuadFormula.FormulaData(Weights, Xi, Eta);
 

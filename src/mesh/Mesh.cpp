@@ -44,7 +44,7 @@ namespace chemfem{
       ofs <<  "LOOKUP_TABLE default"  << std::endl;
 
       Vector::const_iterator it;
-      int i;
+      size_t i;
       for (i=0, it = x.begin(); i<nr_nodes; ++it, ++i)
 	ofs << *it << std::endl;
     }

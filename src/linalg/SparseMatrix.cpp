@@ -42,7 +42,7 @@ namespace chemfem{
       Row = new size_t[m+1];
       Entry = new double[m];
 
-      for(int i=0; i<m; ++i)
+      for(size_t i=0; i<m; ++i)
 	{
 	  Col[i] = i;
 	  Row[i] = i;

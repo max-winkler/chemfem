@@ -26,6 +26,7 @@ namespace chemfem{
     Vector::const_iterator& Vector::const_iterator::operator++()
     {
       ++cur;
+      return *this;
     }
     const double& Vector::const_iterator::operator*() const
     {
@@ -82,6 +83,7 @@ namespace chemfem{
     Vector& Vector::operator=(const double* data_in)
     {
       std::copy(data_in, data_in+n, data);
+      return *this;
     }
 
     Vector Vector::operator+(const Vector& b) const
@@ -140,6 +142,7 @@ namespace chemfem{
 	  norm += pow(*it, b);
 	}
       norm = pow(norm, 1./b);
+      return norm;
     }
     
     Vector::const_iterator Vector::begin() const

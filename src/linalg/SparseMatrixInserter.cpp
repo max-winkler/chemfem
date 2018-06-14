@@ -60,7 +60,7 @@ namespace chemfem{
       // Compress row vector
       M.Row[0] = 0;
 
-      size_t pos = 0, pos_tmp = 0;
+      size_t pos = 0;
       while(pos < M.nnz)
 	{
 	  size_t NrEntriesRow = 0;

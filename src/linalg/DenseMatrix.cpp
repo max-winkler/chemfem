@@ -91,10 +91,10 @@ namespace chemfem{
 	}
 
       Vector y(m);
-      for(int i=0; i<m; ++i)
+      for(size_t i=0; i<m; ++i)
 	{
 	  y[i] = 0.;
-	  for(int j=0; j<n; ++j)
+	  for(size_t j=0; j<n; ++j)
 	    y[i] += data[n*i+j]*x[j];
 	}
 

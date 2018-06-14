@@ -30,6 +30,8 @@ namespace chemfem{
 	    return 4*lambda[i-3]*lambda[(i-2)%3];
 	  break;
 	}
+      
+      return 0.;
     }
 
     Vector LagrangeElement::Gradient(int i, double x, double y) const
@@ -59,6 +61,8 @@ namespace chemfem{
 	  else
 	    return 4*(lambda[i-3]*gradLambda[(i-2)%3] + lambda[(i-2)%3]*gradLambda[i-3]);
 	}
+
+      return Vector();
     }
     
   }

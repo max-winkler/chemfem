@@ -24,7 +24,7 @@ namespace chemfem{
     }
 
     Edge::Edge(Cell& Neigh0, Node& Node0, Node& Node1)
-      : Neigh0(&Neigh0), Neigh1(NULL), Node0(&Node0), Node1(&Node1), type(BOUNDARY_EDGE)
+      : Node0(&Node0), Node1(&Node1), Neigh0(&Neigh0), Neigh1(NULL), type(BOUNDARY_EDGE)
     {
       if(this->Node0->Index() > this->Node1->Index())
 	std::swap(this->Node0, this->Node1);
@@ -51,10 +51,14 @@ namespace chemfem{
 
     Cell& Edge::GetNeighbor(int i) const
     {
-      if(i==0) return *Neigh0;
-      else if(i==1) return *Neigh1;
-      else
+
+      if(i!= 0 || i != 1)
 	std::cerr << "Requested " << i << "th neighbor of an edge. This makes no sense.\n";
+
+      if(i==0)
+	return *Neigh0;
+      else 
+	return *Neigh1; 
     }
 
     const Node& Edge::GetNode(int i) const
