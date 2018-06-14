@@ -52,7 +52,7 @@ namespace chemfem{
       SparseMatrixInserter Ins(Matrix);     
 
       // TODO: Select correct quadrature formula once it is implemented
-      QuadratureFormula QuadFormula(QUAD_FORMULA::GAUSS_EDGE);
+      QuadratureFormula QuadFormula(QUAD_FORMULA::GAUSS_7);
 
       size_t NrQuadPoints = QuadFormula.NrQuadPoints();
       Vector Xi, Eta, Weights;
@@ -95,10 +95,10 @@ namespace chemfem{
 
 	      for(int k=0; k<TestSpace.DofPerCell; ++k)
 		{
-		  GradTest[k] = TestSpace.RefElement().Gradient(k, XYq[0], XYq[1]);		  
-		  GradTrial[k] = TrialSpace.RefElement().Gradient(k, XYq[0], XYq[1]);
-		  ValueTest[k] = TestSpace.RefElement().Value(k, XYq[0], XYq[1]);
-		  ValueTrial[k] = TrialSpace.RefElement().Value(k, XYq[0], XYq[1]);
+		  GradTest[k] = TestSpace.RefElement().Gradient(k, *Xiq, *Etaq);
+		  GradTrial[k] = TrialSpace.RefElement().Gradient(k, *Xiq, *Etaq);
+		  ValueTest[k] = TestSpace.RefElement().Value(k, *Xiq, *Etaq);
+		  ValueTrial[k] = TrialSpace.RefElement().Value(k, *Xiq, *Etaq);
 		}
 	      
 	      // Iterate over all terms
@@ -116,7 +116,8 @@ namespace chemfem{
 			  for(int k=0; k<TestSpace.DofPerCell; ++k)
 			    for(int l=0; l<TrialSpace.DofPerCell; ++l)
 			      LocMatrix[k][l] += 
-				(*Wq) * CoeffVal * dot(InvJac*GradTest[k], InvJac*GradTrial[l]) * det;
+				0.5 * (*Wq) * CoeffVal * dot(InvJac*GradTest[k], InvJac*GradTrial[l])
+				* det;
 			  break;
 			  /*
 			case FIRST_ORDER:
@@ -126,7 +127,8 @@ namespace chemfem{
 			case ZERO_ORDER:
 			  for(int k=0; k<TestSpace.DofPerCell; ++k)
 			    for(int l=0; l<TrialSpace.DofPerCell; ++l)
-			      LocMatrix[k][l] += (*Wq) * CoeffVal * ValueTest[k] * ValueTrial[l] * det;
+			      LocMatrix[k][l] += 0.5 * (*Wq) * CoeffVal * ValueTest[k]
+				* ValueTrial[l] * det;
 			  			
 			  break;
 			  

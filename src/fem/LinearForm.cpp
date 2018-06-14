@@ -39,7 +39,7 @@ namespace chemfem{
       Vec = Vector(TestSpace.NrDof());
 
       // TODO: Select correct quadrature formula once it is implemented
-      QuadratureFormula QuadFormula(QUAD_FORMULA::VERTEX);
+      QuadratureFormula QuadFormula(QUAD_FORMULA::GAUSS_7);
 
       size_t NrQuadPoints = QuadFormula.NrQuadPoints();
       Vector Xi, Eta, Weights;
@@ -90,7 +90,7 @@ namespace chemfem{
 		      for(int k=0; k<TestSpace.DofPerCell; ++k)
 			{
 			  int GlobalIndex = TestSpace.GetGlobalIndex(CellInd, k);
-			  Vec[GlobalIndex] += (*Wq) * CoeffVal * TestFuncValue[k] * det;
+			  Vec[GlobalIndex] += 0.5 * (*Wq) * CoeffVal * TestFuncValue[k] * det;
 			}
 		      break;
 		      /*
