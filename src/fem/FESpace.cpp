@@ -69,6 +69,20 @@ namespace chemfem{
 	    }
 
 	  nr_dof = NodeDofs + EdgeDofCtr;
+
+	  if(element.Degree() >2)
+	    {
+	      // Numerate interior dofs
+	      std::vector<Cell>::const_iterator cell;
+	      for(cell = mesh.Cells.begin(); cell != mesh.Cells.end(); ++cell)
+		{
+		  size_t cell_ind = cell->Index();
+		  
+		  // TODO: Works only for P3 elements
+		  Dof[cell_ind*DofPerCell + 3*DofPerEdge] = nr_dof++;
+		}
+	    }
+	  
 	}      
       else
 	std::cerr << "Error: Only Lagrange elements are implemented yet.\n";

@@ -52,7 +52,7 @@ namespace chemfem{
     Cell& Edge::GetNeighbor(int i) const
     {
 
-      if(i!= 0 || i != 1)
+      if(i!= 0 && i != 1)
 	std::cerr << "Requested " << i << "th neighbor of an edge. This makes no sense.\n";
 
       if(i==0)
