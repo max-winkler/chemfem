@@ -21,16 +21,32 @@ namespace chemfem{
       switch(degree)
 	{
 	case 1:
-	  return lambda[i];
+	  if(i<3)
+	    return lambda[i];
 	  break;
 	case 2:
 	  if(i<3)
 	    return lambda[i]*(2*lambda[i]-1);
-	  else
+	  else if(i<6)
 	    return 4*lambda[i-3]*lambda[(i-2)%3];
 	  break;
+	case 3:
+	  if(i<3)
+	    return 4.5*lambda[i]*(lambda[i]-1./3)*(lambda[i]-2./3);
+	  else if(i<9)
+	    {
+	      int edge_ind = (i-3) / 2;
+	      int vert_ind = (i-3) % 2;  
+	      return 13.5 * lambda[i]*lambda[(i+1)%3]*(lambda[(edge_ind+vert_ind)%3]-1./3);
+	    }
+	  else if(i==9)
+	    return 27*lambda[0]*lambda[1]*lambda[2];
+	  break;
+
 	}
-      
+      std::cerr << "Requested function value of trial function " << i
+		<< ", but the element has only " << nr_dof << " degrees of freedom.\n";
+
       return 0.;
     }
 
