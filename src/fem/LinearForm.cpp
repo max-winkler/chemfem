@@ -74,7 +74,7 @@ namespace chemfem{
 
 	      // Function value of test functions
 	      for(int k=0; k<TestSpace.DofPerCell; ++k)
-		TestFuncValue[k] = TestSpace.RefElement().Value(k, XYq[0], XYq[1]);
+		TestFuncValue[k] = TestSpace.RefElement().Value(k, *Xiq, *Etaq);
 	      
 	      // Iterate over all terms
 	      for(std::vector<FEExpression>::const_iterator Term = Terms.begin();

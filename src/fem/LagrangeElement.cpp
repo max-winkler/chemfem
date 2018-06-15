@@ -82,24 +82,24 @@ namespace chemfem{
 	  break;
 	case 3:
 	  if(i<3)
-	    grad_L[i] = 4.5*(lambda[i]*(lambda[i]-1./3) + (2*lambda[i]-1./3)*(lambda[i]-2./3));
+	    grad_L[i] = 13.5*lambda[i]*lambda[i] - 9*lambda[i] + 1.;
 	  else if(i<9)
 	    {
 	      int edge_ind = (i-3) / 2;
 	      int vert_ind = (i-3) % 2;
 
-	      grad_L[edge_ind] = 4.5*lambda[(edge_ind+1)%3]
+	      grad_L[edge_ind] = 13.5*lambda[(edge_ind+1)%3]
 		*(lambda[edge_ind + vert_ind]-1./3 + (vert_ind == 0 ? lambda[edge_ind] : 0.));
-	      grad_L[(edge_ind+1)%3] = 4.5*lambda[edge_ind]
+	      grad_L[(edge_ind+1)%3] = 13.5*lambda[edge_ind]
 		*(lambda[edge_ind + vert_ind]-1./3 + (vert_ind == 1 ? lambda[(edge_ind+1)%3] : 0.));
 	    }
-	  else if(i==10)
+	  else if(i==9)
 	    {
 	      grad_L[0] = 27.*lambda[1]*lambda[2];
 	      grad_L[1] = 27.*lambda[0]*lambda[2];
 	      grad_L[2] = 27.*lambda[0]*lambda[1];
 	    }
-	    break;
+	  break;
 	}
 
       return dLdX*grad_L;
