@@ -12,7 +12,8 @@ namespace chemfem{
     {
       DofPerCell = element.NrDof();
       DofPerEdge = element.Degree() - 1;
-	
+      IntDofPerCell = (element.Degree()-1) * (element.Degree()-2) / 2;
+      
       Dof = new size_t[mesh.NrCells()*DofPerCell];
       
       if(element.Type() == Lagrange)
@@ -78,8 +79,8 @@ namespace chemfem{
 		{
 		  size_t cell_ind = cell->Index();
 		  
-		  // TODO: Works only for P3 elements
-		  Dof[cell_ind*DofPerCell + 3 + 3*DofPerEdge] = nr_dof++;		  
+		  for(int k=0; k<IntDofPerCell; ++k)
+		    Dof[cell_ind*DofPerCell + 3 + 3*DofPerEdge + k] = nr_dof++;		  
 		}
 	    }
 	  

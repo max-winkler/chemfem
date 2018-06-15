@@ -46,7 +46,7 @@ namespace chemfem{
 
       size_t nr_dof;
       
-      int DofPerCell, DofPerEdge;
+      int DofPerCell, DofPerEdge, IntDofPerCell;
       
       Element& refElement;
       const Mesh& mesh;
