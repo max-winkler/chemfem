@@ -79,7 +79,7 @@ namespace chemfem{
 		  size_t cell_ind = cell->Index();
 		  
 		  // TODO: Works only for P3 elements
-		  Dof[cell_ind*DofPerCell + 3*DofPerEdge] = nr_dof++;
+		  Dof[cell_ind*DofPerCell + 3 + 3*DofPerEdge] = nr_dof++;
 		}
 	    }
 	  
