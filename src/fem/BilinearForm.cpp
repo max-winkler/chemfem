@@ -107,16 +107,19 @@ namespace chemfem{
 		  if(&TestSpace.mesh == &TrialSpace.mesh)
 		    {
 		      double CoeffVal = Term->Coeff(XYq[0], XYq[1]);
-		      		      
+		      
 		      switch(Term->Type)
 			{
 			case SECOND_ORDER:
 			  
 			  for(int k=0; k<TestSpace.DofPerCell; ++k)
 			    for(int l=0; l<TrialSpace.DofPerCell; ++l)
-			      LocMatrix[k][l] += 
-				0.5 * (*Wq) * CoeffVal * dot(InvJac*GradTest[k], InvJac*GradTrial[l])
-				* det;
+			      {
+				LocMatrix[k][l] += 
+				  0.5 * (*Wq) * CoeffVal * dot(InvJac*GradTest[k], InvJac*GradTrial[l])
+				  * det;
+			      }
+		  
 			  break;
 			  /*
 			case FIRST_ORDER:
@@ -153,7 +156,7 @@ namespace chemfem{
 	      {
 		Ins.Insert(TestSpace.GetGlobalIndex(CellInd, k),
 			   TrialSpace.GetGlobalIndex(CellInd, l),
-			   LocMatrix[k][l]);
+			   LocMatrix[k][l]);		
 	      }
 	  
 	} // loop over cells

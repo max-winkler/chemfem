@@ -59,6 +59,9 @@ namespace chemfem{
     {           
       double lambda[3] = {1.-x-y, x, y};
 
+      if(x > 1 || y > 1 || x < 0 || y < 0)
+	std::cerr << "Invalid quadrature point.\n";
+      
       DenseMatrix dLdX(2,3);
       dLdX[0][0] = -1.; dLdX[0][1] = 1.; dLdX[0][2] = 0.;
       dLdX[1][0] = -1.; dLdX[1][1] = 0.; dLdX[1][2] = 1.;
@@ -89,9 +92,9 @@ namespace chemfem{
 	      int vert_ind = (i-3) % 2;
 
 	      grad_L[edge_ind] = 13.5*lambda[(edge_ind+1)%3]
-		*(lambda[edge_ind + vert_ind]-1./3 + (vert_ind == 0 ? lambda[edge_ind] : 0.));
+		*(lambda[(edge_ind + vert_ind)%3]-1./3 + (vert_ind == 0 ? lambda[edge_ind] : 0.));
 	      grad_L[(edge_ind+1)%3] = 13.5*lambda[edge_ind]
-		*(lambda[edge_ind + vert_ind]-1./3 + (vert_ind == 1 ? lambda[(edge_ind+1)%3] : 0.));
+		*(lambda[(edge_ind + vert_ind)%3]-1./3 + (vert_ind == 1 ? lambda[(edge_ind+1)%3] : 0.));
 	    }
 	  else if(i==9)
 	    {

@@ -28,7 +28,7 @@ int main()
   std::cout << "Nr of nodes : " << mesh.NrNodes() << std::endl;
   std::cout << "Nr of cells : " << mesh.NrCells() << std::endl;
   
-  LagrangeElement element(2);
+  LagrangeElement element(3);
   FESpace Space(mesh, element);
 
   BilinearForm Laplace(Space, Space);
