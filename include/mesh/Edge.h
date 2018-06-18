@@ -53,7 +53,10 @@ namespace chemfem{
        * Returns the edge type.
        */
       EdgeType Type() const;
-      
+
+      /**
+       * Returns the i-th endpoint of the edge.
+       */
       const Node& GetNode(int) const;
     private:
       Node *Node0 = NULL, *Node1 = NULL;

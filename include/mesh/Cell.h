@@ -57,6 +57,12 @@ namespace chemfem{
        * Set the index variable.
        */
       void SetIndex(size_t);
+
+      /**
+       * Returns the local index of the edge in the cell. The return value is 
+       * -1 if the edge is not an edge of the cell.
+       */
+      int EdgeIndex(const Edge&) const;
       
     private:
       /// Stores the 3 vertices of the triangle

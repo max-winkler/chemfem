@@ -50,6 +50,8 @@ namespace chemfem{
       
       Element& refElement;
       const Mesh& mesh;
+
+      size_t *BdDof;
     };
     
   };

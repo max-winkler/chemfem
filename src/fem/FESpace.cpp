@@ -40,11 +40,9 @@ namespace chemfem{
 		{
 		  Cell& cur_cell = edge->GetNeighbor(loc_ind);
 		  int cell_ind = cur_cell.Index();
-
-		  int edge_ind;
-		  for(edge_ind=0; edge_ind<3; ++edge_ind)
-		    if(cur_cell.LocEdge[edge_ind] == &(*edge)) break;
-		  if(edge_ind == 3)
+		  int edge_ind = cur_cell.EdgeIndex(*edge);
+		  
+		  if(edge_ind == -1)
 		    {
 		      std::cerr << "Edge not found but it should belong to the element. "
 				<< "Maybe the mesh format is corrupt.\n";
@@ -83,8 +81,24 @@ namespace chemfem{
 		    Dof[cell_ind*DofPerCell + 3 + 3*DofPerEdge + k] = nr_dof++;		  
 		}
 	    }
-	  
-	}      
+
+	  // Find boundary DOFs
+	  BdDof = new size_t[(2+DofPerEdge)*mesh.BdEdges.size()];
+
+	  size_t bd_dof_ctr = 0;
+	  std::vector<const Edge*>::const_iterator bd_edge;
+	  for(bd_edge = mesh.BdEdges.begin();
+	      bd_edge != mesh.BdEdges.end(); ++bd_edge)
+	    {
+	      Cell& cell = (*bd_edge)->GetNeighbor(0);
+	      int edge_ind = cell.EdgeIndex(**bd_edge);
+
+	      for(int k=0; k<2; ++k)
+		BdDof[bd_dof_ctr++] = (*bd_edge)->GetNode(k).Index();
+	      for(int k=0; k<DofPerEdge; ++k)
+		BdDof[bd_dof_ctr++] = Dof[cell.Index()*DofPerCell + 3 + edge_ind*DofPerEdge + k];
+	    }
+	}
       else
 	std::cerr << "Error: Only Lagrange elements are implemented yet.\n";
     }
