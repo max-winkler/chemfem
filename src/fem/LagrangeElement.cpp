@@ -168,7 +168,7 @@ namespace chemfem{
 	  else if(i<15)
 	    {
 	      int int_ind = i-12;
-	      grad_L[int_ind] = 128.*lambda[(int_ind+1)%1]*lambda[(int_ind+2)%1]
+	      grad_L[int_ind] = 128.*lambda[(int_ind+1)%3]*lambda[(int_ind+2)%3]
 		* (2*lambda[int_ind] - 0.25);
 	      grad_L[(int_ind+1)%3] = 128.*lambda[(int_ind+2)%3]*lambda[int_ind]
 		* (lambda[int_ind]-0.25);

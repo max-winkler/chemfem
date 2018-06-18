@@ -15,7 +15,12 @@ namespace chemfem{
     class Edge
     {           
     public:     
-      
+
+      /**
+       * Constructor which initializes an egde by two endpoints.
+       */
+      Edge(Node&, Node&);
+       
       /**
        * Constructor which initializes an edge by the two cells which meet in the edge.
        */

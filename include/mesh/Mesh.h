@@ -50,6 +50,7 @@ namespace chemfem{
       std::vector<Cell> Cells;
       std::vector<Node> Nodes;
       std::set<Edge> Edges;
+      std::vector<const Edge*> BdEdges;
       
       void CreateEdgeList();
       
