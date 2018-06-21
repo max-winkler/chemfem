@@ -14,19 +14,27 @@ namespace chemfem{
       DofPerEdge = element.Degree() - 1;
       IntDofPerCell = (element.Degree()-1) * (element.Degree()-2) / 2;
       
+      CreateDofMap();
+      CreateDirichletBcMap();
+    }
+
+    void FESpace::CreateDofMap()
+    {
       Dof = new size_t[mesh.NrCells()*DofPerCell];
       
-      if(element.Type() == Lagrange)
+      if(refElement.Type() == Lagrange)
 	{
 	  // Dofs in the vertices
-	  size_t i; std::vector<Cell>::iterator cell;
-	  for(i=0, cell = mesh.Cells.begin();
-	      cell != mesh.Cells.end(); ++cell, ++i)
+	  size_t i; std::vector<Cell>::iterator it_cell;
+	  for(i=0, it_cell = mesh.Cells.begin();
+	      it_cell != mesh.Cells.end(); ++it_cell, ++i)
 	    {
+	      Cell cell = *it_cell;
+	      
 	      for(int j=0; j<3; ++j)
-		Dof[i*DofPerCell+j] = cell->LocNode[j]->Index();
+		Dof[i*DofPerCell+j] = cell.LocNode[j]->Index();
 
-	      cell->SetIndex(i);
+	      cell.SetIndex(i);
 	    }
 
 	  size_t NodeDofs = mesh.NrNodes();
@@ -69,7 +77,7 @@ namespace chemfem{
 
 	  nr_dof = NodeDofs + EdgeDofCtr;
 
-	  if(element.Degree() >2)
+	  if(refElement.Degree() >2)
 	    {
 	      // Numerate interior dofs
 	      std::vector<Cell>::const_iterator cell;
@@ -81,28 +89,27 @@ namespace chemfem{
 		    Dof[cell_ind*DofPerCell + 3 + 3*DofPerEdge + k] = nr_dof++;		  
 		}
 	    }
-
-	  // Find boundary DOFs
-	  BdDof = new size_t[(2+DofPerEdge)*mesh.BdEdges.size()];
-
-	  size_t bd_dof_ctr = 0;
-	  std::vector<const Edge*>::const_iterator bd_edge;
-	  for(bd_edge = mesh.BdEdges.begin();
-	      bd_edge != mesh.BdEdges.end(); ++bd_edge)
-	    {
-	      Cell& cell = (*bd_edge)->GetNeighbor(0);
-	      int edge_ind = cell.EdgeIndex(**bd_edge);
-
-	      for(int k=0; k<2; ++k)
-		BdDof[bd_dof_ctr++] = (*bd_edge)->GetNode(k).Index();
-	      for(int k=0; k<DofPerEdge; ++k)
-		BdDof[bd_dof_ctr++] = Dof[cell.Index()*DofPerCell + 3 + edge_ind*DofPerEdge + k];
-	    }
 	}
       else
 	std::cerr << "Error: Only Lagrange elements are implemented yet.\n";
     }
 
+    void FESpace::CreateDirichletBcMap()
+    {      
+      std::vector<const Edge*>::const_iterator it;
+      for(it = mesh.BdEdges.begin(); it != mesh.BdEdges.end(); ++it)
+	{
+	  const Edge& edge = *(*it);
+	  Cell& cell = edge.GetNeighbor(0);
+	  int edge_ind = cell.EdgeIndex(edge);
+	  
+	  for(int k=0; k<2; ++k)
+	    DirichletNodes.insert(edge.GetNode(k).Index());
+	  for(int k=0; k<DofPerEdge; ++k)
+	    DirichletNodes.insert(Dof[cell.Index()*DofPerCell + 3 + edge_ind*DofPerEdge + k]);
+	} // loop over boundary edges
+    }
+    
     size_t FESpace::GetGlobalIndex(size_t cell, size_t index) const
     {
       return Dof[DofPerCell*cell + index];

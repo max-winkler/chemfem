@@ -49,9 +49,25 @@ namespace chemfem{
       int DofPerCell, DofPerEdge, IntDofPerCell;
       
       Element& refElement;
-      const Mesh& mesh;
+      Mesh& mesh;
 
+      /**
+       * Saves a list of the global indices where Dirichlet boundary conditions are imposed.
+       */
+      std::set<size_t> DirichletNodes;
+      
       size_t *BdDof;
+
+      /**
+       * Creates the map between global and local degrees of freedom.
+       */
+      void CreateDofMap();
+
+      /**
+       * Creates a list of Dirichlet nodes according to the boundary conditions 
+       * passed to FESpace in its contructor.
+       */
+      void CreateDirichletBcMap();
     };
     
   };

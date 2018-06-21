@@ -42,6 +42,11 @@ namespace chemfem{
       size_t Index() const;
     private:
       double x, y;
+      /* 
+       * TODO: It is actually not a good idea to store the index (used also as global DOF)
+       * in the Node. The numbering depends on the used FE Space. A mapping between 
+       * index and node should be stored there.
+       */
       size_t index;
     };
     
