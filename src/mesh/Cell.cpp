@@ -51,6 +51,16 @@ namespace chemfem{
     {
       this->index = index;
     }
-    
+
+    int Cell::EdgeIndex(const Edge& edge) const
+    {
+      int edge_ind;
+      for(edge_ind=0; edge_ind<3; ++edge_ind)
+	if(LocEdge[edge_ind] == &edge) break;
+
+      if(edge_ind == 3) edge_ind = -1;
+
+      return edge_ind;
+    }
   };
 };
