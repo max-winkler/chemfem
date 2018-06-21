@@ -23,12 +23,12 @@ double c(double x, double y)
 
 int main()
 {
-  UnitSquareMesh mesh(3);
+  UnitSquareMesh mesh(10);
 
   std::cout << "Nr of nodes : " << mesh.NrNodes() << std::endl;
   std::cout << "Nr of cells : " << mesh.NrCells() << std::endl;
   
-  LagrangeElement element(3);
+  LagrangeElement element(4);
   FESpace Space(mesh, element);
 
   BilinearForm Laplace(Space, Space);
