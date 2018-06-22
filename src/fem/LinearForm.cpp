@@ -106,14 +106,14 @@ namespace chemfem{
 	    } // loop over quadrature points
 	  for(int k=0; k<TestSpace.DofPerCell; ++k)
 	    {
-	      int GlobalIndex = TestSpace.GetGlobalIndex(CellInd, k);
+	      size_t GlobalIndex = TestSpace.GetGlobalIndex(CellInd, k);
 	      if(TestSpace.DofType[GlobalIndex])
-	
 		Vec[TestSpace.DofIndex[GlobalIndex]] += LocVec[k];
 	    }
 		
 	} // loop over cells
-
     }
+
+    
   }
 }

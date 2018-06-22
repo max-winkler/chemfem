@@ -158,7 +158,7 @@ namespace chemfem{
 		size_t DofTrial = TrialSpace.GetGlobalIndex(CellInd, l);
 		size_t DofTest = TestSpace.GetGlobalIndex(CellInd, k);
 
-		// Skip for test functions not in the test space
+		// Skip for test functions not in the test 
 		if(!TestSpace.DofType[DofTest])
 		  continue;
 		

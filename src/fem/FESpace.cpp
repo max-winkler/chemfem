@@ -113,13 +113,13 @@ namespace chemfem{
       DofIndex = new size_t[nr_dof];
       
       // Initialize DOF type and DOF index arrays
-      std::set<size_t>::iterator it_node;
+      std::set<size_t>::iterator it_dof;
       size_t dirichlet_dof_ctr, free_dof_ctr = 0, last_dirichlet_dof = 0;
       
-      for(it_node = DirichletNodes.begin(), dirichlet_dof_ctr=0; it_node != DirichletNodes.end();
-	  ++it_node, ++dirichlet_dof_ctr)
+      for(it_dof = DirichletNodes.begin(), dirichlet_dof_ctr=0; it_dof != DirichletNodes.end();
+	  ++it_dof, ++dirichlet_dof_ctr)
 	{
-	  const size_t index = *(it_node);
+	  const size_t index = *(it_dof);
 
 	  // Numerate free nodes between last and current Dirichlet Dof
 	  for(size_t k = last_dirichlet_dof+1; k<index; ++k)
@@ -135,8 +135,11 @@ namespace chemfem{
 	  last_dirichlet_dof = index;	  
 	}
       for(size_t k = last_dirichlet_dof+1; k<nr_dof; ++k)
-	DofIndex[k] = free_dof_ctr++;
-
+	{
+	  DofType[k] = true;
+	  DofIndex[k] = free_dof_ctr++;
+	}
+      
       nr_free_dof = free_dof_ctr;
     }
     
