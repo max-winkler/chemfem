@@ -59,6 +59,8 @@ namespace chemfem{
 	  
 	  DenseMatrix Jac = cell->Jacobian();
 
+	  Vector LocVec(TestSpace.DofPerCell);
+	  
 	  // Iterate over all quadrature points
 	  Vector::const_iterator Wq, Xiq, Etaq;
 	  
@@ -87,12 +89,7 @@ namespace chemfem{
 		    case VOLUME_FORCE:
 			  
 		      for(int k=0; k<TestSpace.DofPerCell; ++k)
-			{
-			  int GlobalIndex = TestSpace.GetGlobalIndex(CellInd, k);
-			  if(TestSpace.DofType[GlobalIndex])
-			    Vec[TestSpace.DofIndex[GlobalIndex]] += 0.5 * (*Wq) * CoeffVal
-			      * TestFuncValue[k] * det;
-			}
+			LocVec[k] += 0.5 * (*Wq) * CoeffVal * TestFuncValue[k] * det;
 		      break;
 		      /*
 			case NEUMANN_BC:
@@ -106,7 +103,15 @@ namespace chemfem{
 		    }
 		      
 		} // loop over Terms
-	    } // loop over quadrature points	  
+	    } // loop over quadrature points
+	  for(int k=0; k<TestSpace.DofPerCell; ++k)
+	    {
+	      int GlobalIndex = TestSpace.GetGlobalIndex(CellInd, k);
+	      if(TestSpace.DofType[GlobalIndex])
+	
+		Vec[TestSpace.DofIndex[GlobalIndex]] += LocVec[k];
+	    }
+		
 	} // loop over cells
 
     }
