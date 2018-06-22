@@ -21,7 +21,8 @@ namespace chemfem{
     double Identity(double x, double y) {return 1.;}
     
     BilinearForm::BilinearForm(const FESpace& TrialSpace, const FESpace& TestSpace)
-      : TrialSpace(TrialSpace), TestSpace(TestSpace), Matrix(0,0) {}
+      : TrialSpace(TrialSpace), TestSpace(TestSpace), Matrix(0,0),
+	DirichletRhs(TestSpace.NrDof()) {}
 
     void BilinearForm::AddDiffusionTerm(double (*DiffusionCoeff)(double, double))
     {
@@ -48,7 +49,7 @@ namespace chemfem{
         
     void BilinearForm::Assemble()
     {
-      Matrix = SparseMatrix(TestSpace.NrDof(), TrialSpace.NrDof());
+      Matrix = SparseMatrix(TestSpace.NrFreeDof(), TrialSpace.NrFreeDof());
       SparseMatrixInserter Ins(Matrix);     
 
       // TODO: Select correct quadrature formula once it is implemented
@@ -154,9 +155,23 @@ namespace chemfem{
 	  for(int k=0; k<TestSpace.DofPerCell; ++k)
 	    for(int l=0; l<TestSpace.DofPerCell; ++l)
 	      {
-		Ins.Insert(TestSpace.GetGlobalIndex(CellInd, k),
-			   TrialSpace.GetGlobalIndex(CellInd, l),
-			   LocMatrix[k][l]);		
+		size_t DofTrial = TrialSpace.GetGlobalIndex(CellInd, l);
+		size_t DofTest = TestSpace.GetGlobalIndex(CellInd, k);
+
+		// Skip for test functions not in the test space
+		if(!TestSpace.DofType[DofTest])
+		  continue;
+		
+		if(TrialSpace.DofType[DofTrial])
+		  // DOF is a free DOF
+		  Ins.Insert(TestSpace.DofIndex[DofTest], TrialSpace.DofIndex[DofTrial],
+			     LocMatrix[k][l]);
+		else
+		  {
+		    //DOF is a Dirichlet DOF
+		    double Value = 0.; // TODO: Get function value of boundary condition
+		    DirichletRhs[TestSpace.DofIndex[DofTest]] += LocMatrix[k][l] * Value;
+		  }
 	      }
 	  
 	} // loop over cells

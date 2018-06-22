@@ -135,7 +135,9 @@ namespace chemfem{
 	  last_dirichlet_dof = index;	  
 	}
       for(size_t k = last_dirichlet_dof+1; k<nr_dof; ++k)
-	DofIndex[k] = free_dof_ctr++;	
+	DofIndex[k] = free_dof_ctr++;
+
+      nr_free_dof = free_dof_ctr;
     }
     
     size_t FESpace::GetGlobalIndex(size_t cell, size_t index) const
@@ -148,9 +150,30 @@ namespace chemfem{
       return nr_dof;
     }
 
+    size_t FESpace::NrFreeDof() const
+    {
+      return nr_free_dof;
+    }
+
     const Element& FESpace::RefElement() const
     {
       return refElement;
     }
+
+    Vector FESpace::IncorporateBC(const Vector& inner) const
+    {
+      Vector full(nr_dof);
+
+      for(size_t k=0; k<nr_dof; ++k)
+	{
+	  if(DofType[k])
+	    full[k] = inner[DofIndex[k]];
+
+	  // TODO: Implement also inhomogeneous Dirichlet boundary conditions.
+	}
+
+      return full;
+    }
+    
   }
 }

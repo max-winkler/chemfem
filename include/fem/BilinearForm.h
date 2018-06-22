@@ -54,7 +54,10 @@ namespace chemfem{
       
     private:
       const FESpace& TrialSpace, TestSpace;
+
       SparseMatrix Matrix;
+      Vector DirichletRhs;
+      
       std::vector<FEExpression> Terms;
     };
     

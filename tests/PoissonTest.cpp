@@ -23,7 +23,7 @@ double c(double x, double y)
 
 int main()
 {
-  UnitSquareMesh mesh(5);
+  UnitSquareMesh mesh(20);
 
   std::cout << "Nr of nodes : " << mesh.NrNodes() << std::endl;
   std::cout << "Nr of cells : " << mesh.NrCells() << std::endl;
@@ -48,8 +48,10 @@ int main()
 
   Vector Res(Matrix*X - Vec);
   std::cout << "Error of equation system: " << Res.Norm() << std::endl;
-
-  mesh.WriteVtk("solution.vtk", X);
+  
+  Vector X_full(Space.IncorporateBC(Vec));
+  
+  mesh.WriteVtk("solution.vtk", X_full);
   
   return 0;
 }

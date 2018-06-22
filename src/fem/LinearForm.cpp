@@ -36,7 +36,7 @@ namespace chemfem{
 
     void LinearForm::Assemble()
     {
-      Vec = Vector(TestSpace.NrDof());
+      Vec = Vector(TestSpace.NrFreeDof());
 
       // TODO: Select correct quadrature formula once it is implemented
       QuadratureFormula QuadFormula(QUAD_FORMULA::GAUSS_7);
@@ -89,7 +89,9 @@ namespace chemfem{
 		      for(int k=0; k<TestSpace.DofPerCell; ++k)
 			{
 			  int GlobalIndex = TestSpace.GetGlobalIndex(CellInd, k);
-			  Vec[GlobalIndex] += 0.5 * (*Wq) * CoeffVal * TestFuncValue[k] * det;
+			  if(TestSpace.DofType[GlobalIndex])
+			    Vec[TestSpace.DofIndex[GlobalIndex]] += 0.5 * (*Wq) * CoeffVal
+			      * TestFuncValue[k] * det;
 			}
 		      break;
 		      /*

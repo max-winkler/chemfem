@@ -31,6 +31,11 @@ namespace chemfem{
       size_t NrDof() const;
 
       /**
+       * Returns the number of free DOFs (DOFs that are not fixed by essential boundary conditions).
+       */
+      size_t NrFreeDof() const;
+      
+      /**
        * Returns the global index of a local degree of freedom. The first argument 
        * is the index of the cell, the second one the local index.
        */
@@ -40,6 +45,12 @@ namespace chemfem{
        * Returns the reference element.
        */
       const Element& RefElement() const;
+
+      /**
+       * For a given vector representing the values at the free DOFs, this function returns
+       * a vector where also Dirichlet DOFs are invorporated.
+       */
+      Vector IncorporateBC(const Vector&) const; 
       
     private:
       /**
@@ -60,6 +71,7 @@ namespace chemfem{
       size_t *DofIndex;
 
       size_t nr_dof;
+      size_t nr_free_dof;
       
       int DofPerCell, DofPerEdge, IntDofPerCell;
       
