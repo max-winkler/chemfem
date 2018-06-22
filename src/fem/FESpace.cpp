@@ -20,7 +20,7 @@ namespace chemfem{
 
     void FESpace::CreateDofMap()
     {
-      Dof = new size_t[mesh.NrCells()*DofPerCell];
+      DofMap = new size_t[mesh.NrCells()*DofPerCell];
       
       if(refElement.Type() == Lagrange)
 	{
@@ -29,10 +29,10 @@ namespace chemfem{
 	  for(i=0, it_cell = mesh.Cells.begin();
 	      it_cell != mesh.Cells.end(); ++it_cell, ++i)
 	    {
-	      Cell cell = *it_cell;
+	      Cell& cell = *it_cell;
 	      
 	      for(int j=0; j<3; ++j)
-		Dof[i*DofPerCell+j] = cell.LocNode[j]->Index();
+		DofMap[i*DofPerCell+j] = cell.LocNode[j]->Index();
 
 	      cell.SetIndex(i);
 	    }
@@ -69,7 +69,7 @@ namespace chemfem{
 			      << "is broken.\n";
 		  
 		  for(int k=0; k<DofPerEdge; ++k)
-		    Dof[cell_ind*DofPerCell + 3 + edge_ind*DofPerEdge + k]
+		    DofMap[cell_ind*DofPerCell + 3 + edge_ind*DofPerEdge + k]
 		      = NodeDofs + EdgeDofCtr + (orientation ? k : DofPerEdge - k - 1) ;
 		}
 	      EdgeDofCtr += DofPerEdge;
@@ -86,7 +86,7 @@ namespace chemfem{
 		  size_t cell_ind = cell->Index();
 		  
 		  for(int k=0; k<IntDofPerCell; ++k)
-		    Dof[cell_ind*DofPerCell + 3 + 3*DofPerEdge + k] = nr_dof++;		  
+		    DofMap[cell_ind*DofPerCell + 3 + 3*DofPerEdge + k] = nr_dof++;		  
 		}
 	    }
 	}
@@ -96,23 +96,51 @@ namespace chemfem{
 
     void FESpace::CreateDirichletBcMap()
     {      
-      std::vector<const Edge*>::const_iterator it;
-      for(it = mesh.BdEdges.begin(); it != mesh.BdEdges.end(); ++it)
+      std::vector<const Edge*>::const_iterator it_edge;
+      for(it_edge = mesh.BdEdges.begin(); it_edge != mesh.BdEdges.end(); ++it_edge)
 	{
-	  const Edge& edge = *(*it);
+	  const Edge& edge = *(*it_edge);
 	  Cell& cell = edge.GetNeighbor(0);
 	  int edge_ind = cell.EdgeIndex(edge);
 	  
 	  for(int k=0; k<2; ++k)
 	    DirichletNodes.insert(edge.GetNode(k).Index());
 	  for(int k=0; k<DofPerEdge; ++k)
-	    DirichletNodes.insert(Dof[cell.Index()*DofPerCell + 3 + edge_ind*DofPerEdge + k]);
+	    DirichletNodes.insert(DofMap[cell.Index()*DofPerCell + 3 + edge_ind*DofPerEdge + k]);
 	} // loop over boundary edges
+
+      DofType = new bool[nr_dof];
+      DofIndex = new size_t[nr_dof];
+      
+      // Initialize DOF type and DOF index arrays
+      std::set<size_t>::iterator it_node;
+      size_t dirichlet_dof_ctr, free_dof_ctr = 0, last_dirichlet_dof = 0;
+      
+      for(it_node = DirichletNodes.begin(), dirichlet_dof_ctr=0; it_node != DirichletNodes.end();
+	  ++it_node, ++dirichlet_dof_ctr)
+	{
+	  const size_t index = *(it_node);
+
+	  // Numerate free nodes between last and current Dirichlet Dof
+	  for(size_t k = last_dirichlet_dof+1; k<index; ++k)
+	    {
+	      DofType[k] = true;
+	      DofIndex[k] = free_dof_ctr++;
+	    }
+	  
+	  // Numerate Dirichlet Dof
+	  DofType[index] = false;
+	  DofIndex[index] = dirichlet_dof_ctr;
+
+	  last_dirichlet_dof = index;	  
+	}
+      for(size_t k = last_dirichlet_dof+1; k<nr_dof; ++k)
+	DofIndex[k] = free_dof_ctr++;	
     }
     
     size_t FESpace::GetGlobalIndex(size_t cell, size_t index) const
     {
-      return Dof[DofPerCell*cell + index];
+      return DofMap[DofPerCell*cell + index];
     }
 
     size_t FESpace::NrDof() const

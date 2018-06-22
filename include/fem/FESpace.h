@@ -42,13 +42,29 @@ namespace chemfem{
       const Element& RefElement() const;
       
     private:
-      size_t *Dof;
+      /**
+       * Contains the mappings between local and global DOFs for each element
+       */
+      size_t *DofMap;
+      
+      /**
+       * List of booleans. If the i-th index is true, the degree of freedom is
+       * free, this means, no essential boundary conditions are present there.
+       */
+      bool *DofType;
+
+      /**
+       * This array is used to map all free and active degrees of freedom to a 
+       * new numbering.
+       */
+      size_t *DofIndex;
 
       size_t nr_dof;
       
       int DofPerCell, DofPerEdge, IntDofPerCell;
       
       Element& refElement;
+
       Mesh& mesh;
 
       /**
@@ -56,8 +72,6 @@ namespace chemfem{
        */
       std::set<size_t> DirichletNodes;
       
-      size_t *BdDof;
-
       /**
        * Creates the map between global and local degrees of freedom.
        */
