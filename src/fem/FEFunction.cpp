@@ -2,6 +2,10 @@
 
 namespace chemfem{
   namespace fem{
+
+    using chemfem::mesh::Cell;
+    using chemfem::mesh::Node;
+    using chemfem::mesh::Edge;
     
     FEFunction::FEFunction(const FEFunction& other)
       : Space(other.Space), Data(other.Data) {}
@@ -33,9 +37,112 @@ namespace chemfem{
     {
       FEFunction Function(*this);
       Vector Vec(nr_dof);
+
+      double x, y;
       
-      // TODO Set functions
-      Function.SetCoefficients(Vec);
+      if(refElement.Type() == Lagrange)
+	{
+	  // Interpolate nodes
+	  std::vector<Cell>::const_iterator it_cell;
+	  for(it_cell = mesh.Cells.begin(); it_cell != mesh.Cells.end(); ++it_cell)
+	    {
+	      const Cell& cell = *it_cell;
+	      size_t cell_ind = cell.Index();
+	      
+	      // Interpolate in nodes of the mesh
+	      for(int k=0; k<3; ++k)
+		{
+		  Node& node = *(cell.LocNode[k]);
+		  x = node.getX();
+		  y = node.getY();
+
+		  // TODO: Each cell sharing this note has written this variable already.
+		  // This may lead to performance lost. Can we improve this?
+		  Vec[DofMap[cell_ind * DofPerCell + k]] = u(x,y);
+		}
+
+	      if(refElement.Degree() < 2) continue;
+	      
+	      // Interpolate in nodes at edges
+	      for(int l=0; l<3; ++l)
+		{
+		  const Edge& edge = *(cell.LocEdge[l]);
+
+		  // Coordinates of endpoints
+		  double x0 = edge.GetNode(0).getX(), y0 = edge.GetNode(0).getY();
+		  double x1 = edge.GetNode(1).getX(), y1 = edge.GetNode(1).getY();
+		  
+		  // Determine orientation of the edge
+		  bool orientation;
+		  if(&(edge.GetNode(0)) == cell.LocNode[l]
+		     && &(edge.GetNode(1)) == cell.LocNode[(l+1)%3])
+		    orientation = true;
+		  else if(&(edge.GetNode(1)) == cell.LocNode[l]
+			  && &(edge.GetNode(0)) == cell.LocNode[(l+1)%3])
+		    orientation = false;
+		  else
+		    std::cerr << "An unexpected error occured. Maybe the mesh data structure "
+			      << "is broken.\n";
+		  
+		  for(int k=0; k<DofPerEdge; ++k)
+		    {
+		      // Coordinate of edge dof
+		      if(orientation)
+			{
+			  x = x0 + (x1-x0)*((double)k/DofPerEdge);
+			  y = y0 + (y1-y0)*((double)k/DofPerEdge);
+			}
+		      else
+			{
+			  x = x1 + (x0-x1)*((double)k/DofPerEdge);
+			  y = y1 + (y0-y1)*((double)k/DofPerEdge);
+			}
+		      
+		      Vec[DofMap[cell_ind*DofPerCell + 3 + l*DofPerEdge + k]]
+			= u(x,y);		      
+		    } // loop over edges
+
+		  if(refElement.Degree() < 3) continue;
+
+		  double X[3], Y[3];
+		  for(int k=0; k<3; ++k)
+		    {
+		      X[k] = cell.GetNode(k).getX();
+		      Y[k] = cell.GetNode(k).getY();
+		    }
+		  
+		  // Interpolate interior nodes		  
+		  for(int k=0; k<IntDofPerCell; ++k)
+		    {
+		      // TODO: Is there a more elegant way to determine interior DOF's?
+		      // Now we are restricted to P3 and P4 elements.
+		      switch(refElement.Degree())
+			{
+			case 3:
+			  x = (X[0]+X[1]+X[2])/3;
+			  y = (Y[0]+Y[1]+Y[2])/3;
+			  break;
+			case 4:
+			  x = (X[0]+X[1]+X[2]+X[k])/4;
+			  y = (Y[0]+Y[1]+Y[2]+Y[k])/4;
+			  break;
+			default:
+			  std::cerr << "Interpolation of P" << refElement.Degree()
+				    << " not implemented yet.\n"; 
+			  break;
+			}
+		      Vec[DofMap[cell_ind*DofPerCell + 3 + 3*DofPerEdge + k]]
+			= u(x,y);
+		    }
+		  
+		} // loop over cells
+	    }
+	  
+	  Function.SetCoefficients(Vec);
+	}
+      else
+	std::cerr << "Only Lagrange elements implemented. Cannot interpolate yet.\n";
+
       return Function;
     }
 

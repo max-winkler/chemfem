@@ -86,7 +86,7 @@ namespace chemfem{
 		  size_t cell_ind = cell->Index();
 		  
 		  for(int k=0; k<IntDofPerCell; ++k)
-		    DofMap[cell_ind*DofPerCell + 3 + 3*DofPerEdge + k] = nr_dof++;		  
+		    DofMap[cell_ind*DofPerCell + 3 + 3*DofPerEdge + k] = nr_dof++;
 		}
 	    }
 	}

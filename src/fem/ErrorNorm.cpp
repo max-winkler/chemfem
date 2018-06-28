@@ -33,7 +33,7 @@ namespace chemfem{
       const FESpace& Space = FESolution->GetFESpace();
       const Mesh& mesh = Space.GetMesh();
 
-      QuadratureFormula quad(chemfem::quadrature::VERTEX);
+      QuadratureFormula quad(chemfem::quadrature::GAUSS_7);
       Vector Weights, Xi, Eta;
       quad.FormulaData(Weights, Xi, Eta);
       
@@ -73,7 +73,7 @@ namespace chemfem{
 		  // Value of exact solution
 		  double ex_value = Value(XYq[0], XYq[1]);
 		  loc_error += (*Wq) * pow(fe_value - ex_value, 2.);
-		  std::cout << "Difference: " << fe_value - ex_value << std::endl;
+		  std::cout << "FEValue: " << fe_value << std::endl;
 		}
 	    } // loop over quadrature points
 	  

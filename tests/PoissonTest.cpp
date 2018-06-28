@@ -35,7 +35,7 @@ int main()
   std::cout << "Nr of nodes : " << mesh.NrNodes() << std::endl;
   std::cout << "Nr of cells : " << mesh.NrCells() << std::endl;
   
-  LagrangeElement element(1);
+  LagrangeElement element(2);
   FESpace Space(mesh, element);
 
   BilinearForm Laplace(Space, Space);
@@ -56,7 +56,7 @@ int main()
   Vector Res(Matrix*X - Vec);
   std::cout << "Error of equation system: " << Res.Norm() << std::endl;
 
-  FEFunction Sol(Space);
+  FEFunction Sol = Space.Interpolate(exact);
   Sol.CreateFunction(X);
   Sol.WriteVtk("solution.vtk");
     
@@ -65,6 +65,5 @@ int main()
   Error.SetFEFunction(Sol);
   std::cout << "Error: " << Error.Compute(L2) << std::endl;  
 
-  
   return 0;
 }
