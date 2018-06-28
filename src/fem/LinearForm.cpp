@@ -89,7 +89,10 @@ namespace chemfem{
 		    case VOLUME_FORCE:
 			  
 		      for(int k=0; k<TestSpace.DofPerCell; ++k)
-			LocVec[k] += 0.5 * (*Wq) * CoeffVal * TestFuncValue[k] * det;
+			// TODO: Why do we have to multiply with 2? Scaling seems to be
+			// incorrect at some point.
+			LocVec[k] += 2.*(*Wq) * CoeffVal * TestFuncValue[k] * det;
+		      
 		      break;
 		      /*
 			case NEUMANN_BC:

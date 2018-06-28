@@ -72,7 +72,7 @@ namespace chemfem{
 
 		  // Value of exact solution
 		  double ex_value = Value(XYq[0], XYq[1]);
-		  loc_error += 0.5 * (*Wq) * pow(fe_value - ex_value, 2.);		  
+		  loc_error += (*Wq) * pow(fe_value - ex_value, 2.);		  
 		}
 	    } // loop over quadrature points
 	  

@@ -117,7 +117,8 @@ namespace chemfem{
 			    for(int l=0; l<TrialSpace.DofPerCell; ++l)
 			      {
 				LocMatrix[k][l] += 
-				  0.5 * (*Wq) * CoeffVal * dot(InvJac*GradTest[k], InvJac*GradTrial[l])
+				  (*Wq) * CoeffVal
+				  * dot(InvJac*GradTest[k], InvJac*GradTrial[l])
 				  * det;
 			      }
 		  
@@ -130,7 +131,7 @@ namespace chemfem{
 			case ZERO_ORDER:
 			  for(int k=0; k<TestSpace.DofPerCell; ++k)
 			    for(int l=0; l<TrialSpace.DofPerCell; ++l)
-			      LocMatrix[k][l] += 0.5 * (*Wq) * CoeffVal * ValueTest[k]
+			      LocMatrix[k][l] += (*Wq) * CoeffVal * ValueTest[k]
 				* ValueTrial[l] * det;
 			  			
 			  break;
