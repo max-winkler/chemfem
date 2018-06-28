@@ -51,6 +51,16 @@ namespace chemfem{
        * a vector where also Dirichlet DOFs are invorporated.
        */
       Vector IncorporateBC(const Vector&) const; 
+
+      /**
+       * Returns a reference to the finite element mesh.
+       */
+      const Mesh& GetMesh() const;
+
+      /**
+       * Returns a pointer to the first element of the local Dof map for the i-th cell.
+       */
+      const size_t* GetLocalDofMap(size_t) const;
       
     private:
       /**

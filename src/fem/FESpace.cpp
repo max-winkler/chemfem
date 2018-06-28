@@ -177,6 +177,16 @@ namespace chemfem{
 
       return full;
     }
+
+    const Mesh& FESpace::GetMesh() const
+    {
+      return mesh;
+    }
+
+    const size_t* FESpace::GetLocalDofMap(size_t k) const
+    {
+      return &(DofMap[DofPerCell*k]);
+    }
     
   }
 }

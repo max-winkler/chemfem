@@ -63,6 +63,11 @@ namespace chemfem{
        * -1 if the edge is not an edge of the cell.
        */
       int EdgeIndex(const Edge&) const;
+
+      /**
+       * Returns a reference to the i-th node of the triangle.
+       */
+      const Node& GetNode(int) const;
       
     private:
       /// Stores the 3 vertices of the triangle

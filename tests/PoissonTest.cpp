@@ -4,6 +4,7 @@
 #include "fem/LinearForm.h"
 #include "fem/BilinearForm.h"
 #include "fem/LagrangeElement.h"
+#include "fem/FEFunction.h"
 #include "mesh/UnitSquareMesh.h"
 #include "linalg/SparseMatrix.h"
 
@@ -42,6 +43,8 @@ int main()
   F.AddVolumeForce(f);
   F.Assemble();
 
+  FEFunction Sol(Space);
+  
   Vector& Vec = F.LoadVector();
     
   Vector X(Matrix.Solve(Vec));

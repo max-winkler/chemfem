@@ -62,5 +62,11 @@ namespace chemfem{
 
       return edge_ind;
     }
+
+    const Node& Cell::GetNode(int i) const
+    {
+      return *(LocNode[i]);
+    }
+    
   };
 };

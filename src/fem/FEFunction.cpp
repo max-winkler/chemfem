@@ -5,6 +5,19 @@ namespace chemfem{
     
     FEFunction::FEFunction(const FEFunction& other)
       : Space(other.Space), Data(other.Data) {}
+
+    FEFunction::FEFunction(const FESpace& Space)
+      : Space(&Space), Data(Space.NrDof()) {}
+
+    const FESpace& FEFunction::GetFESpace() const
+    {
+      return *Space;
+    }
+
+    const double& FEFunction::operator[](size_t k) const
+    {
+      return Data[k];
+    }
     
   }
 }

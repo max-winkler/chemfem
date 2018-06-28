@@ -18,7 +18,8 @@ OBJ = 	src/linalg/Vector.o \
 	src/fem/LagrangeElement.o \
 	src/fem/FEExpression.o \
 	src/fem/LinearForm.o \
-	src/fem/BilinearForm.o 
+	src/fem/BilinearForm.o \
+	src/fem/ErrorNorm.o
 
 TESTS = tests/SparseMatrixTest.o \
 	tests/DenseMatrixTest.o \

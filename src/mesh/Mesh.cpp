@@ -49,6 +49,11 @@ namespace chemfem{
 	ofs << *it << std::endl;
     }
 
+    const std::vector<Cell>& Mesh::GetCellList() const
+    {
+      return Cells;
+    }
+    
     void Mesh::CreateEdgeList()
     {
       std::vector<Cell>::iterator cell;

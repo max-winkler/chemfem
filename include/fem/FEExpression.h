@@ -7,6 +7,7 @@ namespace chemfem{
   namespace fem{
 
     typedef double (*ScalarFunction)(double, double);
+    typedef double* (*VectorFunction)(double, double);
     
     enum ExpressionType {SECOND_ORDER, FIRST_ORDER, ZERO_ORDER, VOLUME_FORCE, NEUMANN_BC};
 
