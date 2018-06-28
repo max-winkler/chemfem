@@ -9,6 +9,9 @@ using chemfem::mesh::Mesh;
 namespace chemfem{
   namespace fem{   
 
+    // Forward declarations
+    class FEFunction;
+    
     /**
      * This class represents a finite element space which is characterized by 
      * the mesh, the finite element type and the polynomial degree.
@@ -61,6 +64,11 @@ namespace chemfem{
        * Returns a pointer to the first element of the local Dof map for the i-th cell.
        */
       const size_t* GetLocalDofMap(size_t) const;
+
+      /**
+       * Interpolates a smooth function into the finite element space 
+       */
+      FEFunction Interpolate(double (*)(double, double));
       
     private:
       /**

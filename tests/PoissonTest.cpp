@@ -30,12 +30,12 @@ double exact(double x, double y)
 
 int main()
 {
-  UnitSquareMesh mesh(80);
+  UnitSquareMesh mesh(20);
 
   std::cout << "Nr of nodes : " << mesh.NrNodes() << std::endl;
   std::cout << "Nr of cells : " << mesh.NrCells() << std::endl;
   
-  LagrangeElement element(2);
+  LagrangeElement element(1);
   FESpace Space(mesh, element);
 
   BilinearForm Laplace(Space, Space);
@@ -44,7 +44,7 @@ int main()
   Laplace.Assemble();
 
   SparseMatrix& Matrix = Laplace.SystemMatrix();
-
+  
   LinearForm F(Space);
   F.AddVolumeForce(f);
   F.Assemble();
@@ -58,14 +58,13 @@ int main()
 
   FEFunction Sol(Space);
   Sol.CreateFunction(X);
-
+  Sol.WriteVtk("solution.vtk");
+    
   ErrorNorm Error;
   Error.SetExactValue(&exact);
   Error.SetFEFunction(Sol);
   std::cout << "Error: " << Error.Compute(L2) << std::endl;  
 
-  Vector X_full = Space.IncorporateBC(X);  
-  mesh.WriteVtk("solution.vtk", X_full);
   
   return 0;
 }

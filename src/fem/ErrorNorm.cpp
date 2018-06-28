@@ -33,7 +33,7 @@ namespace chemfem{
       const FESpace& Space = FESolution->GetFESpace();
       const Mesh& mesh = Space.GetMesh();
 
-      QuadratureFormula quad(chemfem::quadrature::GAUSS_7);
+      QuadratureFormula quad(chemfem::quadrature::VERTEX);
       Vector Weights, Xi, Eta;
       quad.FormulaData(Weights, Xi, Eta);
       
@@ -43,13 +43,13 @@ namespace chemfem{
 	{
 	  const Cell& cell = *it_cell;
 
-	  double det = cell.Determinant();
 
 	  const Node& x0 = cell.GetNode(0);
 	  Vector b(2); b[0] = x0.getX(); x0.getY();
 	  
 	  DenseMatrix Jac = cell.Jacobian();
-
+	  double det = Jac.Determinant();
+	  
 	  double loc_error = 0.;
 
 	  const size_t* LocalDof = Space.GetLocalDofMap(cell.Index());
@@ -72,7 +72,8 @@ namespace chemfem{
 
 		  // Value of exact solution
 		  double ex_value = Value(XYq[0], XYq[1]);
-		  loc_error += (*Wq) * pow(fe_value - ex_value, 2.);		  
+		  loc_error += (*Wq) * pow(fe_value - ex_value, 2.);
+		  std::cout << "Difference: " << fe_value - ex_value << std::endl;
 		}
 	    } // loop over quadrature points
 	  

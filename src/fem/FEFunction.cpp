@@ -23,6 +23,25 @@ namespace chemfem{
     {
       Data = Space->IncorporateBC(FreeDof);
     }
-    
+
+    void FEFunction::SetCoefficients(const Vector& Data)
+    {
+      this->Data = Data;
+    }
+
+    FEFunction FESpace::Interpolate(double (*u)(double, double))
+    {
+      FEFunction Function(*this);
+      Vector Vec(nr_dof);
+      
+      // TODO Set functions
+      Function.SetCoefficients(Vec);
+      return Function;
+    }
+
+    void FEFunction::WriteVtk(const std::string& filename) const
+    {
+      Space->GetMesh().WriteVtk(filename, Data);
+    }
   }
 }

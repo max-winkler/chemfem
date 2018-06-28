@@ -48,7 +48,7 @@ namespace chemfem{
 	  return 0;
 	}
       
-      return data[0]*data[3] - data[1]*data[2]; 
+      return std::abs(data[0]*data[3] - data[1]*data[2]); 
     }
 
     DenseMatrix DenseMatrix::Transpose() const

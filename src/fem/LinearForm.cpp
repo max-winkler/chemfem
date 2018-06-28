@@ -39,7 +39,7 @@ namespace chemfem{
       Vec = Vector(TestSpace.NrFreeDof());
 
       // TODO: Select correct quadrature formula once it is implemented
-      QuadratureFormula QuadFormula(QUAD_FORMULA::GAUSS_7);
+      QuadratureFormula QuadFormula(QUAD_FORMULA::VERTEX);
 
       Vector Xi, Eta, Weights;
       QuadFormula.FormulaData(Weights, Xi, Eta);
@@ -115,6 +115,8 @@ namespace chemfem{
 	    }
 		
 	} // loop over cells
+
+      delete[] TestFuncValue;
     }
 
     

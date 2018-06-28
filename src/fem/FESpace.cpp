@@ -187,6 +187,8 @@ namespace chemfem{
     {
       return &(DofMap[DofPerCell*k]);
     }
+
+
     
   }
 }

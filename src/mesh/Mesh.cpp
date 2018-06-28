@@ -12,7 +12,7 @@ namespace chemfem{
     size_t Mesh::NrCells() const { return Cells.size(); }
     size_t Mesh::NrNodes() const { return Nodes.size(); }    
 
-    void Mesh::WriteVtk(const std::string& filename, const Vector& x)
+    void Mesh::WriteVtk(const std::string& filename, const Vector& x) const
     {
       std::ofstream ofs(filename);
 

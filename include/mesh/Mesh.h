@@ -44,7 +44,7 @@ namespace chemfem{
       /// Returns the number of nodes
       size_t NrNodes() const;
       /// Write Mesh to a VTK file
-      void WriteVtk(const std::string&, const Vector& x);
+      void WriteVtk(const std::string&, const Vector& x) const;
 
       /**
        * Returns a reference to the cell list of the mesh.

@@ -31,7 +31,7 @@ namespace chemfem{
 	  Eta = Vector(3);
 
 	  for(int i=0; i<Points; ++i)
-	    Weights[i] = 1./3;
+	    Weights[i] = 1./6;
 	  
 	  Xi[0] = 0.; Eta[0] = 0.;
 	  Xi[1] = 1.; Eta[1] = 0.;

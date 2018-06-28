@@ -40,6 +40,14 @@ namespace chemfem{
        * The degrees of freedom at Dirichlet nodes are taken from the FE space.
        */
       void CreateFunction(const Vector&);
+
+      /**
+       * Initializes the FE function by the coefficients of the degrees of freedom.
+       * Essential boundary conditions are ignored.
+       */
+      void SetCoefficients(const Vector&);
+
+      void WriteVtk(const std::string&) const;
       
     private:
       const FESpace* Space;
