@@ -22,12 +22,12 @@ namespace chemfem{
       /**
        * Provide an exact solution of the problem.
        */
-      void SetExactValue(ScalarFunction*);
+      void SetExactValue(ScalarFunction);
 
       /**
        * Provide the first derivatives of the exact solution.
        */
-      void SetExactGradient(VectorFunction*);
+      void SetExactGradient(VectorFunction);
 
       /**
        * Set the finite element solution which should be compared to the exact solution.
@@ -38,12 +38,12 @@ namespace chemfem{
        * Compute the error Norm. The argument specifies the norm in which the error
        * should be evaluated.
        */
-      double Error(Norm) const;
+      double Compute(Norm) const;
       
     private:
       
-      ScalarFunction* Value;
-      VectorFunction* Gradient;
+      ScalarFunction Value;
+      VectorFunction Gradient;
       const FEFunction* FESolution;
     };
 

@@ -11,12 +11,12 @@ using chemfem::quadrature::QuadratureFormula;
 namespace chemfem{
   namespace fem{
 
-    void ErrorNorm::SetExactValue(ScalarFunction* Value)
+    void ErrorNorm::SetExactValue(ScalarFunction Value)
     {
       this->Value = Value;
     }
 
-    void ErrorNorm::SetExactGradient(VectorFunction* Gradient)
+    void ErrorNorm::SetExactGradient(VectorFunction Gradient)
     {
       this->Gradient = Gradient;
     }
@@ -26,7 +26,7 @@ namespace chemfem{
       this->FESolution = &FESolution;
     }
 
-    double ErrorNorm::Error(Norm norm) const
+    double ErrorNorm::Compute(Norm norm) const
     {
       double error = 0.;
 
@@ -71,7 +71,7 @@ namespace chemfem{
 		    fe_value += (*FESolution)[LocalDof[k]] * Space.RefElement().Value(k, *Xiq, *Etaq);
 
 		  // Value of exact solution
-		  double ex_value = (*Value)(XYq[0], XYq[1]);
+		  double ex_value = Value(XYq[0], XYq[1]);
 		  loc_error += 0.5 * (*Wq) * pow(fe_value - ex_value, 2.);		  
 		}
 	    } // loop over quadrature points

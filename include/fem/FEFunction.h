@@ -34,6 +34,12 @@ namespace chemfem{
        * Returns a constant reference to the value of the i-th degree of freedom.
        */
       const double& operator[](size_t) const;
+
+      /**
+       * Build an FE function from the vector of the values of the free degrees of freedom.
+       * The degrees of freedom at Dirichlet nodes are taken from the FE space.
+       */
+      void CreateFunction(const Vector&);
       
     private:
       const FESpace* Space;

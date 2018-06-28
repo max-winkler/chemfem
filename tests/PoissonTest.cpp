@@ -5,6 +5,7 @@
 #include "fem/BilinearForm.h"
 #include "fem/LagrangeElement.h"
 #include "fem/FEFunction.h"
+#include "fem/ErrorNorm.h"
 #include "mesh/UnitSquareMesh.h"
 #include "linalg/SparseMatrix.h"
 
@@ -14,7 +15,7 @@ using namespace chemfem::mesh;
 
 double f(double x, double y)
 {
-  return 1.;//sin(2*x*M_PI)+cos(2*y*M_PI);
+  return 32.*(x*(1.-x) + y*(1.-y));
 }
 
 double c(double x, double y)
@@ -22,9 +23,14 @@ double c(double x, double y)
   return 1.;
 }
 
+double exact(double x, double y)
+{
+  return 16.*x*(1.-x)*y*(1.-y);
+}
+
 int main()
 {
-  UnitSquareMesh mesh(16);
+  UnitSquareMesh mesh(20);
 
   std::cout << "Nr of nodes : " << mesh.NrNodes() << std::endl;
   std::cout << "Nr of cells : " << mesh.NrCells() << std::endl;
@@ -42,8 +48,6 @@ int main()
   LinearForm F(Space);
   F.AddVolumeForce(f);
   F.Assemble();
-
-  FEFunction Sol(Space);
   
   Vector& Vec = F.LoadVector();
     
@@ -51,9 +55,16 @@ int main()
     
   Vector Res(Matrix*X - Vec);
   std::cout << "Error of equation system: " << Res.Norm() << std::endl;
-  
-  Vector X_full(Space.IncorporateBC(X));
-    
+
+  FEFunction Sol(Space);
+  Sol.CreateFunction(X);
+
+  ErrorNorm Error;
+  Error.SetExactValue(&exact);
+  Error.SetFEFunction(Sol);
+  std::cout << "Error: " << Error.Compute(L2) << std::endl;  
+
+  Vector X_full = Space.IncorporateBC(X);  
   mesh.WriteVtk("solution.vtk", X_full);
   
   return 0;

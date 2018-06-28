@@ -18,6 +18,11 @@ namespace chemfem{
     {
       return Data[k];
     }
+
+    void FEFunction::CreateFunction(const Vector& FreeDof)
+    {
+      Data = Space->IncorporateBC(FreeDof);
+    }
     
   }
 }
