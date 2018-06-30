@@ -48,6 +48,8 @@ namespace chemfem{
 	  b[0] = x0.getX(); b[1] = x0.getY();
 	  
 	  DenseMatrix Jac = cell.Jacobian();
+	  DenseMatrix InvJac(Jac.Transpose().Invert());
+	  
 	  double det = Jac.Determinant();
 	  
 	  double loc_error = 0.;
@@ -78,6 +80,21 @@ namespace chemfem{
 
 		  double diff = fe_value - ex_value;
 		  loc_error += (*Wq) * pow(diff, 2.);
+		}
+	      if(norm == H1 || norm == H1_SEMI)
+		{
+		  Vector fe_grad(2);
+		  for(int k=0; k<Space.RefElement().NrDof(); ++k)
+		    {
+		      Vector form_grad = Space.RefElement().Gradient(k, *Xiq, *Etaq);
+		      double dof_value = (*FESolution)[LocalDof[k]];
+		      fe_grad += dof_value*form_grad;
+		    }
+		  
+		  Vector ex_grad = Gradient(XYq[0], XYq[1]);
+		  
+		  Vector diff = ex_grad - InvJac*fe_grad;
+		  loc_error += (*Wq) * dot(diff, diff);
 		}
 	    } // loop over quadrature points
 	  

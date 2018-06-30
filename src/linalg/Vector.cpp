@@ -105,7 +105,18 @@ namespace chemfem{
 
       return x;
     }
-        
+
+    Vector& Vector::operator+=(const Vector& b)
+    {
+      size_t k=0;
+      Vector::const_iterator it;
+      for(it=b.begin(); it!=b.end(); ++it, ++k)
+	{
+	  data[k] += *it;
+	}
+      return *this;
+    }
+    
     void Vector::axpy(double a, const Vector& b, Vector& x) const
     {
       if(n != b.size())

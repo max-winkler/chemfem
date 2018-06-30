@@ -86,6 +86,11 @@ namespace chemfem{
       Vector operator-(const Vector&) const;
 
       /**
+       * Adds vector to another one.
+       */
+      Vector& operator+=(const Vector&);
+            
+      /**
        * Returns the scalar vector product a*v.
        */
       friend Vector operator*(const double&, const Vector&);

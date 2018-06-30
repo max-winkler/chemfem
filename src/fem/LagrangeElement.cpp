@@ -88,7 +88,7 @@ namespace chemfem{
     {           
       double lambda[3] = {1.-x-y, x, y};
 
-      if(x > 1 || y > 1 || x < 0 || y < 0)
+      if(x > 1 || y > 1 || x < 0 || y < 0 || x+y > 1)
 	std::cerr << "Invalid quadrature point.\n";
       
       DenseMatrix dLdX(2,3);
