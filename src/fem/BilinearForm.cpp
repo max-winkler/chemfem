@@ -73,7 +73,7 @@ namespace chemfem{
 	  double det = cell->Determinant();
 
 	  Node* x0 = cell->LocNode[0];
-	  Vector b(2); b[0] = x0->getX(); x0->getY();
+	  Vector b(2); b[0] = x0->getX(); b[1] = x0->getY();
 	  
 	  DenseMatrix Jac = cell->Jacobian();
 	  DenseMatrix InvJac(Jac.Transpose().Invert());

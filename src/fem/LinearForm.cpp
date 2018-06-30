@@ -55,7 +55,7 @@ namespace chemfem{
 	  double det = cell->Determinant();
 	  
 	  Node* x0 = cell->LocNode[0];
-	  Vector b(2); b[0] = x0->getX(); x0->getY();
+	  Vector b(2); b[0] = x0->getX(); b[1] = x0->getY();
 	  
 	  DenseMatrix Jac = cell->Jacobian();
 
@@ -89,9 +89,7 @@ namespace chemfem{
 		    case VOLUME_FORCE:
 			  
 		      for(int k=0; k<TestSpace.DofPerCell; ++k)
-			// TODO: Why do we have to multiply with 2? Scaling seems to be
-			// incorrect at some point.
-			LocVec[k] += 2.*(*Wq) * CoeffVal * TestFuncValue[k] * det;
+			LocVec[k] += (*Wq) * CoeffVal * TestFuncValue[k] * det;
 		      
 		      break;
 		      /*
