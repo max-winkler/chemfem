@@ -109,8 +109,8 @@ namespace chemfem{
 	    grad_L[i] = 4.*lambda[i] -1.;
 	  else if(i<6)
 	    {
-	      grad_L[i%3] = 4*lambda[(i+1)%3];
-	      grad_L[(i+1)%3] = 4*lambda[i%3];
+	      grad_L[i-3] = 4.*lambda[(i-2)%3];
+	      grad_L[(i-2)%3] = 4.*lambda[i-3];
 	    }
 	  break;
 	  

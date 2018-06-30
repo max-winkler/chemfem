@@ -35,6 +35,8 @@ namespace chemfem{
 
     FEFunction FESpace::Interpolate(double (*u)(double, double))
     {
+      // TODO: This functions seems to be wrong for P2 elements.
+      // Check this!
       FEFunction Function(*this);
       Vector Vec(nr_dof);
 

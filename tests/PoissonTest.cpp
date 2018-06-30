@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <cmath>
 
 #include "fem/LinearForm.h"
@@ -38,14 +39,16 @@ Vector exact_grad(double x, double y)
 
 int main()
 {
-  for(int size=10; size<200; size*=2)
+  std::ofstream ofs("errors.dat");
+  
+  for(int size=10; size<150; size*=2)
     {
       UnitSquareMesh mesh(size);
 
       std::cout << "Nr of nodes : " << mesh.NrNodes() << std::endl;
       std::cout << "Nr of cells : " << mesh.NrCells() << std::endl;
   
-      LagrangeElement element(1);
+      LagrangeElement element(3);
       FESpace Space(mesh, element);
 
       BilinearForm Laplace(Space, Space);
@@ -66,16 +69,22 @@ int main()
       Vector Res(Matrix*X - Vec);
       std::cout << "Error of equation system: " << Res.Norm() << std::endl;
 
-      FEFunction Sol(Space.Interpolate(exact));
-      //Sol.CreateFunction(X);
+      FEFunction Sol(Space);
+      Sol.CreateFunction(X);
       Sol.WriteVtk("solution.vtk");
     
       ErrorNorm Error;
       Error.SetExactValue(&exact);
       Error.SetExactGradient(&exact_grad);
       Error.SetFEFunction(Sol);
-      std::cout << "L2 Error: " << Error.Compute(L2) << std::endl;  
-      std::cout << "H1 Error: " << Error.Compute(H1_SEMI) << std::endl;
+
+      double l2_error = Error.Compute(L2);
+      double h1_error = Error.Compute(H1_SEMI);
+      
+      std::cout << "L2 Error: " << l2_error << std::endl;  
+      std::cout << "H1 Error: " << h1_error << std::endl;
+
+      ofs << h1_error << "\t" << l2_error << std::endl;
     }  
   return 0;
 }
