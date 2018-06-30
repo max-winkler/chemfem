@@ -30,12 +30,12 @@ double exact(double x, double y)
 
 int main()
 {
-  UnitSquareMesh mesh(20);
+  UnitSquareMesh mesh(50);
 
   std::cout << "Nr of nodes : " << mesh.NrNodes() << std::endl;
   std::cout << "Nr of cells : " << mesh.NrCells() << std::endl;
   
-  LagrangeElement element(2);
+  LagrangeElement element(1);
   FESpace Space(mesh, element);
 
   BilinearForm Laplace(Space, Space);
@@ -56,7 +56,7 @@ int main()
   Vector Res(Matrix*X - Vec);
   std::cout << "Error of equation system: " << Res.Norm() << std::endl;
 
-  FEFunction Sol = Space.Interpolate(exact);
+  FEFunction Sol(Space);//.Interpolate(exact);
   Sol.CreateFunction(X);
   Sol.WriteVtk("solution.vtk");
     

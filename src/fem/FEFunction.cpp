@@ -48,6 +48,8 @@ namespace chemfem{
 	    {
 	      const Cell& cell = *it_cell;
 	      size_t cell_ind = cell.Index();
+
+	      const size_t* LocalDof = GetLocalDofMap(cell_ind);
 	      
 	      // Interpolate in nodes of the mesh
 	      for(int k=0; k<3; ++k)
@@ -58,7 +60,7 @@ namespace chemfem{
 
 		  // TODO: Each cell sharing this note has written this variable already.
 		  // This may lead to performance lost. Can we improve this?
-		  Vec[DofMap[cell_ind * DofPerCell + k]] = u(x,y);
+		  Vec[LocalDof[k]] = u(x,y);
 		}
 
 	      if(refElement.Degree() < 2) continue;

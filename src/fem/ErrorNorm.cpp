@@ -43,17 +43,17 @@ namespace chemfem{
 	{
 	  const Cell& cell = *it_cell;
 
-
 	  const Node& x0 = cell.GetNode(0);
-	  Vector b(2); b[0] = x0.getX(); x0.getY();
+	  Vector b(2);
+	  b[0] = x0.getX(); b[1] = x0.getY();
 	  
 	  DenseMatrix Jac = cell.Jacobian();
 	  double det = Jac.Determinant();
 	  
 	  double loc_error = 0.;
-
-	  const size_t* LocalDof = Space.GetLocalDofMap(cell.Index());
 	  
+	  const size_t* LocalDof = Space.GetLocalDofMap(cell.Index());
+	  	  
 	  Vector::const_iterator Xiq, Etaq, Wq;
 	  for(Xiq = Xi.begin(), Etaq = Eta.begin(), Wq = Weights.begin();
 	      Xiq != Xi.end(); ++Xiq, ++Etaq, ++Wq)
@@ -68,12 +68,16 @@ namespace chemfem{
 		  // Value of FE solution
 		  double fe_value = 0.;
 		  for(int k=0; k<Space.RefElement().NrDof(); ++k)
-		    fe_value += (*FESolution)[LocalDof[k]] * Space.RefElement().Value(k, *Xiq, *Etaq);
-
+		    {
+		      double form_value = Space.RefElement().Value(k, *Xiq, *Etaq);
+		      double dof_value = (*FESolution)[LocalDof[k]];
+		      fe_value += dof_value * form_value;
+		    }
 		  // Value of exact solution
 		  double ex_value = Value(XYq[0], XYq[1]);
-		  loc_error += (*Wq) * pow(fe_value - ex_value, 2.);
-		  std::cout << "FEValue: " << fe_value << std::endl;
+
+		  double diff = fe_value - ex_value;
+		  loc_error += (*Wq) * pow(diff, 2.);
 		}
 	    } // loop over quadrature points
 	  
