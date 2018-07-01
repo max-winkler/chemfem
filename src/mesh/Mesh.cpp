@@ -2,6 +2,7 @@
 
 #include "mesh/Mesh.h"
 
+#include "mesh/RefDataRegular.h"
 #include "linalg/Vector.h"
 
 using chemfem::linalg::Vector;
@@ -76,9 +77,23 @@ namespace chemfem{
 	}
     }
 
+    void Mesh::RefineUniform()
+    {
+      std::vector<Cell>::iterator it_cell;
+      for(it_cell = Cells.begin(); it_cell != Cells.end(); ++it_cell)
+	it_cell->SetRefType(REGULAR_REF);
+
+      Refine();
+    }
+
+    void Mesh::Refine()
+    {
+      /// \todo Implement refinement routine here.
+    }
+    
     Mesh::~Mesh()
     {
-      // TODO: Delete all Cells, Nodes and Edges.
+      /// \todo Delete all Cells, Nodes and Edges.
     }
     
   };

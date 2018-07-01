@@ -7,6 +7,7 @@
 
 #include "mesh/Node.h"
 #include "mesh/Edge.h"
+#include "mesh/RefData.h"
 
 // Forward declarations for friend classes
 namespace chemfem::fem{
@@ -68,15 +69,22 @@ namespace chemfem{
        * Returns a reference to the i-th node of the triangle.
        */
       const Node& GetNode(int) const;
+
+      /**
+       * Sets a refinement type. Should be applied to all cells which should be refined
+       * before the chemfem::mesh::Mesh#Refine method of chemfem::mesh::Mesh is invoked.
+       */
+      void SetRefType(RefType);
       
     private:
       /// Stores the 3 vertices of the triangle
       Node *LocNode[3];
       /// Store pointers to the 3 edges of the triangle
-      const Edge *LocEdge[3];
-      
+      const Edge *LocEdge[3];      
       /// Stores the index of the cell. Merely used as temporary variable during FESpace::FESpace()
       size_t index;
+      /// Stores the refinement type
+      RefType ref_type;
     };
     
   };

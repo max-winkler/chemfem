@@ -47,6 +47,16 @@ namespace chemfem{
       void WriteVtk(const std::string&, const Vector& x) const;
 
       /**
+       * Refine the mesh uniformly (all triangles are decomposed into 4 of equivalent size)
+       */
+      void RefineUniform();	
+
+      /**
+       * Refine the mesh according to the refinement description of the cells.
+       */
+      void Refine();
+      
+      /**
        * Returns a reference to the cell list of the mesh.
        */
       const std::vector<Cell>& GetCellList() const;

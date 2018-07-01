@@ -67,6 +67,11 @@ namespace chemfem{
     {
       return *(LocNode[i]);
     }
+
+    void Cell::SetRefType(RefType ref_type)
+    {
+      this->ref_type = ref_type;
+    }
     
   };
 };
