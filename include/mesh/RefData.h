@@ -25,25 +25,25 @@ namespace chemfem{
       /// Returns the number of cells
       int GetNrCells();
       /// Returns a pointer to the coordinates of the i-th new node
-      double* GetNodeCoords(int);
+      const double* GetNodeCoords(int);
       /// Returns a pointer to the endpoints of the edges (dimension is 2)
-      int* GetEdge(int);
+      const int* GetEdge(int);
       /// Returns a pointer to the vertices of the new cells (dimension is 3)
-      int* GetCell(int);
+      const int* GetCell(int);
       
     protected:
       /// The number of new cells (after refinement)
-      int NrNewCells;
+      const int NrNewCells;
       /// The indices of the vertices of new cells
-      int* NewCells;            
+      const int* NewCells;            
       /// The number of new nodes (after refinement)
-      int NrNewNodes;
+      const int NrNewNodes;
       /// Barycentric coordinates of the new nodes
-      double* NewNodeCoords;
+      const double* NewNodeCoords;
       /// The number of the new edges (after refinement)
-      int NrNewEdges;
+      const int NrNewEdges;
       /// Endpoints of the new edges
-      int* NewEdges;
+      const int* NewEdges;
     };
     
   };

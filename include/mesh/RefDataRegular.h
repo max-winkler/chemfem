@@ -14,6 +14,11 @@ namespace chemfem{
     public:
       /// Constructor which sets the local member variables.
       RefDataRegular();
+
+    private:
+      static const int NrNewCells = 4;
+      static const int NrNewEdges = 9;
+      static const int NrNewNodes = 6;
     };
 
   };
