@@ -15,7 +15,7 @@ namespace chemfem{
       /// Constructor which sets the local member variables.
       RefDataRegular();
     };
-
+    
   };
 };
 
