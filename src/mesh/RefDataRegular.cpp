@@ -10,10 +10,12 @@ namespace chemfem{
       const double NewNodeCoords[][2] = {{0.5, 0.0}, {0.5, 0.5}, {0.0, 0.5}};
       const int NewEdges[][2] = {{0, 3}, {3, 1}, {1, 4}, {4, 2}, {2, 5}, {5, 0},
 				 {3, 4}, {4, 5}, {5, 6}};
-
+      const int NewEdgeVertices[3] = {4, 5, 6};
+      
       this->NewCells = NewCells;
       this->NewNodeCoords = NewNodeCoords;
       this->NewEdges = NewEdges;
+      this->NewEdgeVertices = NewEdgeVertices;
     }
     
   }

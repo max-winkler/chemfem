@@ -54,7 +54,7 @@ namespace chemfem{
       /**
        * Refine the mesh according to the refinement description of the cells.
        */
-      void Refine();
+      void Refine(const std::vector<bool>&);
       
       /**
        * Returns a reference to the cell list of the mesh.

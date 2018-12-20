@@ -35,7 +35,9 @@ namespace chemfem{
 
     const int* RefData::GetCell(int i)
     { return NewCells[i]; }
-
+    
+    const int RefData::GetEdgeVertex(int i)
+    { return NewEdgeVertices[i]; }
   }
 }
   

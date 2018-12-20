@@ -79,16 +79,87 @@ namespace chemfem{
 
     void Mesh::RefineUniform()
     {
-      std::vector<Cell>::iterator it_cell;
-      for(it_cell = Cells.begin(); it_cell != Cells.end(); ++it_cell)
-	it_cell->SetRefType(REGULAR_REF);
-
-      Refine();
+      std::vector<bool> cell_marker(NrCells(), true);            
+      Refine(cell_marker);
     }
 
-    void Mesh::Refine()
+    void Mesh::Refine(const std::vector<bool>& cell_marker)
     {
-      /// \todo Implement refinement routine here.
+      RefData ref_data = RefDataRegular();
+
+      Node** new_edge_nodes = new Node*[Edges.size()];      
+
+      // Initialize edge index list (used to check if two cells share one new node)
+      std::vector<size_t> global_edge_index(3*NrCells());
+
+      size_t k;
+      std::set<Edge>::const_iterator it_edge;
+      
+      for(k=0, it_edge = Edges.begin();
+	  it_edge != Edges.end(); ++it_edge, ++k)
+	{
+	  for(int m=0; m<(it_edge->Type() == BOUNDARY_EDGE ? 1 : 2); ++m)
+	    {
+	      Cell& cell = it_edge->GetNeighbor(m);
+	      global_edge_index[3*cell.Index() + cell.EdgeIndex(*it_edge)] = k;
+	    }
+	}
+
+      int j;
+      std::vector<bool>::const_iterator it_marker;
+      std::vector<Cell>::const_iterator it_cell;
+      for(j=0, it_marker = cell_marker.begin(), it_cell = Cells.begin();
+	  it_cell != Cells.end(); ++it_cell, ++it_marker, ++j)
+	{
+	  if(!(*it_marker)) continue;
+	  
+	  // Regular refinement
+	  int nr_nodes = ref_data.GetNrNodes();
+	  Node** new_nodes = new Node*[nr_nodes];
+
+	  for(int k=0; k<nr_nodes; ++k)
+	    new_nodes[k] = NULL;
+	  
+	  // Set old nodes
+	  for(int k=0; k<3; ++k)
+	    new_nodes[k] = it_cell->LocNode[k];
+
+	  // Create new nodes
+	  for(int k=0; k<3; ++k)
+	    {
+	      if(ref_data.GetEdgeVertex(k) == -1) continue;
+
+	      if(new_edge_nodes[global_edge_index[3*j + k]] == NULL)
+		{
+		  // Node does not exist. Create a new one.
+		  double x = 0.5*(new_nodes[k]->getX() + new_nodes[(k+1)%3]->getX());
+		  double y = 0.5*(new_nodes[k]->getY() + new_nodes[(k+1)%3]->getY());
+		  
+		  new_nodes[ref_data.GetEdgeVertex(k)] = new Node(0, x, y);
+		  new_edge_nodes[global_edge_index[3*j + k]] = new_nodes[ref_data.GetEdgeVertex(k)];
+		}
+	      else
+		{
+		  // Node already exists. Reuse the existing one.
+		  new_nodes[ref_data.GetEdgeVertex(k)] = new_edge_nodes[global_edge_index[3*j + k]];
+		}
+	    }
+	  
+	  int nr_cells = ref_data.GetNrCells();
+	  Cell** new_cells = new Cell*[nr_cells];
+
+	  for(int k=0; k<nr_cells; ++k)
+	    {
+	      const int* NewLocalNodes = ref_data.GetCell(k);
+	      
+	      new_cells[k] = new Cell(*(new_nodes[NewLocalNodes[0]]),
+				      *(new_nodes[NewLocalNodes[1]]),
+				      *(new_nodes[NewLocalNodes[2]]));
+	      
+	      
+	    }
+	  
+	}
     }
     
     Mesh::~Mesh()

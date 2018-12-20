@@ -31,6 +31,8 @@ namespace chemfem{
       const int* GetEdge(int);
       /// Returns a pointer to the vertices of the new cells (dimension is 3)
       const int* GetCell(int);
+      /// Returns the index of the new vertex on the refined edges
+      const int GetEdgeVertex(int);
 
     protected:
       /// The number of new cells (after refinement)
@@ -45,6 +47,8 @@ namespace chemfem{
       int NrNewEdges;
       /// Endpoints of the new edges
       const int (*NewEdges)[2];
+      /// New vertices at the midpoint of an edge (-1 if no new vertex is inserted)
+      const int *NewEdgeVertices;
     };
     
   };

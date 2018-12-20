@@ -69,12 +69,6 @@ namespace chemfem{
        * Returns a reference to the i-th node of the triangle.
        */
       const Node& GetNode(int) const;
-
-      /**
-       * Sets a refinement type. Should be applied to all cells which should be refined
-       * before the chemfem::mesh::Mesh#Refine method of chemfem::mesh::Mesh is invoked.
-       */
-      void SetRefType(RefType);
       
     private:
       /// Stores the 3 vertices of the triangle
@@ -83,8 +77,6 @@ namespace chemfem{
       const Edge *LocEdge[3];      
       /// Stores the index of the cell. Merely used as temporary variable during FESpace::FESpace()
       size_t index;
-      /// Stores the refinement type
-      RefType ref_type;
     };
     
   };
