@@ -115,20 +115,27 @@ namespace chemfem{
 	  
 	  // Regular refinement
 	  int nr_nodes = ref_data.GetNrNodes();
+	  int nr_edges = ref_data.GetNrEdges();
+
+	  int edge_ctr = 0;
+	  
 	  Node** new_nodes = new Node*[nr_nodes];
+	  Edge** new_edges = new Edge*[nr_edges];
 
 	  for(int k=0; k<nr_nodes; ++k)
 	    new_nodes[k] = NULL;
+	  for(int k=0; k<nr_edges; ++k)
+	    new_edges[k] = NULL;
 	  
 	  // Set old nodes
 	  for(int k=0; k<3; ++k)
 	    new_nodes[k] = it_cell->LocNode[k];
 
-	  // Create new nodes
+	  // Create new nodes and edges
 	  for(int k=0; k<3; ++k)
 	    {
 	      if(ref_data.GetEdgeVertex(k) == -1) continue;
-
+	      
 	      if(new_edge_nodes[global_edge_index[3*j + k]] == NULL)
 		{
 		  // Node does not exist. Create a new one.
@@ -137,6 +144,12 @@ namespace chemfem{
 		  
 		  new_nodes[ref_data.GetEdgeVertex(k)] = new Node(0, x, y);
 		  new_edge_nodes[global_edge_index[3*j + k]] = new_nodes[ref_data.GetEdgeVertex(k)];
+
+		  // Create new edges		  
+		  new_edges[edge_ctr++] = new Edge(*(new_nodes[k]),
+						   *(new_nodes[ref_data.GetEdgeVertex(k)]));
+		  new_edges[edge_ctr++] = new Edge(*(new_nodes[ref_data.GetEdgeVertex(k)]),
+						   *(new_nodes[(k+1)%3]));		  
 		}
 	      else
 		{
@@ -144,7 +157,11 @@ namespace chemfem{
 		  new_nodes[ref_data.GetEdgeVertex(k)] = new_edge_nodes[global_edge_index[3*j + k]];
 		}
 	    }
+
+	  // Create interior edges
 	  
+	  
+	  // Create new cells
 	  int nr_cells = ref_data.GetNrCells();
 	  Cell** new_cells = new Cell*[nr_cells];
 
@@ -154,10 +171,9 @@ namespace chemfem{
 	      
 	      new_cells[k] = new Cell(*(new_nodes[NewLocalNodes[0]]),
 				      *(new_nodes[NewLocalNodes[1]]),
-				      *(new_nodes[NewLocalNodes[2]]));
-	      
-	      
+				      *(new_nodes[NewLocalNodes[2]]));	      	      
 	    }
+
 	  
 	}
     }
