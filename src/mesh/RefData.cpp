@@ -23,7 +23,10 @@ namespace chemfem{
 
     int RefData::GetNrEdges()
     { return NrNewEdges; }
-    
+
+    int RefData::GetNrRefinedEdges()
+    { return NrNewNodes-3; }
+      
     int RefData::GetNrCells()
     { return NrNewCells; }
 
@@ -35,6 +38,9 @@ namespace chemfem{
 
     const int* RefData::GetCell(int i)
     { return NewCells[i]; }
+
+    const int* RefData::GetCellEdges(int i)
+    { return NewCellEdges[i]; }
     
     const int RefData::GetEdgeVertex(int i)
     { return NewEdgeVertices[i]; }

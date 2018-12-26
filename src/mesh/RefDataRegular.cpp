@@ -4,15 +4,17 @@ namespace chemfem{
   namespace mesh{
 
     RefDataRegular::RefDataRegular()
-      : RefData(4, 6, 3)
+      : RefData(4, 6, 9)
     {
       const int NewCells[][3] = {{0, 3, 5}, {1, 4, 3}, {2, 5, 4}, {3, 4, 5}};
+      const int NewCellEdges[][3] = {{0, 5, 8}, {2, 6, 1}, {4, 7, 3}, {6, 7, 8}};
       const double NewNodeCoords[][2] = {{0.5, 0.0}, {0.5, 0.5}, {0.0, 0.5}};
       const int NewEdges[][2] = {{0, 3}, {3, 1}, {1, 4}, {4, 2}, {2, 5}, {5, 0},
 				 {3, 4}, {4, 5}, {5, 6}};
       const int NewEdgeVertices[3] = {4, 5, 6};
       
       this->NewCells = NewCells;
+      this->NewCellEdges = NewCellEdges;
       this->NewNodeCoords = NewNodeCoords;
       this->NewEdges = NewEdges;
       this->NewEdgeVertices = NewEdgeVertices;

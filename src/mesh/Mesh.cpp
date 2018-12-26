@@ -88,7 +88,8 @@ namespace chemfem{
       RefData ref_data = RefDataRegular();
 
       Node** new_edge_nodes = new Node*[Edges.size()];      
-
+      Edge** new_edge_edges = new Edge*[2*Edges.size()];
+      
       // Initialize edge index list (used to check if two cells share one new node)
       std::vector<size_t> global_edge_index(3*NrCells());
 
@@ -135,8 +136,9 @@ namespace chemfem{
 	  for(int k=0; k<3; ++k)
 	    {
 	      if(ref_data.GetEdgeVertex(k) == -1) continue;
-	      
-	      if(new_edge_nodes[global_edge_index[3*j + k]] == NULL)
+
+	      size_t edge_index = global_edge_index[3*j + k];
+	      if(new_edge_nodes[edge_index] == NULL)
 		{
 		  // Node does not exist. Create a new one.
 		  double x = 0.5*(new_nodes[k]->getX() + new_nodes[(k+1)%3]->getX());
@@ -145,36 +147,59 @@ namespace chemfem{
 		  new_nodes[ref_data.GetEdgeVertex(k)] = new Node(0, x, y);
 		  new_edge_nodes[global_edge_index[3*j + k]] = new_nodes[ref_data.GetEdgeVertex(k)];
 
-		  // Create new edges		  
-		  new_edges[edge_ctr++] = new Edge(*(new_nodes[k]),
+		  // Create new edges (will be done later)
+		  new_edges[edge_ctr] = new Edge(*(new_nodes[k]),
 						   *(new_nodes[ref_data.GetEdgeVertex(k)]));
-		  new_edges[edge_ctr++] = new Edge(*(new_nodes[ref_data.GetEdgeVertex(k)]),
-						   *(new_nodes[(k+1)%3]));		  
+		  new_edges[edge_ctr+1] = new Edge(*(new_nodes[ref_data.GetEdgeVertex(k)]),
+						   *(new_nodes[(k+1)%3]));
+
+		  new_edge_edges[2*edge_index] = new_edges[edge_ctr];
+		  new_edge_edges[2*edge_index+1] = new_edges[edge_ctr+1];
+		  
+		  edge_ctr += 1;
 		}
 	      else
 		{
-		  // Node already exists. Reuse the existing one.
-		  new_nodes[ref_data.GetEdgeVertex(k)] = new_edge_nodes[global_edge_index[3*j + k]];
+		  // Node and edge already exist. Reuse the existing ones.
+		  new_nodes[ref_data.GetEdgeVertex(k)] = new_edge_nodes[edge_index];
+
+		  new_edges[edge_ctr++] = new_edge_edges[2*edge_index+1];
+		  new_edges[edge_ctr++] = new_edge_edges[2*edge_index];		  
 		}
 	    }
 
-	  // Create interior edges
+	  // Create new interior edges
+	  int nr_outer_edges = 2*ref_data.GetNrRefinedEdges();
+	  if(nr_outer_edges != edge_ctr)
+	    std::cerr << "Something went wrong. Number of outer edges is not correct.\n";
 	  
+	  for(int k=nr_outer_edges; k<ref_data.GetNrEdges(); ++k)
+	    {
+	      const int* edge_vertices = ref_data.GetEdge(k);
+	      new_edges[nr_outer_edges] = new Edge(*(new_nodes[edge_vertices[0]]),
+						   *(new_nodes[edge_vertices[1]]));	      	     
+	    }
 	  
 	  // Create new cells
 	  int nr_cells = ref_data.GetNrCells();
 	  Cell** new_cells = new Cell*[nr_cells];
-
+	  
 	  for(int k=0; k<nr_cells; ++k)
 	    {
 	      const int* NewLocalNodes = ref_data.GetCell(k);
 	      
 	      new_cells[k] = new Cell(*(new_nodes[NewLocalNodes[0]]),
 				      *(new_nodes[NewLocalNodes[1]]),
-				      *(new_nodes[NewLocalNodes[2]]));	      	      
-	    }
+				      *(new_nodes[NewLocalNodes[2]]));
 
-	  
+	      // Set pointers between edges and cells
+	      const int* cell_edges = ref_data.GetCellEdges(k);
+	      for(int m=0; m<3; ++m)
+		{
+		  new_edges[cell_edges[m]]->SetNeighbor(*(new_cells[k]));
+		  new_cells[k]->LocEdge[m] = new_edges[cell_edges[m]];
+		}
+	    }	 	  
 	}
     }
     
