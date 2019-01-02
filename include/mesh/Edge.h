@@ -33,12 +33,6 @@ namespace chemfem{
       Edge(Cell&, Node&, Node&);
       
       /**
-       * The operator< is used in the mesh class as all edges are stored in an sorted
-       * set. An edge is less than another edge if the indices of the nodes fulfill such a relation.
-       */
-      bool operator<(const Edge&) const;
-
-      /**
        * Updates the neighbor. This method is used when the edge was initialized with 1 Cell only.
        * The neighbor is sometimes found later when iterating over all cells.
        */
@@ -53,11 +47,19 @@ namespace chemfem{
        * Returns the edge type.
        */
       EdgeType Type() const;
-
+      
       /**
        * Returns the i-th endpoint of the edge.
        */
       const Node& GetNode(int) const;
+
+      /**
+       * The operator< is used in the mesh class as all edges are stored in an sorted
+       * set. An edge is less than another edge if the indices of the nodes fulfill such a relation.
+       */
+      bool operator<(const Edge&) const;
+
+      friend std::ostream& operator<< (std::ostream&, const Edge&);
     private:
       Node *Node0 = NULL, *Node1 = NULL;
       

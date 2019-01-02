@@ -40,6 +40,8 @@ namespace chemfem{
        * Returns the index of the node.
        */
       size_t Index() const;
+
+      friend std::ostream& operator<< (std::ostream&, const Node&);
     private:
       double x, y;
       /* 

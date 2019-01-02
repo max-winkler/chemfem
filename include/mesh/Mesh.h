@@ -76,10 +76,13 @@ namespace chemfem{
       const std::vector<Cell>& GetCellList() const;
       
     private:
-      std::vector<Cell> Cells;
       std::vector<Node> Nodes;
+      std::vector<Cell> Cells;
       std::set<Edge> Edges;
       std::vector<const Edge*> BdEdges;
+
+      /// Copies a mesh and updates the pointers to nodes and edges
+      void copy(const Mesh&);
       
       void CreateEdgeList();
       

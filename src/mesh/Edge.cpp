@@ -38,22 +38,16 @@ namespace chemfem{
 	std::swap(this->Node0, this->Node1);
     }
 
-    bool Edge::operator<(const Edge& other) const
-    {
-      if(Node0->Index() < other.Node0->Index())
-	return true;
-      if(Node0->Index() == other.Node0->Index() && Node1->Index() < other.Node1->Index())
-	return true;
-
-      return false;
-    }
-
     void Edge::SetNeighbor(Cell& other) const
     {
-      if(Node1 == NULL)
+      if(Neigh1 != NULL)
 	std::cerr << "All neighbors of the edge are already set. This seems to be a mistake.\n";
 
-      Neigh1 = &other;
+      if(Neigh0 == NULL)
+	Neigh0 = &other;
+      else
+	Neigh1 = &other;
+      
       type = INTERFACE_EDGE;
     }
 
@@ -76,8 +70,28 @@ namespace chemfem{
 
     EdgeType Edge::Type() const
     {
-      return type;
+      if(Neigh0 != NULL && Neigh1 != NULL)
+	return INTERFACE_EDGE;
+      else
+	return BOUNDARY_EDGE;
     }
 
+    bool Edge::operator<(const Edge& other) const
+    {
+      if(Node0->Index() < other.Node0->Index())
+	return true;
+      if(Node0->Index() == other.Node0->Index() && Node1->Index() < other.Node1->Index())
+	return true;
+      
+      return false;
+    }
+
+    
+    std::ostream& operator<< (std::ostream& stream, const Edge& edge)
+    {
+      stream << "[" << *(edge.Node0) << "," << *(edge.Node1) << "]";
+					       return stream;
+    }
+    
   }
 }

@@ -12,6 +12,13 @@ namespace chemfem{
     {
       return index;
     }
+
+    std::ostream& operator<< (std::ostream& stream, const Node& node)
+    {
+      stream << "(" << node.x << "," << node.y << ")";
+      return stream;
+    }
+    
     
   }
 }
