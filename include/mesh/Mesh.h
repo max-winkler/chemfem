@@ -20,6 +20,8 @@ namespace chemfem::fem{
   class LinearForm;
 }
 
+typedef std::pair<std::set<chemfem::mesh::Edge>::iterator, bool> set_insert_res;
+
 namespace chemfem{
   namespace mesh{
 
@@ -34,27 +36,39 @@ namespace chemfem{
       friend class chemfem::fem::LinearForm;
     public:
 
+      /// Default constructor
+      Mesh();
+      
+      /// Copy constructor
+      Mesh(const Mesh&);
+      
       /**
        * Destructor which frees all allocated memory by cells, nodes and edges.
        */
       ~Mesh();
+
+      /// Copy assignment
+      Mesh& operator=(const Mesh&);
       
       /// Returns the number of cells
       size_t NrCells() const;
       /// Returns the number of nodes
       size_t NrNodes() const;
+
+      /// Write Mesh to a VTK file
+      void WriteVtk(const std::string&) const;      
       /// Write Mesh to a VTK file
       void WriteVtk(const std::string&, const Vector& x) const;
 
       /**
        * Refine the mesh uniformly (all triangles are decomposed into 4 of equivalent size)
        */
-      void RefineUniform();	
+      Mesh& RefineUniform();	
 
       /**
        * Refine the mesh according to the refinement description of the cells.
        */
-      void Refine(const std::vector<bool>&);
+      Mesh& Refine(const std::vector<bool>&);
       
       /**
        * Returns a reference to the cell list of the mesh.

@@ -10,6 +10,16 @@ namespace chemfem{
       LocNode[2] = &n3;
     }
 
+    Cell::Cell(const Cell& other)
+      : index(other.index)
+    {
+      for(int k=0; k<3; ++k)
+	{
+	  LocNode[k] = other.LocNode[k];
+	  LocEdge[k] = other.LocEdge[k];
+	}
+    }
+    
     double Cell::Determinant() const
     {
       double x[3], y[3];

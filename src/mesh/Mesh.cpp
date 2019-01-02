@@ -10,9 +10,35 @@ using chemfem::linalg::Vector;
 namespace chemfem{
   namespace mesh{
 
+    Mesh::Mesh()
+    {}
+    
+    Mesh::Mesh(const Mesh& other)
+    {
+      // \todo Copy data here
+      Nodes = std::move(other.Nodes);
+      Cells = std::move(other.Cells);
+      Edges = std::move(other.Edges);
+      
+      std::cout << "Copy constructor called\n";
+    }
+
+    Mesh& Mesh::operator=(const Mesh& other)
+    {
+      std::cout << "Copy assignment called\n";
+      // \todo Copy data here
+      return *this;
+    }
+    
     size_t Mesh::NrCells() const { return Cells.size(); }
     size_t Mesh::NrNodes() const { return Nodes.size(); }    
 
+    void Mesh::WriteVtk(const std::string& filename) const
+    {
+      Vector x(NrNodes());
+      WriteVtk(filename, x);
+    }
+    
     void Mesh::WriteVtk(const std::string& filename, const Vector& x) const
     {
       std::ofstream ofs(filename);
@@ -77,18 +103,20 @@ namespace chemfem{
 	}
     }
 
-    void Mesh::RefineUniform()
+    Mesh& Mesh::RefineUniform()
     {
       std::vector<bool> cell_marker(NrCells(), true);            
-      Refine(cell_marker);
+      return Refine(cell_marker);
     }
 
-    void Mesh::Refine(const std::vector<bool>& cell_marker)
+    Mesh& Mesh::Refine(const std::vector<bool>& cell_marker)
     {
+      Mesh* new_mesh = new Mesh();
+      
       RefData ref_data = RefDataRegular();
 
       Node** new_edge_nodes = new Node*[Edges.size()];      
-      Edge** new_edge_edges = new Edge*[2*Edges.size()];
+      const Edge** new_edge_edges = new const Edge*[2*Edges.size()];
       
       // Initialize edge index list (used to check if two cells share one new node)
       std::vector<size_t> global_edge_index(3*NrCells());
@@ -106,6 +134,14 @@ namespace chemfem{
 	    }
 	}
 
+      // Copy old nodes
+      // Set index of node
+      std::vector<Node>::iterator it_node;
+      for(k=0, it_node = Nodes.begin(); it_node != Nodes.end(); ++it_node, ++k)
+	it_node->index = k;
+      // Perform copy operation
+      new_mesh->Nodes.assign(Nodes.begin(), Nodes.end());
+      
       int j;
       std::vector<bool>::const_iterator it_marker;
       std::vector<Cell>::const_iterator it_cell;
@@ -121,7 +157,7 @@ namespace chemfem{
 	  int edge_ctr = 0;
 	  
 	  Node** new_nodes = new Node*[nr_nodes];
-	  Edge** new_edges = new Edge*[nr_edges];
+	  const Edge** new_edges = new const Edge*[nr_edges];
 
 	  for(int k=0; k<nr_nodes; ++k)
 	    new_nodes[k] = NULL;
@@ -130,8 +166,8 @@ namespace chemfem{
 	  
 	  // Set old nodes
 	  for(int k=0; k<3; ++k)
-	    new_nodes[k] = it_cell->LocNode[k];
-
+	    new_nodes[k] = &(Nodes[it_cell->LocNode[k]->Index()]);
+	  
 	  // Create new nodes and edges
 	  for(int k=0; k<3; ++k)
 	    {
@@ -141,22 +177,39 @@ namespace chemfem{
 	      if(new_edge_nodes[edge_index] == NULL)
 		{
 		  // Node does not exist. Create a new one.
+
+		  // Compute vertex coordinates
 		  double x = 0.5*(new_nodes[k]->getX() + new_nodes[(k+1)%3]->getX());
 		  double y = 0.5*(new_nodes[k]->getY() + new_nodes[(k+1)%3]->getY());
+
+		  // Create node object and insert into new mesh
+		  new_mesh->Nodes.push_back(Node(0, x, y));
 		  
-		  new_nodes[ref_data.GetEdgeVertex(k)] = new Node(0, x, y);
+		  new_nodes[ref_data.GetEdgeVertex(k)] = &(new_mesh->Nodes.back());
 		  new_edge_nodes[global_edge_index[3*j + k]] = new_nodes[ref_data.GetEdgeVertex(k)];
 
-		  // Create new edges (will be done later)
-		  new_edges[edge_ctr] = new Edge(*(new_nodes[k]),
-						   *(new_nodes[ref_data.GetEdgeVertex(k)]));
-		  new_edges[edge_ctr+1] = new Edge(*(new_nodes[ref_data.GetEdgeVertex(k)]),
-						   *(new_nodes[(k+1)%3]));
+		  // Create new edges
+		  for(int m=0; m<2; ++m)
+		    {
+		      set_insert_res ins_res;
+		      if(k==0)
+			ins_res = new_mesh->Edges.insert(Edge(*(new_nodes[k]),
+							     *(new_nodes[ref_data.GetEdgeVertex(k)])));
+		      else
+			ins_res = new_mesh->Edges.insert(Edge(*(new_nodes[ref_data.GetEdgeVertex(k)]),
+							     *(new_nodes[(k+1)%3])));
+		      
+		      if(!ins_res.second)
+			{
+			  std::cerr << "Insertion of new edge failed. Edge already exists.\n";
+			  return *new_mesh;
+			}
+		      
+		      new_edges[edge_ctr] = &(*ins_res.first);
+		      new_edge_edges[2*edge_index+m] = new_edges[edge_ctr];
 
-		  new_edge_edges[2*edge_index] = new_edges[edge_ctr];
-		  new_edge_edges[2*edge_index+1] = new_edges[edge_ctr+1];
-		  
-		  edge_ctr += 1;
+		      edge_ctr++;
+		    }
 		}
 	      else
 		{
@@ -171,13 +224,18 @@ namespace chemfem{
 	  // Create new interior edges
 	  int nr_outer_edges = 2*ref_data.GetNrRefinedEdges();
 	  if(nr_outer_edges != edge_ctr)
-	    std::cerr << "Something went wrong. Number of outer edges is not correct.\n";
+	    {
+	      std::cerr << "Something went wrong. Number of outer edges is not correct.\n";
+	      return *new_mesh;
+	    }
 	  
 	  for(int k=nr_outer_edges; k<ref_data.GetNrEdges(); ++k)
 	    {
 	      const int* edge_vertices = ref_data.GetEdge(k);
-	      new_edges[nr_outer_edges] = new Edge(*(new_nodes[edge_vertices[0]]),
-						   *(new_nodes[edge_vertices[1]]));	      	     
+	      set_insert_res ins_res = new_mesh->Edges.insert(Edge(*(new_nodes[edge_vertices[0]]),
+							       *(new_nodes[edge_vertices[1]])));
+	      
+	      new_edges[nr_outer_edges] = &(*ins_res.first);
 	    }
 	  
 	  // Create new cells
@@ -187,10 +245,12 @@ namespace chemfem{
 	  for(int k=0; k<nr_cells; ++k)
 	    {
 	      const int* NewLocalNodes = ref_data.GetCell(k);
+
+	      new_mesh->Cells.push_back(Cell(*(new_nodes[NewLocalNodes[0]]),
+					    *(new_nodes[NewLocalNodes[1]]),
+					    *(new_nodes[NewLocalNodes[2]])));
 	      
-	      new_cells[k] = new Cell(*(new_nodes[NewLocalNodes[0]]),
-				      *(new_nodes[NewLocalNodes[1]]),
-				      *(new_nodes[NewLocalNodes[2]]));
+	      new_cells[k] = &(new_mesh->Cells.back());
 
 	      // Set pointers between edges and cells
 	      const int* cell_edges = ref_data.GetCellEdges(k);
@@ -201,10 +261,13 @@ namespace chemfem{
 		}
 	    }	 	  
 	}
+
+      return *new_mesh;
     }
     
     Mesh::~Mesh()
     {
+      std::cout << "Destructor called\n";
       /// \todo Delete all Cells, Nodes and Edges.
     }
     

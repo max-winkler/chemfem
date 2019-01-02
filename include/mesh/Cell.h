@@ -39,6 +39,9 @@ namespace chemfem{
        */
       Cell(Node&, Node&, Node&);
 
+      /// Copy constructor
+      Cell(const Cell&);
+      
       /**
        * Returns the volume of the parallelogram which is spanned by the vertices of the cell.
        */

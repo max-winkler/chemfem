@@ -13,9 +13,11 @@ namespace chemfem{
 
     RefData::~RefData()
     {
+      /*
       delete[] NewNodeCoords;
       delete[] NewCells;
       delete[] NewEdges;
+      */
     }
     
     int RefData::GetNrNodes()

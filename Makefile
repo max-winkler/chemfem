@@ -26,7 +26,8 @@ OBJ = 	src/linalg/Vector.o \
 TESTS = tests/SparseMatrixTest.o \
 	tests/DenseMatrixTest.o \
 	tests/MeshTest.o \
-	tests/PoissonTest.o
+	tests/PoissonTest.o \
+	tests/MeshRefineTest.o
 
 TESTS_BIN = $(TESTS:.o=)
 
