@@ -17,7 +17,6 @@ namespace chemfem{
       : Nodes(other.Nodes), Cells(other.Cells)
     {
       copy(other);
-      std::cout << "Copy constructor called\n";
     }
 
     Mesh& Mesh::operator=(const Mesh& other)
@@ -26,7 +25,7 @@ namespace chemfem{
       Cells = other.Cells;
       
       copy(other);
-      std::cout << "Copy assignment called\n";      
+
       return *this;
     }
 
@@ -39,13 +38,8 @@ namespace chemfem{
       for(it_cells = other.Cells.begin(), it_new_cells = Cells.begin();
 	  it_cells != other.Cells.end(); ++it_cells, ++it_new_cells)
 	{
-	  std::cout << "Node indices: ";
 	  for(int k=0; k<3; ++k)
-	    {
-	      it_new_cells->LocNode[k] = &(Nodes[it_cells->LocNode[k]->index]);
-	      std::cout << it_new_cells->LocNode[k]->index << " ";
-	    }
-	  std::cout << std::endl;
+	    it_new_cells->LocNode[k] = &(Nodes[it_cells->LocNode[k]->index]);	    
 	}
 
       // \todo Find faster implementation. Edge list already created by the Refine routine.
@@ -295,31 +289,12 @@ namespace chemfem{
 		}
 	    }
 	}
-
-      // TEST (delete afterwards)
-      for(std::vector<Node>::const_iterator it_nodes = new_mesh->Nodes.begin();
-	  it_nodes != new_mesh->Nodes.end(); ++it_nodes)
-	{
-	  std::cout << "Index: " << it_nodes->Index() << std::endl;
-	}
-      for(std::vector<Cell>::const_iterator it_cells = new_mesh->Cells.begin();
-	  it_cells != new_mesh->Cells.end(); ++it_cells)
-	{
-	  std::cout << "Cell index: " << it_cells->index << std::endl;
-	  for(int k=0; k<3; ++k)
-	    std::cout << "Node Index: " << k << ": " << it_cells->LocNode[k]->index << std::endl;
-
-	  if(it_cells->LocNode[k]->index > 1000)
-	    std::cout << "Breakpoint!\n";
-	}
-
       
       return *new_mesh;
     }
     
     Mesh::~Mesh()
     {
-      std::cout << "Destructor called\n";
       /// \todo Delete all Cells, Nodes and Edges.
     }
     

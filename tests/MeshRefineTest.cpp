@@ -6,7 +6,7 @@ using namespace chemfem::mesh;
 
 int main()
 {
-  Mesh mesh = UnitSquareMesh(3);
+  Mesh mesh = UnitSquareMesh(4);
   mesh.WriteVtk("mesh_old.vtk");
   mesh = mesh.RefineUniform();
   
