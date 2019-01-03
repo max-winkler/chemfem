@@ -22,6 +22,9 @@ namespace chemfem{
 
     Mesh& Mesh::operator=(const Mesh& other)
     {
+      Nodes = other.Nodes;
+      Cells = other.Cells;
+      
       copy(other);
       std::cout << "Copy assignment called\n";      
       return *this;
@@ -36,8 +39,13 @@ namespace chemfem{
       for(it_cells = other.Cells.begin(), it_new_cells = Cells.begin();
 	  it_cells != other.Cells.end(); ++it_cells, ++it_new_cells)
 	{
-	  for(int k=0; k<3; ++k)	    
-	    it_new_cells->LocNode[k] = &(Nodes[it_cells->LocNode[k]->index]);
+	  std::cout << "Node indices: ";
+	  for(int k=0; k<3; ++k)
+	    {
+	      it_new_cells->LocNode[k] = &(Nodes[it_cells->LocNode[k]->index]);
+	      std::cout << it_new_cells->LocNode[k]->index << " ";
+	    }
+	  std::cout << std::endl;
 	}
 
       // \todo Find faster implementation. Edge list already created by the Refine routine.
@@ -138,7 +146,7 @@ namespace chemfem{
       std::vector<const Edge*> new_edge_edges(2*Edges.size(), NULL);
       
       // Initialize edge index list (used to check if two cells share one new node)
-      std::vector<size_t> global_edge_index(3*NrCells());
+      std::vector<size_t> global_edge_index(3*NrCells(), -1);
 
       size_t k;
       std::set<Edge>::const_iterator it_edge;
@@ -149,10 +157,14 @@ namespace chemfem{
 	  for(int m=0; m<(it_edge->Type() == INTERFACE_EDGE ? 2 : 1); ++m)
 	    {
 	      Cell& cell = it_edge->GetNeighbor(m);
-	      global_edge_index[3*cell.Index() + cell.EdgeIndex(*it_edge)] = k;
+	      
+	      size_t loc_edge_index = cell.EdgeIndex(*it_edge);
+	      size_t cell_index = cell.Index();
+	      
+	      global_edge_index.at(3*cell_index + loc_edge_index) = k;
 	    }
 	}
-
+      
       // Copy old nodes
       // Set index of node
       std::vector<Node>::iterator it_node;
@@ -160,9 +172,13 @@ namespace chemfem{
 	it_node->index = k;
       
       // Perform copy operation
-      new_mesh->Nodes.assign(Nodes.begin(), Nodes.end());
+      for(size_t k=0; k<Nodes.size(); ++k)
+	new_mesh->Nodes.push_back(Nodes.at(k));
+      //new_mesh->Nodes.assign(Nodes.begin(), Nodes.end());
 
+      // Initialize index counters
       size_t node_ctr = new_mesh->Nodes.size();
+      size_t cell_ctr = 0;
 	
       std::vector<bool>::const_iterator it_marker;
       std::vector<Cell>::const_iterator it_cell;
@@ -177,66 +193,53 @@ namespace chemfem{
 
 	  int edge_ctr = 0;
 	  
-	  Node** new_nodes = new Node*[nr_nodes];
-	  const Edge** new_edges = new const Edge*[nr_edges];
-
-	  for(int k=0; k<nr_nodes; ++k)
-	    new_nodes[k] = NULL;
-	  for(int k=0; k<nr_edges; ++k)
-	    new_edges[k] = NULL;
+	  std::vector<Node*> new_nodes(nr_nodes, NULL);
+	  std::vector<const Edge*> new_edges(nr_edges, NULL);
 	  
 	  // Set old nodes
 	  for(int k=0; k<3; ++k)	    
-	    new_nodes[k] = &(new_mesh->Nodes[it_cell->LocNode[k]->Index()]);	    
+	    new_nodes.at(k) = &(new_mesh->Nodes.at(it_cell->LocNode[k]->Index()));	    
 	  
 	  // Create new nodes and edges
 	  for(int k=0; k<3; ++k)
 	    {
 	      if(ref_data.GetEdgeVertex(k) == -1) continue;
 
-	      size_t edge_index = global_edge_index[3*j + k];
-	      if(new_edge_nodes[edge_index] == NULL)
+	      size_t edge_index = global_edge_index.at(3*j + k);
+	      if(new_edge_nodes.at(edge_index) == NULL)
 		{
 		  // Node does not exist. Create a new one.
 
 		  // Compute vertex coordinates
-		  double x = 0.5*(new_nodes[k]->getX() + new_nodes[(k+1)%3]->getX());
-		  double y = 0.5*(new_nodes[k]->getY() + new_nodes[(k+1)%3]->getY());
+		  double x = 0.5*(new_nodes.at(k)->getX() + new_nodes.at((k+1)%3)->getX());
+		  double y = 0.5*(new_nodes.at(k)->getY() + new_nodes.at((k+1)%3)->getY());
 
 		  // Create node object and insert into new mesh
 		  new_mesh->Nodes.push_back(Node(node_ctr++, x, y));
 		  
-		  new_nodes[ref_data.GetEdgeVertex(k)] = &(new_mesh->Nodes.back());
-		  new_edge_nodes[global_edge_index[3*j + k]] = new_nodes[ref_data.GetEdgeVertex(k)];
+		  new_nodes.at(ref_data.GetEdgeVertex(k)) = &(new_mesh->Nodes.back());
+		  new_edge_nodes.at(global_edge_index.at(3*j + k))
+		    = new_nodes.at(ref_data.GetEdgeVertex(k));
 
 		  // Create new edges
 		  for(int m=0; m<2; ++m)
 		    {
 		      set_insert_res ins_res;
 		      if(m==0)
-			ins_res = new_mesh->Edges.insert(Edge(*new_nodes[k],
-							     *new_nodes[ref_data.GetEdgeVertex(k)]));
+			ins_res = new_mesh->Edges.insert(Edge(*new_nodes.at(k),
+							      *new_nodes.at(ref_data.GetEdgeVertex(k))));
 		      else
-			ins_res = new_mesh->Edges.insert(Edge(*new_nodes[ref_data.GetEdgeVertex(k)],
-							     *new_nodes[(k+1)%3]));
+			ins_res = new_mesh->Edges.insert(Edge(*new_nodes.at(ref_data.GetEdgeVertex(k)),
+							      *new_nodes.at((k+1)%3)));
 		      
 		      if(!ins_res.second)
 			{
-			  std::cerr << "Insertion of new edge " << m << " failed. Edge already exists.\n";
-			  std::cerr << "Trying to add edges between " << *new_nodes[k] << " and "
-				    << *new_nodes[ref_data.GetEdgeVertex(k)] << std::endl;
-			  			  
-			  for(std::set<Edge>::const_iterator it_edges = new_mesh->Edges.begin();
-			      it_edges != new_mesh->Edges.end(); ++it_edges)
-			    {
-			      std::cout << "Edge: " << *it_edges << std::endl;
-			    }
-			  
+			  std::cerr << "Insertion of new edge " << m << " failed. Edge already exists.\n";			  
 			  return *new_mesh;
 			}
 		      
-		      new_edges[edge_ctr] = &(*ins_res.first);
-		      new_edge_edges[2*edge_index+m] = new_edges[edge_ctr];
+		      new_edges.at(edge_ctr) = &(*ins_res.first);
+		      new_edge_edges.at(2*edge_index+m) = new_edges.at(edge_ctr);
 
 		      edge_ctr++;
 		    }
@@ -244,10 +247,10 @@ namespace chemfem{
 	      else
 		{
 		  // Node and edge already exist. Reuse the existing ones.
-		  new_nodes[ref_data.GetEdgeVertex(k)] = new_edge_nodes[edge_index];
+		  new_nodes.at(ref_data.GetEdgeVertex(k)) = new_edge_nodes.at(edge_index);
 
-		  new_edges[edge_ctr++] = new_edge_edges[2*edge_index+1];
-		  new_edges[edge_ctr++] = new_edge_edges[2*edge_index];		  
+		  new_edges.at(edge_ctr++) = new_edge_edges.at(2*edge_index+1);
+		  new_edges.at(edge_ctr++) = new_edge_edges.at(2*edge_index);		  
 		}
 	    }
 
@@ -262,36 +265,55 @@ namespace chemfem{
 	  for(int k=nr_outer_edges; k<ref_data.GetNrEdges(); ++k)
 	    {
 	      const int* edge_vertices = ref_data.GetEdge(k);
-	      set_insert_res ins_res = new_mesh->Edges.insert(Edge(*(new_nodes[edge_vertices[0]]),
-							       *(new_nodes[edge_vertices[1]])));
+	      set_insert_res ins_res = new_mesh->Edges.insert(Edge(*(new_nodes.at(edge_vertices[0])),
+								   *(new_nodes.at(edge_vertices[1]))));
 	      
-	      new_edges[k] = &(*ins_res.first);
+	      new_edges.at(k) = &(*ins_res.first);
 	    }
 	  
 	  // Create new cells
 	  int nr_cells = ref_data.GetNrCells();
-	  Cell** new_cells = new Cell*[nr_cells];
+	  std::vector<Cell*> new_cells(nr_cells, NULL);
 	  
 	  for(int k=0; k<nr_cells; ++k)
 	    {
 	      const int* NewLocalNodes = ref_data.GetCell(k);
 
-	      new_mesh->Cells.push_back(Cell(*(new_nodes[NewLocalNodes[0]]),
-					    *(new_nodes[NewLocalNodes[1]]),
-					    *(new_nodes[NewLocalNodes[2]])));
+	      new_mesh->Cells.push_back(Cell(*(new_nodes.at(NewLocalNodes[0])),
+					     *(new_nodes.at(NewLocalNodes[1])),
+					     *(new_nodes.at(NewLocalNodes[2]))));
 	      
-	      new_cells[k] = &(new_mesh->Cells.back());
-
+	      new_cells.at(k) = &(new_mesh->Cells.back());
+	      new_cells.at(k)->SetIndex(cell_ctr++);
+	      
 	      // Set pointers between edges and cells
 	      const int* cell_edges = ref_data.GetCellEdges(k);
 	      for(int m=0; m<3; ++m)
 		{
-		  new_edges[cell_edges[m]]->SetNeighbor(*(new_cells[k]));
-		  new_cells[k]->LocEdge[m] = new_edges[cell_edges[m]];
+		  new_edges.at(cell_edges[m])->SetNeighbor(*(new_cells.at(k)));
+		  new_cells.at(k)->LocEdge[m] = new_edges.at(cell_edges[m]);
 		}
-	    }	 	  
+	    }
 	}
 
+      // TEST (delete afterwards)
+      for(std::vector<Node>::const_iterator it_nodes = new_mesh->Nodes.begin();
+	  it_nodes != new_mesh->Nodes.end(); ++it_nodes)
+	{
+	  std::cout << "Index: " << it_nodes->Index() << std::endl;
+	}
+      for(std::vector<Cell>::const_iterator it_cells = new_mesh->Cells.begin();
+	  it_cells != new_mesh->Cells.end(); ++it_cells)
+	{
+	  std::cout << "Cell index: " << it_cells->index << std::endl;
+	  for(int k=0; k<3; ++k)
+	    std::cout << "Node Index: " << k << ": " << it_cells->LocNode[k]->index << std::endl;
+
+	  if(it_cells->LocNode[k]->index > 1000)
+	    std::cout << "Breakpoint!\n";
+	}
+
+      
       return *new_mesh;
     }
     
