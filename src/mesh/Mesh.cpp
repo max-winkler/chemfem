@@ -99,7 +99,16 @@ namespace chemfem{
     
     void Mesh::CreateEdgeList()
     {
+      // Remove old edges
+      Edges.clear();
+      
       std::vector<Cell>::iterator cell;
+
+      // Remove all edge information
+      for(cell = Cells.begin(); cell != Cells.end(); ++cell)
+	for(int k=0; k<3; ++k)
+	  cell->LocEdge[k] = NULL;
+	      
       for(cell = Cells.begin(); cell != Cells.end(); ++cell)
 	{
 	  for(int i=0; i<3; ++i)
@@ -296,6 +305,35 @@ namespace chemfem{
     Mesh::~Mesh()
     {
       /// \todo Delete all Cells, Nodes and Edges.
+    }
+
+    bool Mesh::Check()
+    {
+      for(std::vector<Cell>::const_iterator it_cell = Cells.begin(); it_cell != Cells.end(); ++it_cell)
+	{
+	  const Cell& cell = *it_cell;
+
+	  for(int k=0; k<3; ++k)
+	    {
+	      const Edge& edge = *cell.LocEdge[k];
+
+	      if(cell.EdgeIndex(edge) != k)
+		{
+		  std::cerr << "The edge index seems to be wrong.\n";
+		}
+	      
+	      if(!((&edge.GetNode(0) == cell.LocNode[k]
+		    && &edge.GetNode(1) == cell.LocNode[(k+1)%3])
+		   || (&edge.GetNode(1) == cell.LocNode[k]
+		       && &edge.GetNode(0) == cell.LocNode[(k+1)%3])))
+		{
+		  std::cerr << "I found a cell whose edges do not point to the corresponding nodes.\n";
+		  return false;
+		}
+	    }
+	}
+      
+      return true;      
     }
     
   };

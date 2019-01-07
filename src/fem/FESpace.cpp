@@ -58,11 +58,11 @@ namespace chemfem{
 		    }
 
 		  bool orientation;
-		  if(&(edge->GetNode(0)) == cur_cell.LocNode[edge_ind]
-		     && &(edge->GetNode(1)) == cur_cell.LocNode[(edge_ind+1)%3])
+		  if(&edge->GetNode(0) == cur_cell.LocNode[edge_ind]
+		     && &edge->GetNode(1) == cur_cell.LocNode[(edge_ind+1)%3])
 		    orientation = true;
-		  else if(&(edge->GetNode(1)) == cur_cell.LocNode[edge_ind]
-			  && &(edge->GetNode(0)) == cur_cell.LocNode[(edge_ind+1)%3])
+		  else if(&edge->GetNode(1) == cur_cell.LocNode[edge_ind]
+			  && &edge->GetNode(0) == cur_cell.LocNode[(edge_ind+1)%3])
 		    orientation = false;
 		  else
 		    std::cerr << "An unexpected error occured. Maybe the mesh data structure "
@@ -134,7 +134,7 @@ namespace chemfem{
 
 	  last_dirichlet_dof = index;	  
 	}
-      for(size_t k = last_dirichlet_dof+1; k<nr_dof; ++k)
+      for(size_t k = last_dirichlet_dof; k<nr_dof; ++k)
 	{
 	  DofType[k] = true;
 	  DofIndex[k] = free_dof_ctr++;

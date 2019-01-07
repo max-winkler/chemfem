@@ -74,6 +74,11 @@ namespace chemfem{
        * Returns a reference to the cell list of the mesh.
        */
       const std::vector<Cell>& GetCellList() const;
+
+      /**
+       * Check if the mesh data structure is broken
+       */
+      bool Check();
       
     private:
       std::vector<Node> Nodes;
