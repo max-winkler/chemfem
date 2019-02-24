@@ -71,10 +71,12 @@ int main()
       Vector& Vec = F.LoadVector();
     
       Vector X(Matrix.Solve(Vec));
-    
+      
       Vector Res(Matrix*X - Vec);
       std::cout << "Error of equation system: " << Res.Norm() << std::endl;
-
+      
+      X = Space.IncorporateBC(X);
+      
       FEFunction Sol(Space);
       Sol.CreateFunction(X);
       Sol.WriteVtk("solution.vtk");

@@ -170,7 +170,8 @@ namespace chemfem{
 		else
 		  {
 		    //DOF is a Dirichlet DOF
-		    double Value = 0.; // TODO: Get function value of boundary condition
+		    // \todo Modify this when implementing inhomogeneous Dirichlet conditions
+		    double Value = 0.;
 		    DirichletRhs[TestSpace.DofIndex[DofTest]] += LocMatrix[k][l] * Value;
 		  }
 	      }
