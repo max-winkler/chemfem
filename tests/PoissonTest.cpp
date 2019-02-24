@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <cmath>
 
@@ -16,7 +17,7 @@ using namespace chemfem::mesh;
 
 double f(double x, double y)
 {
-  return 32.*(x*(1.-x) + y*(1.-y));
+  return 32.*(x*(1.-x) + y*(1.-y)) + 16.*x*(1.-x)*y*(1.-y);
 }
 
 double c(double x, double y)
@@ -39,21 +40,26 @@ Vector exact_grad(double x, double y)
 
 int main()
 {
-  std::ofstream ofs("errors.dat");
-  
-  for(int size=10; size<150; size*=2)
-    {
-      UnitSquareMesh mesh(size);
+  Mesh mesh = UnitSquareMesh(10);
+  const int max_iter = 5;
 
+  std::vector<double> l2_errors, h1_errors;
+  
+  for(int iter=0; iter<max_iter; ++iter)
+    {
+      std::cout << " Computation on level " << iter << std::endl;
+      std::cout << "======================================\n";
+      
       std::cout << "Nr of nodes : " << mesh.NrNodes() << std::endl;
       std::cout << "Nr of cells : " << mesh.NrCells() << std::endl;
-  
-      LagrangeElement element(2);
+
+      // \todo We must incorporate Dirichlet conditions here. Otherwise the exact solution is not the correct one
+      LagrangeElement element(1);
       FESpace Space(mesh, element);
 
       BilinearForm Laplace(Space, Space);
       Laplace.AddLaplaceTerm();
-      //Laplace.AddReactionTerm(c);
+      Laplace.AddReactionTerm(c);
       Laplace.Assemble();
 
       SparseMatrix& Matrix = Laplace.SystemMatrix();
@@ -81,10 +87,32 @@ int main()
       double l2_error = Error.Compute(L2);
       double h1_error = Error.Compute(H1_SEMI);
       
-      std::cout << "L2 Error: " << l2_error << std::endl;  
-      std::cout << "H1 Error: " << h1_error << std::endl;
+      l2_errors.push_back(l2_error);
+      h1_errors.push_back(h1_error);
 
-      ofs << h1_error << "\t" << l2_error << std::endl;
+      if(iter+1 < max_iter)
+	mesh = mesh.RefineUniform();
     }  
+
+  std::cout << std::setw(10) << "Iteration"
+	    << std::setw(20) << "L2-error" << std::setw(20) << "L2-eoc"
+	    << std::setw(20) << "H1-error" << std::setw(20) << "H1-eoc"
+	    << std::endl;
+  
+  for(int iter=0; iter<max_iter; ++iter)
+    {
+      double l2_eoc = 0., h1_eoc = 0.;
+      
+      if(iter>0)
+	{
+	  l2_eoc = log(l2_errors[iter] / l2_errors[iter-1]) / log(0.5);
+	  h1_eoc = log(h1_errors[iter] / h1_errors[iter-1]) / log(0.5);
+	}
+
+      std::cout << std::setw(10) << iter
+		<< std::setw(20) << l2_errors[iter] << std::setw(20) << l2_eoc
+		<< std::setw(20) << h1_errors[iter] << std::setw(20) << h1_eoc
+		<< std::endl;
+    }
   return 0;
 }

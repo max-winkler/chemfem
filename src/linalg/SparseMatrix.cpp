@@ -58,7 +58,7 @@ namespace chemfem{
 	  os << " [ ";
 	  
 	  size_t last_col = 0;
-	  size_t cur_col;
+	  size_t cur_col = 0;
 	  for(size_t j=M.Row[i]; j<M.Row[i+1]; ++j)
 	    {
 	      cur_col = M.Col[j];

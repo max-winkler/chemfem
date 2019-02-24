@@ -77,7 +77,7 @@ namespace chemfem{
 		  double x1 = edge.GetNode(1).getX(), y1 = edge.GetNode(1).getY();
 		  
 		  // Determine orientation of the edge
-		  bool orientation;
+		  bool orientation = true;
 		  if(&(edge.GetNode(0)) == cell.LocNode[l]
 		     && &(edge.GetNode(1)) == cell.LocNode[(l+1)%3])
 		    orientation = true;

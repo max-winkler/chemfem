@@ -57,7 +57,7 @@ namespace chemfem{
 		      return;
 		    }
 
-		  bool orientation;
+		  bool orientation = true;
 		  if(&edge->GetNode(0) == cur_cell.LocNode[edge_ind]
 		     && &edge->GetNode(1) == cur_cell.LocNode[(edge_ind+1)%3])
 		    orientation = true;

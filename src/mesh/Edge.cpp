@@ -13,8 +13,10 @@ namespace chemfem{
     
     Edge::Edge(Cell& Neigh0, Cell& Neigh1) : Neigh0(&Neigh0), Neigh1(&Neigh1), type(INTERFACE_EDGE)
     {
-      for(Node* Node0 = Neigh0.LocNode[0]; Node0 != Neigh0.LocNode[3]; ++Node0)
-	for(Node* Node1 = Neigh1.LocNode[0]; Node1 != Neigh1.LocNode[3]; ++Node1)
+      std::cout << "I think there is a mistake in this routine: Edge::Edge(Cell, Cell)\n";
+      
+      for(Node* Node0 = Neigh0.LocNode[0]; Node0 != Neigh0.LocNode[2]; ++Node0)
+	for(Node* Node1 = Neigh1.LocNode[0]; Node1 != Neigh1.LocNode[2]; ++Node1)
 	  {
 	    if(Node0 == Node1)
 	      {
