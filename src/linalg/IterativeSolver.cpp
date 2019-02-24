@@ -60,9 +60,9 @@ namespace chemfem{
 	    break;
 
 	  ++iter;
-	}	
+	}
+      std::cout << "CG finished after " << iter << " iterations with resid = " << sqrt(eps) << std::endl;
     }
-    
-    
+        
   }
 }

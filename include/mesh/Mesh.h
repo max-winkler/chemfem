@@ -54,7 +54,9 @@ namespace chemfem{
       size_t NrCells() const;
       /// Returns the number of nodes
       size_t NrNodes() const;
-
+      /// Returns the number of edges
+      size_t NrEdges() const;
+      
       /// Write Mesh to a VTK file
       void WriteVtk(const std::string&) const;      
       /// Write Mesh to a VTK file

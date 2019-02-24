@@ -14,7 +14,7 @@ using namespace chemfem::fem;
 
 double f(double x, double y)
 {
-  return 10.*sin(4*x*M_PI)*cos(2*y*M_PI);
+  return 10.*sin(2*x*M_PI)*cos(2*y*M_PI);
 }
 
 double c(double x, double y)
@@ -25,20 +25,23 @@ double c(double x, double y)
 int main()
 {
   // Build up and refine mesh
-  Mesh mesh = UnitSquareMesh(4);
+  Mesh mesh = UnitSquareMesh(3);
   mesh.WriteVtk("mesh_old.vtk");
 
-  for(int k=0; k<2; ++k)
+  for(int k=0; k<5; ++k)
     {
+      std::cout << "Refinement #" << k << std::endl;
       mesh = mesh.RefineUniform();  
       mesh.Check();
     }
   mesh.WriteVtk("mesh.vtk");
 
   // Solve Poisson equation
-  LagrangeElement element(1);
+  std::cout << "Setup function space\n";
+  LagrangeElement element(3);
   FESpace Space(mesh, element);
 
+  std::cout << "Assemble matrices and vectors\n";
   BilinearForm Laplace(Space, Space);
   Laplace.AddLaplaceTerm();
   Laplace.AddReactionTerm(c);
@@ -51,7 +54,8 @@ int main()
   F.Assemble();
   
   Vector& Vec = F.LoadVector();
-    
+
+  std::cout << "Solve equation system\n";
   Vector X(Matrix.Solve(Vec));  
 
   FEFunction Sol(Space);

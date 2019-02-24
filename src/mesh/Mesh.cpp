@@ -30,16 +30,16 @@ namespace chemfem{
     }
 
     void Mesh::copy(const Mesh& other)
-    {
+    {      
       std::vector<Cell>::iterator it_new_cells;
       std::vector<Cell>::const_iterator it_cells;
-      
+
       // Update pointers to local nodes
       for(it_cells = other.Cells.begin(), it_new_cells = Cells.begin();
 	  it_cells != other.Cells.end(); ++it_cells, ++it_new_cells)
 	{
 	  for(int k=0; k<3; ++k)
-	    it_new_cells->LocNode[k] = &(Nodes[it_cells->LocNode[k]->index]);	    
+	    it_new_cells->LocNode[k] = &(Nodes[it_cells->LocNode[k]->index]);
 	}
 
       // \todo Find faster implementation. Edge list already created by the Refine routine.
@@ -47,7 +47,8 @@ namespace chemfem{
     }
     
     size_t Mesh::NrCells() const { return Cells.size(); }
-    size_t Mesh::NrNodes() const { return Nodes.size(); }    
+    size_t Mesh::NrNodes() const { return Nodes.size(); }
+    size_t Mesh::NrEdges() const { return Edges.size(); }    
 
     void Mesh::WriteVtk(const std::string& filename) const
     {
@@ -108,7 +109,7 @@ namespace chemfem{
       for(cell = Cells.begin(); cell != Cells.end(); ++cell)
 	for(int k=0; k<3; ++k)
 	  cell->LocEdge[k] = NULL;
-	      
+
       for(cell = Cells.begin(); cell != Cells.end(); ++cell)
 	{
 	  for(int i=0; i<3; ++i)
@@ -137,6 +138,10 @@ namespace chemfem{
     Mesh& Mesh::Refine(const std::vector<bool>& cell_marker)
     {
       Mesh* new_mesh = new Mesh();
+
+      // Reserve memory for Nodes and Cells
+      new_mesh->Cells.reserve(4*NrCells());
+      new_mesh->Nodes.reserve(NrNodes()+NrEdges());      
       
       RefData ref_data = RefDataRegular();
       std::vector<Cell>::iterator it_cells;
@@ -176,7 +181,8 @@ namespace chemfem{
       
       // Perform copy operation
       for(size_t k=0; k<Nodes.size(); ++k)
-	new_mesh->Nodes.push_back(Nodes.at(k));
+	new_mesh->Nodes.push_back(Nodes.at(k));      
+      // \todo: The following method is probably faster
       //new_mesh->Nodes.assign(Nodes.begin(), Nodes.end());
 
       // Initialize index counters
@@ -200,7 +206,7 @@ namespace chemfem{
 	  std::vector<const Edge*> new_edges(nr_edges, NULL);
 	  
 	  // Set old nodes
-	  for(int k=0; k<3; ++k)	    
+	  for(int k=0; k<3; ++k)
 	    new_nodes.at(k) = &(new_mesh->Nodes.at(it_cell->LocNode[k]->Index()));	    
 	  
 	  // Create new nodes and edges
@@ -286,9 +292,9 @@ namespace chemfem{
 					     *(new_nodes.at(NewLocalNodes[1])),
 					     *(new_nodes.at(NewLocalNodes[2]))));
 	      
-	      new_cells.at(k) = &(new_mesh->Cells.back());
-	      new_cells.at(k)->SetIndex(cell_ctr++);
-	      
+	      new_cells[k] = &(new_mesh->Cells.back());
+	      new_cells[k]->SetIndex(cell_ctr++);
+
 	      // Set pointers between edges and cells
 	      const int* cell_edges = ref_data.GetCellEdges(k);
 	      for(int m=0; m<3; ++m)
