@@ -53,7 +53,6 @@ int main()
       std::cout << "Nr of nodes : " << mesh.NrNodes() << std::endl;
       std::cout << "Nr of cells : " << mesh.NrCells() << std::endl;
 
-      // \todo We must incorporate Dirichlet conditions here. Otherwise the exact solution is not the correct one
       LagrangeElement element(1);
       FESpace Space(mesh, element);
 

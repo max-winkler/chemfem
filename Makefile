@@ -1,5 +1,5 @@
 CPP_INCLUDE = -Iinclude
-CPP_FLAGS   = -O3 -Wall
+CPP_FLAGS   = -g -Wall
 
 OBJ = 	src/linalg/Vector.o \
 	src/linalg/SparseMatrix.o \

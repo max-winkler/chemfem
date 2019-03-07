@@ -16,11 +16,13 @@ namespace chemfem{
     Mesh::Mesh(const Mesh& other)
       : Nodes(other.Nodes), Cells(other.Cells)
     {
+      std::cout << "Mesh copied\n";
       copy(other);
     }
 
     Mesh& Mesh::operator=(const Mesh& other)
     {
+      std::cout << "Mesh copied by =\n";
       Nodes = other.Nodes;
       Cells = other.Cells;
       
@@ -42,8 +44,30 @@ namespace chemfem{
 	    it_new_cells->LocNode[k] = &(Nodes[it_cells->LocNode[k]->index]);
 	}
 
+      // Store indices of the endpoints of boundary edges
+      std::vector<std::pair<size_t, size_t>> BdEdgesTemp;
+
+      std::vector<const Edge*>::const_iterator it_edges;
+      for(it_edges = other.BdEdges.begin(); it_edges != other.BdEdges.end(); ++it_edges)
+	{
+	  BdEdgesTemp.push_back(std::pair<size_t, size_t>((*it_edges)->GetNode(0).Index(),
+							  (*it_edges)->GetNode(1).Index()));
+	}
+      
       // \todo Find faster implementation. Edge list already created by the Refine routine.
       CreateEdgeList();
+
+      // Build up new vector for the boundary edges
+      std::vector<std::pair<size_t, size_t>>::const_iterator it_edges_temp;      
+      for(it_edges_temp = BdEdgesTemp.begin(); it_edges_temp != BdEdgesTemp.end(); ++it_edges_temp)
+	{
+	  Edge new_edge(Nodes[it_edges_temp->first], Nodes[it_edges_temp->second]);
+	  std::set<Edge>::iterator it = Edges.find(new_edge);
+	  if(it != Edges.end())
+	    BdEdges.push_back(&(*it));
+	  else
+	    std::cerr << "Can not find my edge after mesh copy any more.\n";	    
+	}
     }
     
     size_t Mesh::NrCells() const { return Cells.size(); }

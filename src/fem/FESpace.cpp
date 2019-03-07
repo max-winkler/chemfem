@@ -39,6 +39,7 @@ namespace chemfem{
 
 	  size_t NodeDofs = mesh.NrNodes();
 	  size_t EdgeDofCtr = 0;
+
 	  // Dofs at the edges	  
 	  std::set<Edge>::iterator edge;
 	  for(edge = mesh.Edges.begin(); edge != mesh.Edges.end(); ++edge)
@@ -95,7 +96,7 @@ namespace chemfem{
     }
 
     void FESpace::CreateDirichletBcMap()
-    {      
+    {
       std::vector<const Edge*>::const_iterator it_edge;
       for(it_edge = mesh.BdEdges.begin(); it_edge != mesh.BdEdges.end(); ++it_edge)
 	{
