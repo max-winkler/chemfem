@@ -135,7 +135,7 @@ namespace chemfem{
 
 	  last_dirichlet_dof = index;	  
 	}
-      for(size_t k = last_dirichlet_dof; k<nr_dof; ++k)
+      for(size_t k = last_dirichlet_dof+1; k<nr_dof; ++k)
 	{
 	  DofType[k] = true;
 	  DofIndex[k] = free_dof_ctr++;

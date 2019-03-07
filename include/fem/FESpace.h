@@ -51,7 +51,7 @@ namespace chemfem{
 
       /**
        * For a given vector representing the values at the free DOFs, this function returns
-       * a vector where also Dirichlet DOFs are invorporated.
+       * a vector where also Dirichlet DOFs are incorporated.
        */
       Vector IncorporateBC(const Vector&) const; 
 

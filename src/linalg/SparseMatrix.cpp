@@ -63,14 +63,14 @@ namespace chemfem{
 	    {
 	      cur_col = M.Col[j];
 	      for(size_t k=last_col; k<cur_col; ++k)
-		os << std::setw(5) << 0 << " ";
+		os << std::setw(10) << 0 << " ";
 
 	      last_col = cur_col + 1;
 	      
-	      os << std::setw(5) << M.Entry[j] << " ";
+	      os << std::setw(10) << M.Entry[j] << " ";
 	    }
 	  for(size_t k=cur_col+1; k<M.n; ++k)
-	    os << std::setw(5) << 0 << " ";
+	    os << std::setw(10) << 0 << " ";
 	  os << "]\n";
 	}
       
