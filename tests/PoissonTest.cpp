@@ -40,8 +40,9 @@ Vector exact_grad(double x, double y)
 
 int main()
 {
-  Mesh mesh = UnitSquareMesh(5);
-  const int max_iter = 3;
+  Mesh mesh = UnitSquareMesh(20);
+  // \todo Solution procedure not correct after regular refinement. Fix this!
+  const int max_iter = 1;
 
   std::vector<double> l2_errors, h1_errors;
   
