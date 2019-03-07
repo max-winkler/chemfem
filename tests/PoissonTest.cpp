@@ -40,8 +40,8 @@ Vector exact_grad(double x, double y)
 
 int main()
 {
-  Mesh mesh = UnitSquareMesh(4);
-  const int max_iter = 4;
+  Mesh mesh = UnitSquareMesh(5);
+  const int max_iter = 3;
 
   std::vector<double> l2_errors, h1_errors;
   
@@ -64,8 +64,6 @@ int main()
       Laplace.Assemble();
 
       SparseMatrix& Matrix = Laplace.SystemMatrix();
-
-      std::cout << "Matrix =\n" << Matrix << std::endl;
       
       LinearForm F(Space);
       F.AddVolumeForce(f);
@@ -77,8 +75,6 @@ int main()
       
       Vector Res(Matrix*X - Vec);
       std::cout << "Error of equation system: " << Res.Norm() << std::endl;
-      
-      X = Space.IncorporateBC(X);
       
       FEFunction Sol(Space);
       Sol.CreateFunction(X);
