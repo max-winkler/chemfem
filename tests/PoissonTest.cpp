@@ -57,6 +57,8 @@ int main()
       LagrangeElement element(1);
       FESpace Space(mesh, element);
 
+      std::cout << "Space:\n" << Space << std::endl;
+      
       BilinearForm Laplace(Space, Space);
       Laplace.AddLaplaceTerm();
       Laplace.AddReactionTerm(c);

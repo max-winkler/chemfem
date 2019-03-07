@@ -188,7 +188,24 @@ namespace chemfem{
       return &(DofMap[DofPerCell*k]);
     }
 
+    std::ostream& operator<<(std::ostream& os, const FESpace& space)
+    {
+      os << "FE Space of type ";
+      switch(space.refElement.Type())
+	{
+	case Lagrange:
+	  os << "Lagrange";
+	  break;
+	default:
+	  break;
+	}
+      os << " of degree " << space.refElement.Degree() << std::endl;
 
+      std::cout << "Number of DOFs     : " << space.nr_dof << std::endl;
+      std::cout << "Number of free DOFs: " << space.nr_free_dof << std::endl;
+
+      return os;
+    }
     
   }
 }

@@ -112,6 +112,11 @@ namespace chemfem{
        * passed to FESpace in its contructor.
        */
       void CreateDirichletBcMap();
+
+      /**
+       * Write some information on the finite element space to a stream
+       */
+      friend std::ostream& operator<<(std::ostream&, const FESpace&);
     };
     
   };
