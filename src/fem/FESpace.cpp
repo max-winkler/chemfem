@@ -132,14 +132,14 @@ namespace chemfem{
 	  // Numerate free nodes between last and current Dirichlet Dof
 	  for(size_t k = last_dirichlet_dof+1; k<index; ++k)
 	    {
-	      DofType[k] = true;
+	      DofType[k] = true;	      
 	      DofIndex[k] = free_dof_ctr++;
 	    }
 	  
 	  // Numerate Dirichlet Dof
 	  DofType[index] = false;
 	  DofIndex[index] = dirichlet_dof_ctr;
-
+	  
 	  last_dirichlet_dof = index;	  
 	}
       for(size_t k = last_dirichlet_dof+1; k<nr_dof; ++k)

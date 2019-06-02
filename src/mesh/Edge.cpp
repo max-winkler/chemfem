@@ -3,6 +3,7 @@
 namespace chemfem{
   namespace mesh{
 
+    // \todo The variable "Edge::type" is set but never read
     Edge::Edge(Node& Node0, Node& Node1) : Node0(&Node0), Node1(&Node1),
 					   Neigh0(NULL), Neigh1(NULL),
 					   type(INTERFACE_EDGE)

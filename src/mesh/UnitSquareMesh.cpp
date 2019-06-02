@@ -34,7 +34,7 @@ namespace chemfem{
 	  // TODO: Remove this test when it works.
 	  if(it == Edges.end())
 	    std::cerr << "The mesh is probably corrupt. A boundary edge was not "
-		      << "found in the edge list.\n";
+		    << "found in the edge list.\n";
 
 	  BdEdges.push_back(&(*it));
 	}
@@ -48,7 +48,7 @@ namespace chemfem{
 	    if(it == Edges.end())
 	      {
 		std::cerr << "The mesh is probably corrupt. A boundary edge was not "
-			  << "found in the edge list.\n";		
+			<< "found in the edge list.\n";		
 	      }
 	    
 	    BdEdges.push_back(&(*it));
@@ -61,7 +61,7 @@ namespace chemfem{
 
 	  if(it == Edges.end())
 	    std::cerr << "The mesh is probably corrupt. A boundary edge was not "
-		      << "found in the edge list.\n";
+		    << "found in the edge list.\n";
 
 	  BdEdges.push_back(&(*it));
 	}

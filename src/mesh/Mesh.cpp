@@ -27,12 +27,14 @@ namespace chemfem{
       Cells = other.Cells;
       
       copy(other);
-
+      
       return *this;
     }
 
     void Mesh::copy(const Mesh& other)
-    {      
+    {
+      BdEdges.clear();
+	  
       std::vector<Cell>::iterator it_new_cells;
       std::vector<Cell>::const_iterator it_cells;
 
@@ -48,8 +50,9 @@ namespace chemfem{
       std::vector<std::pair<size_t, size_t>> BdEdgesTemp;
 
       std::vector<const Edge*>::const_iterator it_edges;
+      std::cout << "Number of BdEdges: " << other.BdEdges.size() << std::endl;
       for(it_edges = other.BdEdges.begin(); it_edges != other.BdEdges.end(); ++it_edges)
-	{
+	{	  
 	  BdEdgesTemp.push_back(std::pair<size_t, size_t>((*it_edges)->GetNode(0).Index(),
 							  (*it_edges)->GetNode(1).Index()));
 	}
@@ -61,10 +64,15 @@ namespace chemfem{
       std::vector<std::pair<size_t, size_t>>::const_iterator it_edges_temp;      
       for(it_edges_temp = BdEdgesTemp.begin(); it_edges_temp != BdEdgesTemp.end(); ++it_edges_temp)
 	{
+	  // Create temporary edge
 	  Edge new_edge(Nodes[it_edges_temp->first], Nodes[it_edges_temp->second]);
+
+	  // Find this edge in the edge list
 	  std::set<Edge>::iterator it = Edges.find(new_edge);
+
+	  // Put a pointer to this edge to the edge list
 	  if(it != Edges.end())
-	    BdEdges.push_back(&(*it));
+	    BdEdges.push_back(&(*it));	      	    
 	  else
 	    std::cerr << "Can not find my edge after mesh copy any more.\n";	    
 	}
@@ -166,6 +174,7 @@ namespace chemfem{
       // Reserve memory for Nodes and Cells
       new_mesh->Cells.reserve(4*NrCells());
       new_mesh->Nodes.reserve(NrNodes()+NrEdges());      
+      new_mesh->BdEdges.reserve(2*BdEdges.size());
       
       RefData ref_data = RefDataRegular();
       std::vector<Cell>::iterator it_cells;
@@ -233,7 +242,7 @@ namespace chemfem{
 	  for(int k=0; k<3; ++k)
 	    new_nodes.at(k) = &(new_mesh->Nodes.at(it_cell->LocNode[k]->Index()));	    
 	  
-	  // Create new nodes and edges
+	  // Create new edges
 	  for(int k=0; k<3; ++k)
 	    {
 	      if(ref_data.GetEdgeVertex(k) == -1) continue;
@@ -260,10 +269,10 @@ namespace chemfem{
 		      set_insert_res ins_res;
 		      if(m==0)
 			ins_res = new_mesh->Edges.insert(Edge(*new_nodes.at(k),
-							      *new_nodes.at(ref_data.GetEdgeVertex(k))));
+						        *new_nodes.at(ref_data.GetEdgeVertex(k))));
 		      else
 			ins_res = new_mesh->Edges.insert(Edge(*new_nodes.at(ref_data.GetEdgeVertex(k)),
-							      *new_nodes.at((k+1)%3)));
+						        *new_nodes.at((k+1)%3)));
 		      
 		      if(!ins_res.second)
 			{
@@ -274,6 +283,10 @@ namespace chemfem{
 		      new_edges.at(edge_ctr) = &(*ins_res.first);
 		      new_edge_edges.at(2*edge_index+m) = new_edges.at(edge_ctr);
 
+		      // If the edge is a boundary edge, at it to the BdEdges list
+		      if(it_cell->LocEdge[k]->Type() == BOUNDARY_EDGE)
+		        new_mesh->BdEdges.push_back(new_edges.at(edge_ctr));
+		      
 		      edge_ctr++;
 		    }
 		}
@@ -299,7 +312,8 @@ namespace chemfem{
 	    {
 	      const int* edge_vertices = ref_data.GetEdge(k);
 	      set_insert_res ins_res = new_mesh->Edges.insert(Edge(*(new_nodes.at(edge_vertices[0])),
-								   *(new_nodes.at(edge_vertices[1]))));
+						         *(new_nodes.at(edge_vertices[1]))
+						         ));
 	      
 	      new_edges.at(k) = &(*ins_res.first);
 	    }

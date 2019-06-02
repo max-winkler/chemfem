@@ -30,6 +30,7 @@ namespace chemfem{
      */
     class Mesh
     {
+      // Friend declarations
       friend class UnitSquareMesh;
       friend class chemfem::fem::FESpace;
       friend class chemfem::fem::BilinearForm;
@@ -86,8 +87,9 @@ namespace chemfem{
       std::vector<Node> Nodes;
       std::vector<Cell> Cells;
       std::set<Edge> Edges;
+    public:
       std::vector<const Edge*> BdEdges;
-
+    private:
       /// Copies a mesh and updates the pointers to nodes and edges
       void copy(const Mesh&);
       

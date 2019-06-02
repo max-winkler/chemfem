@@ -40,9 +40,9 @@ Vector exact_grad(double x, double y)
 
 int main()
 {
-  Mesh mesh = UnitSquareMesh(3);
+  Mesh mesh = UnitSquareMesh(4);
   // \todo Solution procedure not correct after regular refinement. Fix this!
-  const int max_iter = 2;
+  const int max_iter = 7;
 
   std::vector<double> l2_errors, h1_errors;
   
@@ -56,7 +56,7 @@ int main()
 
       LagrangeElement element(1);
       FESpace Space(mesh, element);
-
+      
       std::cout << "Space:\n" << Space << std::endl;
       
       BilinearForm Laplace(Space, Space);
@@ -66,7 +66,7 @@ int main()
 
       SparseMatrix& Matrix = Laplace.SystemMatrix();
 
-      std::cout << "Matrix = \n" << Matrix << std::endl;
+      // std::cout << "Matrix = \n" << Matrix << std::endl;
       
       LinearForm F(Space);
       F.AddVolumeForce(f);
