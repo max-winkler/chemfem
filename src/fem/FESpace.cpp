@@ -13,6 +13,13 @@ namespace chemfem{
       DofPerCell = element.NrDof();
       DofPerEdge = element.Degree() - 1;
       IntDofPerCell = (element.Degree()-1) * (element.Degree()-2) / 2;
+
+      // Test if vertices are numbered correctly
+      for(size_t i=0; i<mesh.Nodes.size(); ++i)
+	{
+	  if(mesh.Nodes[i].Index() != i)
+	    std::cerr << "Nodes are not numbered correctly\n";
+	}
       
       CreateDofMap();
       CreateDirichletBcMap();
