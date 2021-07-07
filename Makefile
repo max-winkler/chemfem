@@ -27,7 +27,8 @@ TESTS = tests/SparseMatrixTest.o \
 	tests/DenseMatrixTest.o \
 	tests/MeshTest.o \
 	tests/PoissonTest.o \
-	tests/MeshRefineTest.o
+	tests/MeshRefineTest.o \
+	tests/LocalRefinement.o
 
 TESTS_BIN = $(TESTS:.o=)
 
