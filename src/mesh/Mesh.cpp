@@ -1,4 +1,5 @@
 #include <fstream>
+#include <iomanip>
 
 #include "mesh/Mesh.h"
 
@@ -76,6 +77,24 @@ namespace chemfem{
 	  else
 	    std::cerr << "Can not find my edge after mesh copy any more.\n";	    
 	}
+    }
+
+    std::ostream& operator<<(std::ostream& os, const Mesh& mesh)
+    {
+      os << "Vertices:\n";
+      
+      std::vector<Node>::const_iterator it_nodes;
+      size_t k = 0;
+      for(it_nodes = mesh.Nodes.begin(), k=0; it_nodes != mesh.Nodes.end(); ++it_nodes, ++k)
+        os << " " << std::setw(3) << k << " : " << (*it_nodes) << std::endl;
+
+      os << "\nCells:\n";
+      std::vector<Cell>::const_iterator it_cells;
+      for(it_cells = mesh.Cells.begin(), k=0; it_cells != mesh.Cells.end(); ++it_cells, ++k)
+        {
+	os << " " << std::setw(3) << k << " : " << (*it_cells) << std::endl;
+        }
+      return os;
     }
     
     size_t Mesh::NrCells() const { return Cells.size(); }
@@ -382,3 +401,4 @@ namespace chemfem{
     
   };
 };
+

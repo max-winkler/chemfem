@@ -1,3 +1,5 @@
+#include <iomanip>
+
 #include "mesh/Cell.h"
 
 namespace chemfem{
@@ -18,6 +20,19 @@ namespace chemfem{
 	  LocNode[k] = other.LocNode[k];
 	  LocEdge[k] = other.LocEdge[k];
 	}
+    }
+
+    std::ostream& operator<<(std::ostream& os, const Cell& cell)
+    {
+      os << "( ";
+      for(size_t i=0; i<3; ++i)
+        {
+	os << std::setw(3) << cell.GetNode(i).Index();
+	if(i<2)
+	  os << " , ";
+        }
+      os << " )";
+      return os;
     }
     
     double Cell::Determinant() const

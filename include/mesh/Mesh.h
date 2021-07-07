@@ -1,6 +1,7 @@
 #ifndef _MESH_H_
 #define _MESH_H_
 
+#include <iostream>
 #include <vector>
 #include <set>
 #include <string>
@@ -82,7 +83,12 @@ namespace chemfem{
        * Check if the mesh data structure is broken
        */
       bool Check();
-      
+
+      /**
+       * Console output of the mesh information
+       */
+      friend std::ostream& operator<<(std::ostream&, const Mesh&);
+
     private:
       std::vector<Node> Nodes;
       std::vector<Cell> Cells;

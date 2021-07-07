@@ -72,6 +72,11 @@ namespace chemfem{
        * Returns a reference to the i-th node of the triangle.
        */
       const Node& GetNode(int) const;
+
+      /**
+       * Console output of the cell
+       */
+      friend std::ostream& operator<<(std::ostream&, const Cell&);
       
     private:
       /// Stores the 3 vertices of the triangle
