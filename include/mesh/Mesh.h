@@ -19,6 +19,7 @@ namespace chemfem::fem{
   class FESpace;
   class BilinearForm;
   class LinearForm;
+  class ErrorNorm;
 }
 
 typedef std::pair<std::set<chemfem::mesh::Edge>::iterator, bool> set_insert_res;
@@ -36,6 +37,7 @@ namespace chemfem{
       friend class chemfem::fem::FESpace;
       friend class chemfem::fem::BilinearForm;
       friend class chemfem::fem::LinearForm;
+      friend class chemfem::fem::ErrorNorm;
     public:
 
       /// Default constructor
@@ -84,6 +86,17 @@ namespace chemfem{
        */
       bool Check();
 
+
+      /**
+       * Returns the volume of the parallelogram which is spanned by the vertices of the cell.
+       */
+      double Determinant(size_t) const;
+
+      /**
+       * Returns the Jacobian of the reference transformation.
+       */
+      chemfem::linalg::DenseMatrix Jacobian(size_t) const;
+      
       /**
        * Console output of the mesh information
        */
@@ -92,10 +105,8 @@ namespace chemfem{
     private:
       std::vector<Node> Nodes;
       std::vector<Cell> Cells;
-      std::set<Edge> Edges;
-    public:
-      std::vector<const Edge*> BdEdges;
-    private:
+      std::vector<Edge> Edges;
+
       /// Copies a mesh and updates the pointers to nodes and edges
       void copy(const Mesh&);
       

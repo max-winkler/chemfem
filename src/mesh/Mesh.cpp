@@ -2,6 +2,7 @@
 #include <deque>
 #include <iomanip>
 #include <map>
+#include <algorithm>
 
 #include "mesh/Mesh.h"
 
@@ -40,51 +41,10 @@ namespace chemfem{
 
     void Mesh::copy(const Mesh& other)
     {
-      BdEdges.clear();
-	  
-      std::vector<Cell>::iterator it_new_cells;
-      std::vector<Cell>::const_iterator it_cells;
-
-      // Update pointers to local nodes
-      for(it_cells = other.Cells.begin(), it_new_cells = Cells.begin();
-	  it_cells != other.Cells.end(); ++it_cells, ++it_new_cells)
-	{
-	  for(int k=0; k<3; ++k)
-	    it_new_cells->LocNode[k] = &(Nodes[it_cells->LocNode[k]->index]);
-	}
-
-      // Store indices of the endpoints of boundary edges
-      std::vector<std::pair<size_t, size_t>> BdEdgesTemp;
-
-      std::vector<const Edge*>::const_iterator it_edges;
-      std::cout << "Number of BdEdges: " << other.BdEdges.size() << std::endl;
-      for(it_edges = other.BdEdges.begin(); it_edges != other.BdEdges.end(); ++it_edges)
-	{	  
-	  BdEdgesTemp.push_back(std::pair<size_t, size_t>((*it_edges)->GetNode(0).Index(),
-							  (*it_edges)->GetNode(1).Index()));
-	}
-      
       // \todo Find faster implementation. Edge list already created by the Refine routine.
       CreateEdgeList();
-
-      // Build up new vector for the boundary edges
-      std::vector<std::pair<size_t, size_t>>::const_iterator it_edges_temp;      
-      for(it_edges_temp = BdEdgesTemp.begin(); it_edges_temp != BdEdgesTemp.end(); ++it_edges_temp)
-	{
-	  // Create temporary edge
-	  Edge new_edge(Nodes[it_edges_temp->first], Nodes[it_edges_temp->second]);
-
-	  // Find this edge in the edge list
-	  std::set<Edge>::iterator it = Edges.find(new_edge);
-
-	  // Put a pointer to this edge to the edge list
-	  if(it != Edges.end())
-	    BdEdges.push_back(&(*it));	      	    
-	  else
-	    std::cerr << "Can not find my edge after mesh copy any more.\n";	    
-	}
     }
-
+    
     std::ostream& operator<<(std::ostream& os, const Mesh& mesh)
     {
       os << "Vertices:\n";
@@ -131,8 +91,8 @@ namespace chemfem{
       
       ofs << "CELLS " << nr_cells << " " << 4*nr_cells << std::endl;
       for (std::vector<Cell>::const_iterator it = Cells.begin(); it != Cells.end(); ++it)	
-	ofs << "3 " <<  it->LocNode[0]->Index() << " " << it->LocNode[1]->Index()
-	    << " " << it->LocNode[2]->Index() << std::endl;
+	ofs << "3 " <<  it->LocNode[0] << " " << it->LocNode[1]
+	    << " " << it->LocNode[2] << std::endl;
       
       ofs << "CELL_TYPES " << nr_cells << std::endl;
       for (std::vector<Cell>::const_iterator it = Cells.begin(); it != Cells.end(); ++it)	
@@ -157,6 +117,8 @@ namespace chemfem{
     
     void Mesh::CreateEdgeList()
     {
+      std::cerr << "WARNING: The routine CreateEdgeList is very slow and should be avoided\n";
+      
       // Remove old edges
       Edges.clear();
       
@@ -165,23 +127,30 @@ namespace chemfem{
       // Remove all edge information
       for(cell = Cells.begin(); cell != Cells.end(); ++cell)
 	for(int k=0; k<3; ++k)
-	  cell->LocEdge[k] = NULL;
+	  cell->LocEdge[k] = -1;
 
       for(cell = Cells.begin(); cell != Cells.end(); ++cell)
 	{
 	  for(int i=0; i<3; ++i)
 	    {
-	      Node *Node0 = cell->LocNode[i], *Node1 = cell->LocNode[(i+1)%3];
-	      Edge NewEdge(*cell, *Node0, *Node1);
-	      
-	      std::pair<std::set<Edge>::iterator, bool> it_pair = Edges.insert(NewEdge);
-	      const Edge& CurEdge = *(it_pair.first);
-	      
-	      // If edge already exists update the neighbor
-	      if (! it_pair.second)
-		CurEdge.SetNeighbor(*cell);		
+	      size_t Node0 = cell->LocNode[i], Node1 = cell->LocNode[(i+1)%3];
+	      Edge new_edge(Node0, Node1, BOUNDARY_EDGE);
 
-	      cell->LocEdge[i] = &CurEdge;
+	      // Check if edge already exists
+	      std::vector<Edge>::iterator it = std::find(Edges.begin(), Edges.end(), new_edge);
+	      if(it != Edges.end())
+	        {
+		// Edge exists, update the neighbor
+		(*it).SetNeighbor(cell->Index());
+		cell->LocEdge[i] = std::distance(Edges.begin(), it);
+	        }
+	      else
+	        {
+		// Edge does not exist, add to edge list
+		new_edge.SetNeighbor(cell->Index());
+		Edges.push_back(new_edge);
+		cell->LocEdge[i] = Edges.size();
+	        }
 	    }
 	}
     }
@@ -216,7 +185,7 @@ namespace chemfem{
         std::cout << (*it_cells).Index() << std::endl;
       */
 
-      std::map<const Edge*, Node*> edge_vertex;
+      std::map<const Edge*, size_t> edge_vertex;
       
       while(!marked_cell_idx.empty())
         {
@@ -229,13 +198,13 @@ namespace chemfem{
 
 	// determine largest index
 	size_t max_idx = 0;
-	if(cur_cell.LocNode[1]->Index() > cur_cell.LocNode[0]->Index()) max_idx = 1;
-	if(cur_cell.LocNode[2]->Index() > cur_cell.LocNode[max_idx]->Index()) max_idx = 2;
+	if(Nodes[cur_cell.LocNode[1]].Index() > Nodes[cur_cell.LocNode[0]].Index()) max_idx = 1;
+	if(Nodes[cur_cell.LocNode[2]].Index() > Nodes[cur_cell.LocNode[max_idx]].Index()) max_idx = 2;
 
 	// apply refinement to the cell
 	RefData& cur_ref_data = ref_data[max_idx];
 
-	Node* new_nodes[4];
+	size_t new_nodes[4];
 
 	// Copy old nodes
 	std::vector<Node>::const_iterator it_nodes;
@@ -243,27 +212,29 @@ namespace chemfem{
 	for(size_t i=0; i<3; ++i)
 	  new_nodes[i] = cur_cell.LocNode[i];
 
-	if(edge_vertex.count(cur_cell.LocEdge[(max_idx+1)%3]) > 0)
+	if(edge_vertex.find(&Edges[cur_cell.LocEdge[(max_idx+1)%3]]) != edge_vertex.end())
 	  // Use vertex already created by neighbour
-	  new_nodes[3] = edge_vertex[cur_cell.LocEdge[(max_idx+1)%3]];
+	  new_nodes[3] = edge_vertex[&Edges[cur_cell.LocEdge[(max_idx+1)%3]]];
 	else
 	  {
 	    // Create new vertex
 	    double s = cur_ref_data.NewNodeCoords[0][0];
 	    double t = cur_ref_data.NewNodeCoords[0][1];
 
-	    double new_x = (1-s-t)*new_nodes[0]->getX() + s*new_nodes[1]->getX() + t*new_nodes[2]->getX();
-	    double new_y = (1-s-t)*new_nodes[0]->getY() + s*new_nodes[1]->getY() + t*new_nodes[2]->getY();
+	    double new_x = (1-s-t)*Nodes[new_nodes[0]].getX() + s*Nodes[new_nodes[1]].getX()
+	      + t*Nodes[new_nodes[2]].getX();
+	    double new_y = (1-s-t)*Nodes[new_nodes[0]].getY() + s*Nodes[new_nodes[1]].getY()
+	      + t*Nodes[new_nodes[2]].getY();
 
 	    new_mesh->Nodes.push_back(Node(new_mesh->NrNodes(), new_x, new_y));
-	    new_nodes[3] = &(new_mesh->Nodes.back());
+	    new_nodes[3] = Nodes.size()-1;
 
-	    edge_vertex[cur_cell.LocEdge[(max_idx+1)%3]] = new_nodes[3];
+	    edge_vertex[&Edges[cur_cell.LocEdge[(max_idx+1)%3]]] = new_nodes[3];
 
 	    // Mark neighbor for refinement
-	    if(cur_cell.LocEdge[(max_idx+1)%3]->Type() == INTERFACE_EDGE)
+	    if(Edges[cur_cell.LocEdge[(max_idx+1)%3]].Type() == INTERFACE_EDGE)
 	      {
-	        Cell& neigh_cell = cur_cell.LocEdge[(max_idx+1)%3]->GetNeighbor(cur_cell);
+	        size_t neigh_cell = Edges[cur_cell.LocEdge[(max_idx+1)%3]].GetNeighbor(idx);
 	        // TODO: Continue here
 	      }
 	  }
@@ -272,20 +243,20 @@ namespace chemfem{
 	for(int i=0; i<cur_ref_data.GetNrCells(); ++i)
 	  {
 	    // Get nodes of new cell
-	    Node* loc_nodes[3];
+	    size_t loc_nodes[3];
 	    for(size_t k=0; k<3; ++k)
 	      {
 	        loc_nodes[k] = new_nodes[cur_ref_data.NewCells[i][k]];
-	        std::cout << "node " << k << ": " << cur_ref_data.NewCells[i][k] << " : " << new_nodes[cur_ref_data.NewCells[i][k]]->Index() << std::endl;
+	        std::cout << "node " << k << ": " << cur_ref_data.NewCells[i][k] << " : " << Nodes[new_nodes[cur_ref_data.NewCells[i][k]]].Index() << std::endl;
 	      }
 	    
 	    
 	    if(i==0)
 	      // Overwrite parent cell
-	      new_mesh->Cells[idx] = Cell(*(loc_nodes[0]), *(loc_nodes[1]), *(loc_nodes[2]));
+	      new_mesh->Cells[idx] = Cell(loc_nodes[0], loc_nodes[1], loc_nodes[2]);
 	    else
 	      // Create new cell at end of the list
-	      new_mesh->Cells.push_back(Cell(*(loc_nodes[0]), *(loc_nodes[1]), *(loc_nodes[2])));	    
+	      new_mesh->Cells.push_back(Cell(loc_nodes[0], loc_nodes[1], loc_nodes[2]));	    
 	  }
 	
 	std::cout << "new mesh:\n" << *new_mesh << std::endl;	
@@ -490,17 +461,15 @@ namespace chemfem{
 
 	  for(int k=0; k<3; ++k)
 	    {
-	      const Edge& edge = *cell.LocEdge[k];
+	      const size_t edge_idx = cell.LocEdge[k];
 
-	      if(cell.EdgeIndex(edge) != k)
-		{
-		  std::cerr << "The edge index seems to be wrong.\n";
-		}
+	      if(cell.EdgeIndex(edge_idx) != k)
+	        std::cerr << "The edge index seems to be wrong.\n";
 	      
-	      if(!((&edge.GetNode(0) == cell.LocNode[k]
-		    && &edge.GetNode(1) == cell.LocNode[(k+1)%3])
-		   || (&edge.GetNode(1) == cell.LocNode[k]
-		       && &edge.GetNode(0) == cell.LocNode[(k+1)%3])))
+	      if(!((Edges[edge_idx].Node0 == cell.LocNode[k]
+		    && Edges[edge_idx].Node1 == cell.LocNode[(k+1)%3])
+		   || (Edges[edge_idx].Node0 == cell.LocNode[k]
+		       && Edges[edge_idx].Node0 == cell.LocNode[(k+1)%3])))
 		{
 		  std::cerr << "I found a cell whose edges do not point to the corresponding nodes.\n";
 		  return false;
@@ -510,7 +479,39 @@ namespace chemfem{
       
       return true;      
     }
+
+    double Mesh::Determinant(size_t i) const
+    {
+      double x[3], y[3];
+      for(int k=0; k<3; ++k)
+	{
+	  x[k] = Nodes[Cells[i].LocNode[k]].getX();
+	  y[k] = Nodes[Cells[i].LocNode[k]].getY();
+	}
+      
+      return (x[1]-x[0])*(y[2]-y[0]) - (x[2]-x[0])*(y[1]-y[0]);
+    }
+
+    using chemfem::linalg::DenseMatrix;
     
+    DenseMatrix Mesh::Jacobian(size_t i) const
+    {
+      double x[3], y[3];
+      for(int k=0; k<3; ++k)
+	{
+	  x[k] = Nodes[Cells[i].LocNode[k]].getX();
+	  y[k] = Nodes[Cells[i].LocNode[k]].getY();
+	}
+      
+      DenseMatrix Jac(2,2);
+      Jac.data[0] =  x[1] - x[0];
+      Jac.data[1] =  x[2] - x[0];
+      Jac.data[2] =  y[1] - y[0];
+      Jac.data[3] =  y[2] - y[0];
+
+      return Jac;
+    }
+
   };
 };
 

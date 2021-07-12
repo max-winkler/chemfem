@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "mesh/UnitSquareMesh.h"
 
 namespace chemfem{
@@ -14,22 +16,20 @@ namespace chemfem{
       // Triangle list
       Cells.reserve(2*(n-1)*(n-1));
       for(size_t i=0; i<n-1; ++i)
-	for(size_t j=0; j<n-1; ++j)
-	  {
-	    //Cells.push_back(Cell(i*n+j, i*n+j+1, (i+1)*n+j+1));
-	    //Cells.push_back(Cell(i*n+j, (i+1)*n+j+1, (i+1)*n+j));
-	    
-	    Cells.push_back(Cell(Nodes[i*n+j], Nodes[i*n+j+1], Nodes[(i+1)*n+j]));
-	    Cells.push_back(Cell(Nodes[i*n+j+1], Nodes[(i+1)*n+j+1], Nodes[(i+1)*n+j]));
-	  }
-
+        for(size_t j=0; j<n-1; ++j)
+	{	    
+	  Cells.push_back(Cell(i*n+j, i*n+j+1, (i+1)*n+j));
+	  Cells.push_back(Cell(i*n+j+1, (i+1)*n+j+1, (i+1)*n+j));
+	}
+      
       CreateEdgeList();
 
       // Boundary edges
+      /*
       for(size_t j=0; j<n-1; ++j)
 	{
 	  Edge edge(Nodes[j], Nodes[j+1]);
-	  std::set<Edge>::iterator it = Edges.find(edge);
+	  std::vector<Edge>::iterator it = std::find(Edges.begin(), Edges.end(), edge);
 
 	  // TODO: Remove this test when it works.
 	  if(it == Edges.end())
@@ -42,8 +42,9 @@ namespace chemfem{
       for(size_t i=0; i<n-1; ++i)
 	for(int k=0; k<2; ++k)
 	  {
-	    Edge edge(Nodes[i*n+(k==1?n-1:0)], Nodes[(i+1)*n+(k==1?n-1:0)]);
-	    std::set<Edge>::iterator it = Edges.find(edge);
+	    Edge edge(i*n+(k==1?n-1:0), (i+1)*n+(k==1?n-1:0));
+	    
+	    std::vector<Edge>::iterator it = std::find(Edges.begin(), Edges.end(), edge);
 
 	    if(it == Edges.end())
 	      {
@@ -65,7 +66,7 @@ namespace chemfem{
 
 	  BdEdges.push_back(&(*it));
 	}
-      
+      */
     }
     
   }

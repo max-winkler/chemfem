@@ -7,7 +7,7 @@
 
 namespace chemfem{
   namespace mesh{
-    class Cell;
+    class Mesh;
   }
 }
 
@@ -19,7 +19,7 @@ namespace chemfem{
      */
     class DenseMatrix
     {
-      friend class chemfem::mesh::Cell;
+      friend class chemfem::mesh::Mesh;
 
       friend std::ostream& operator<<(std::ostream&, const DenseMatrix&);
       

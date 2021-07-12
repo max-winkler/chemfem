@@ -38,16 +38,17 @@ namespace chemfem{
       quad.FormulaData(Weights, Xi, Eta);
       
       std::vector<Cell>::const_iterator it_cell;
-      for(it_cell = mesh.GetCellList().begin();
-	  it_cell != mesh.GetCellList().end(); ++it_cell)
+      size_t CellInd;
+        for(it_cell = mesh.GetCellList().begin(), CellInd = 0;
+	  it_cell != mesh.GetCellList().end(); ++it_cell, ++CellInd)
 	{
 	  const Cell& cell = *it_cell;
 
-	  const Node& x0 = cell.GetNode(0);
+	  const Node& x0 = mesh.Nodes[cell.LocNode[0]];
 	  Vector b(2);
 	  b[0] = x0.getX(); b[1] = x0.getY();
 	  
-	  DenseMatrix Jac = cell.Jacobian();
+	  DenseMatrix Jac = mesh.Jacobian(CellInd);
 	  DenseMatrix InvJac(Jac.Transpose().Invert());
 	  
 	  double det = Jac.Determinant();

@@ -14,6 +14,7 @@ namespace chemfem::fem{
   class FESpace;
   class BilinearForm;
   class LinearForm;
+  class ErrorNorm;
 }
 
 namespace chemfem{
@@ -32,26 +33,17 @@ namespace chemfem{
       friend class chemfem::fem::FESpace;
       friend class chemfem::fem::BilinearForm;
       friend class chemfem::fem::LinearForm;
+      friend class chemfem::fem::ErrorNorm;
       
     public:
       /**
        * Constructor creating a new cell by its given vertices.
        */
-      Cell(Node&, Node&, Node&);
+      Cell(size_t, size_t, size_t);
 
       /// Copy constructor
       Cell(const Cell&);
       
-      /**
-       * Returns the volume of the parallelogram which is spanned by the vertices of the cell.
-       */
-      double Determinant() const;
-
-      /**
-       * Returns the Jacobian of the reference transformation.
-       */
-      chemfem::linalg::DenseMatrix Jacobian() const;
-
       /**
        * Returns the index Variable
        */
@@ -66,12 +58,7 @@ namespace chemfem{
        * Returns the local index of the edge in the cell. The return value is 
        * -1 if the edge is not an edge of the cell.
        */
-      int EdgeIndex(const Edge&) const;
-
-      /**
-       * Returns a reference to the i-th node of the triangle.
-       */
-      const Node& GetNode(int) const;
+      int EdgeIndex(const size_t) const;
 
       /**
        * Console output of the cell
@@ -79,10 +66,10 @@ namespace chemfem{
       friend std::ostream& operator<<(std::ostream&, const Cell&);
       
     private:
-      /// Stores the 3 vertices of the triangle
-      Node *LocNode[3];
-      /// Store pointers to the 3 edges of the triangle
-      const Edge *LocEdge[3];      
+      /// Stores the indices of the 3 vertices of the triangle
+      size_t LocNode[3];
+      /// Store the indices of the 3 edges of the triangle
+      int LocEdge[3];
       /// Stores the index of the cell. Merely used as temporary variable during FESpace::FESpace()
       size_t index;
     };

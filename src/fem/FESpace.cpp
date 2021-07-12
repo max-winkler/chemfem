@@ -39,7 +39,7 @@ namespace chemfem{
 	      Cell& cell = *it_cell;
 	      
 	      for(int j=0; j<3; ++j)
-		DofMap[i*DofPerCell+j] = cell.LocNode[j]->Index();
+		DofMap[i*DofPerCell+j] = cell.LocNode[j];
 
 	      cell.SetIndex(i);
 	    }
@@ -48,17 +48,22 @@ namespace chemfem{
 	  size_t EdgeDofCtr = 0;
 
 	  // Dofs at the edges	  
-	  std::set<Edge>::iterator edge;
-	  for(edge = mesh.Edges.begin(); edge != mesh.Edges.end(); ++edge)
+	  std::vector<Edge>::iterator it_edge;
+	  size_t idx_edge;
+	  for(it_edge = mesh.Edges.begin(), idx_edge = 0; it_edge != mesh.Edges.end(); ++it_edge, ++idx_edge)
 	    {
-	      int NrNeighs = edge->Type() == EdgeType::BOUNDARY_EDGE ? 1:2;
+
+	      int NrNeighs = it_edge->Type() == EdgeType::BOUNDARY_EDGE ? 1:2;
 	      for(int loc_ind=0; loc_ind < NrNeighs; ++loc_ind)
 		{
-		  Cell& cur_cell = edge->GetNeighbor(loc_ind);
-		  int cell_ind = cur_cell.Index();
-		  int edge_ind = cur_cell.EdgeIndex(*edge);
+		  int cell_ind = it_edge->GetNeighbor(loc_ind);
+		  Cell& cur_cell = mesh.Cells[cell_ind];
+
+		  int edge_ind = 0;
+		  while(cur_cell.LocEdge[edge_ind] != idx_edge && edge_ind < 3)
+		    edge_ind++;		  
 		  
-		  if(edge_ind == -1)
+		  if(edge_ind < 0 || edge_ind > 2)
 		    {
 		      std::cerr << "Edge not found but it should belong to the element. "
 				<< "Maybe the mesh format is corrupt.\n";
@@ -66,11 +71,11 @@ namespace chemfem{
 		    }
 
 		  bool orientation = true;
-		  if(&edge->GetNode(0) == cur_cell.LocNode[edge_ind]
-		     && &edge->GetNode(1) == cur_cell.LocNode[(edge_ind+1)%3])
+		  if(it_edge->Node0 == cur_cell.LocNode[edge_ind]
+		     && it_edge->Node1 == cur_cell.LocNode[(edge_ind+1)%3])
 		    orientation = true;
-		  else if(&edge->GetNode(1) == cur_cell.LocNode[edge_ind]
-			  && &edge->GetNode(0) == cur_cell.LocNode[(edge_ind+1)%3])
+		  else if(it_edge->Node1 == cur_cell.LocNode[edge_ind]
+			  && it_edge->Node0 == cur_cell.LocNode[(edge_ind+1)%3])
 		    orientation = false;
 		  else
 		    std::cerr << "An unexpected error occured. Maybe the mesh data structure "
@@ -104,15 +109,23 @@ namespace chemfem{
 
     void FESpace::CreateDirichletBcMap()
     {
-      std::vector<const Edge*>::const_iterator it_edge;
-      for(it_edge = mesh.BdEdges.begin(); it_edge != mesh.BdEdges.end(); ++it_edge)
+      std::vector<Edge>::const_iterator it_edge;
+      size_t idx_edge;
+      for(it_edge = mesh.Edges.begin(), idx_edge=0; it_edge != mesh.Edges.end(); ++it_edge, ++idx_edge)
 	{
-	  const Edge& edge = *(*it_edge);
-	  Cell& cell = edge.GetNeighbor(0);
-	  int edge_ind = cell.EdgeIndex(edge);
+	  if(it_edge->type == EdgeType::INTERFACE_EDGE)
+	    continue;
 	  
-	  for(int k=0; k<2; ++k)
-	    DirichletNodes.insert(edge.GetNode(k).Index());
+	  const Edge& edge = *it_edge;
+	  Cell& cell = mesh.Cells[edge.GetNeighbor(-1)];
+	  // TODO
+	  int edge_ind = 0;
+	  while(cell.LocEdge[edge_ind] != idx_edge && edge_ind < 3)
+	    edge_ind++;
+		  
+	  DirichletNodes.insert(edge.Node0);
+	  DirichletNodes.insert(edge.Node1);
+	  
 	  for(int k=0; k<DofPerEdge; ++k)
 	    DirichletNodes.insert(DofMap[cell.Index()*DofPerCell + 3 + edge_ind*DofPerEdge + k]);
 	} // loop over boundary edges

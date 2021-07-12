@@ -70,12 +70,12 @@ namespace chemfem{
       for(cell = TestSpace.mesh.Cells.begin(), CellInd=0;
 	  cell != TestSpace.mesh.Cells.end(); ++cell, ++CellInd)
 	{
-	  double det = cell->Determinant();
+	  double det = TestSpace.mesh.Determinant(CellInd);
 
-	  Node* x0 = cell->LocNode[0];
-	  Vector b(2); b[0] = x0->getX(); b[1] = x0->getY();
+	  Node& x0 = TestSpace.mesh.Nodes[cell->LocNode[0]];
+	  Vector b(2); b[0] = x0.getX(); b[1] = x0.getY();
 	  
-	  DenseMatrix Jac = cell->Jacobian();
+	  DenseMatrix Jac = TestSpace.mesh.Jacobian(CellInd);
 	  DenseMatrix InvJac(Jac.Transpose().Invert());
 
 	  DenseMatrix LocMatrix(TestSpace.DofPerCell, TrialSpace.DofPerCell);

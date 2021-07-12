@@ -56,7 +56,7 @@ namespace chemfem{
 	      // Interpolate in nodes of the mesh
 	      for(int k=0; k<3; ++k)
 		{
-		  Node& node = *(cell.LocNode[k]);
+		  Node& node = mesh.Nodes[cell.LocNode[k]];
 		  x = node.getX();
 		  y = node.getY();
 
@@ -70,19 +70,17 @@ namespace chemfem{
 	      // Interpolate in nodes at edges
 	      for(int l=0; l<3; ++l)
 		{
-		  const Edge& edge = *(cell.LocEdge[l]);
+		  const Edge& edge = mesh.Edges[cell.LocEdge[l]];
 
 		  // Coordinates of endpoints
-		  double x0 = edge.GetNode(0).getX(), y0 = edge.GetNode(0).getY();
-		  double x1 = edge.GetNode(1).getX(), y1 = edge.GetNode(1).getY();
+		  double x0 = mesh.Nodes[edge.Node0].getX(), y0 = mesh.Nodes[edge.Node0].getY();
+		  double x1 = mesh.Nodes[edge.Node1].getX(), y1 = mesh.Nodes[edge.Node1].getY();
 		  
 		  // Determine orientation of the edge
 		  bool orientation = true;
-		  if(&(edge.GetNode(0)) == cell.LocNode[l]
-		     && &(edge.GetNode(1)) == cell.LocNode[(l+1)%3])
+		  if(edge.Node0 == cell.LocNode[l] && edge.Node1 == cell.LocNode[(l+1)%3])
 		    orientation = true;
-		  else if(&(edge.GetNode(1)) == cell.LocNode[l]
-			  && &(edge.GetNode(0)) == cell.LocNode[(l+1)%3])
+		  else if(edge.Node1 == cell.LocNode[l] && edge.Node0 == cell.LocNode[(l+1)%3])
 		    orientation = false;
 		  else
 		    std::cerr << "An unexpected error occured. Maybe the mesh data structure "
@@ -111,8 +109,8 @@ namespace chemfem{
 		  double X[3], Y[3];
 		  for(int k=0; k<3; ++k)
 		    {
-		      X[k] = cell.GetNode(k).getX();
-		      Y[k] = cell.GetNode(k).getY();
+		      X[k] = mesh.Nodes[cell.LocNode[k]].getX();
+		      Y[k] = mesh.Nodes[cell.LocNode[k]].getY();
 		    }
 		  
 		  // Interpolate interior nodes		  
