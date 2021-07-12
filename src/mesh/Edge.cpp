@@ -66,6 +66,16 @@ namespace chemfem{
 	return *Neigh1; 
     }
 
+    Cell& Edge::GetNeighbor(const Cell& cell) const
+    {
+      if(Neigh0 == &cell)
+        return *Neigh1;
+      else if(Neigh1 ==&cell)
+        return *Neigh0;
+      else
+        std::cerr << "Error in GetNeighbor: The specified cell is not associated with the edge.\n"; 
+    }
+
     const Node& Edge::GetNode(int i) const
     {
       return i==0 ? *Node0 : *Node1;

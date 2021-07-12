@@ -44,6 +44,11 @@ namespace chemfem{
       Cell& GetNeighbor(int) const;
 
       /**
+       * Returns a reference to the neighbor cell which is not the cell specified in the argument
+       */
+      Cell& GetNeighbor(const Cell&) const;
+      
+      /**
        * Returns the edge type.
        */
       EdgeType Type() const;

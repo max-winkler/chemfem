@@ -1,6 +1,8 @@
 #ifndef _REF_DATA_H_
 #define _REF_DATA_H_
 
+#include <cstring>
+
 namespace chemfem{
   namespace mesh{
 
@@ -13,6 +15,7 @@ namespace chemfem{
      */
     class RefData
     {
+      friend class Mesh;
     public:
 
       /// Constructor which initailized the number of new cells, nodes and edges

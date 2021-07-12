@@ -1,9 +1,15 @@
 #include <fstream>
+#include <deque>
 #include <iomanip>
+#include <map>
 
 #include "mesh/Mesh.h"
 
 #include "mesh/RefDataRegular.h"
+#include "mesh/RefDataBisection0.h"
+#include "mesh/RefDataBisection1.h"
+#include "mesh/RefDataBisection2.h"
+
 #include "linalg/Vector.h"
 
 using chemfem::linalg::Vector;
@@ -188,6 +194,111 @@ namespace chemfem{
 
     Mesh& Mesh::Refine(const std::vector<bool>& cell_marker)
     {
+      // Copy the mesh
+      Mesh* new_mesh = new Mesh(*this);
+
+      // Refinement descriptors
+      RefData ref_data[]
+        = {RefDataBisection0(), RefDataBisection1(), RefDataBisection2()};
+      
+      std::deque<size_t> marked_cell_idx;
+      
+      size_t k = 0;
+
+      // Initialize stack of marked cells
+      std::vector<bool>::const_iterator it_marker;
+      for(it_marker = cell_marker.begin(), k=0; it_marker != cell_marker.end(); ++it_marker, ++k)
+        if(*it_marker) marked_cell_idx.push_back(k);
+
+      /* Maybe useful later
+        for(std::vector<Cell>::const_iterator it_cells = new_mesh->Cells.begin();
+        it_cells != new_mesh->Cells.end(); ++it_cells)
+        std::cout << (*it_cells).Index() << std::endl;
+      */
+
+      std::map<const Edge*, Node*> edge_vertex;
+      
+      while(!marked_cell_idx.empty())
+        {
+	size_t idx = marked_cell_idx.front();
+	marked_cell_idx.pop_front();
+	
+	std::cout << "I am about to refine element " << idx << std::endl;
+
+	Cell& cur_cell = new_mesh->Cells[idx];
+
+	// determine largest index
+	size_t max_idx = 0;
+	if(cur_cell.LocNode[1]->Index() > cur_cell.LocNode[0]->Index()) max_idx = 1;
+	if(cur_cell.LocNode[2]->Index() > cur_cell.LocNode[max_idx]->Index()) max_idx = 2;
+
+	// apply refinement to the cell
+	RefData& cur_ref_data = ref_data[max_idx];
+
+	Node* new_nodes[4];
+
+	// Copy old nodes
+	std::vector<Node>::const_iterator it_nodes;
+
+	for(size_t i=0; i<3; ++i)
+	  new_nodes[i] = cur_cell.LocNode[i];
+
+	if(edge_vertex.count(cur_cell.LocEdge[(max_idx+1)%3]) > 0)
+	  // Use vertex already created by neighbour
+	  new_nodes[3] = edge_vertex[cur_cell.LocEdge[(max_idx+1)%3]];
+	else
+	  {
+	    // Create new vertex
+	    double s = cur_ref_data.NewNodeCoords[0][0];
+	    double t = cur_ref_data.NewNodeCoords[0][1];
+
+	    double new_x = (1-s-t)*new_nodes[0]->getX() + s*new_nodes[1]->getX() + t*new_nodes[2]->getX();
+	    double new_y = (1-s-t)*new_nodes[0]->getY() + s*new_nodes[1]->getY() + t*new_nodes[2]->getY();
+
+	    new_mesh->Nodes.push_back(Node(new_mesh->NrNodes(), new_x, new_y));
+	    new_nodes[3] = &(new_mesh->Nodes.back());
+
+	    edge_vertex[cur_cell.LocEdge[(max_idx+1)%3]] = new_nodes[3];
+
+	    // Mark neighbor for refinement
+	    if(cur_cell.LocEdge[(max_idx+1)%3]->Type() == INTERFACE_EDGE)
+	      {
+	        Cell& neigh_cell = cur_cell.LocEdge[(max_idx+1)%3]->GetNeighbor(cur_cell);
+	        // TODO: Continue here
+	      }
+	  }
+
+	// Create new cells
+	for(int i=0; i<cur_ref_data.GetNrCells(); ++i)
+	  {
+	    // Get nodes of new cell
+	    Node* loc_nodes[3];
+	    for(size_t k=0; k<3; ++k)
+	      {
+	        loc_nodes[k] = new_nodes[cur_ref_data.NewCells[i][k]];
+	        std::cout << "node " << k << ": " << cur_ref_data.NewCells[i][k] << " : " << new_nodes[cur_ref_data.NewCells[i][k]]->Index() << std::endl;
+	      }
+	    
+	    
+	    if(i==0)
+	      // Overwrite parent cell
+	      new_mesh->Cells[idx] = Cell(*(loc_nodes[0]), *(loc_nodes[1]), *(loc_nodes[2]));
+	    else
+	      // Create new cell at end of the list
+	      new_mesh->Cells.push_back(Cell(*(loc_nodes[0]), *(loc_nodes[1]), *(loc_nodes[2])));	    
+	  }
+	
+	std::cout << "new mesh:\n" << *new_mesh << std::endl;	
+        }
+      
+      
+      return *new_mesh;
+    }
+    
+    /*
+      // RED-GREEN Refinement (not working yet)
+    Mesh& Mesh::Refine(const std::vector<bool>& cell_marker)
+    {
       Mesh* new_mesh = new Mesh();
 
       // Reserve memory for Nodes and Cells
@@ -364,6 +475,7 @@ namespace chemfem{
       
       return *new_mesh;
     }
+    */
     
     Mesh::~Mesh()
     {
