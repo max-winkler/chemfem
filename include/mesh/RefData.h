@@ -58,6 +58,8 @@ namespace chemfem{
       const int (*NewEdges)[2];
       /// New vertices at the midpoint of an edge (-1 if no new vertex is inserted)
       const int *NewEdgeVertices;
+      /// New edge indices related to the old ones (-1 if the edge was refined)
+      const int *OldEdgeNewEdge;
     };
     
   };

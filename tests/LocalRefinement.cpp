@@ -18,12 +18,11 @@ int main()
   Mesh mesh = UnitSquareMesh(3);
 
   mesh.WriteVtk("mesh_old.vtk");
-  std::cout << "MESH INFORMATION:\n" << mesh << std::endl;
+  std::cout << mesh << std::endl;
  
   std::vector<bool> marker(mesh.NrCells(), false);
   marker[0] = true;
   marker[1] = true;
-  marker[2] = true;
 
   mesh = mesh.Refine(marker);
   if(!mesh.Check())

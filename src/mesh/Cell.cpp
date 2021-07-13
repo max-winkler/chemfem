@@ -31,6 +31,13 @@ namespace chemfem{
 	if(i<2)
 	  os << " , ";
         }
+      os << " ) - edges: ( ";
+      for(size_t i=0; i<3; ++i)
+	{
+	  os << std::setw(3) << cell.LocEdge[i];
+	  if(i<2)
+	    os << " , ";
+	}
       os << " )";
       return os;
     }
