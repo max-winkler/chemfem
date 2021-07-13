@@ -40,7 +40,7 @@ Vector exact_grad(double x, double y)
 
 int main()
 {
-  Mesh mesh = UnitSquareMesh(4);
+  Mesh mesh = UnitSquareMesh(3);
   // \todo Solution procedure not correct after regular refinement. Fix this!
   const int max_iter = 7;
 
@@ -54,6 +54,8 @@ int main()
       std::cout << "Nr of nodes : " << mesh.NrNodes() << std::endl;
       std::cout << "Nr of cells : " << mesh.NrCells() << std::endl;
 
+      std::cout << mesh << std::endl;
+      
       LagrangeElement element(3);
       FESpace Space(mesh, element);
       

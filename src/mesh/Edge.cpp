@@ -19,7 +19,9 @@ namespace chemfem{
       else if(Neigh1 == cell)
         return Neigh0;
       else
-        std::cerr << "Error in GetNeighbor: The specified cell is not associated with the edge.\n"; 
+        std::cerr << "Error in GetNeighbor: The specified cell with index " << cell
+	        << " is not associated with the edge. The edge connects " << Neigh0 << " and "
+	        << Neigh1 << ".\n"; 
     }
 
     void Edge::SetNeighbor(size_t neigh)
@@ -60,11 +62,10 @@ namespace chemfem{
       return false;
     }
     
-    std::ostream& operator<< (std::ostream& stream, const Edge& edge)
+    std::ostream& operator<<(std::ostream& os, const Edge& edge)
     {
-      stream << "[" << edge.Node0 << "," << edge.Node1 << "]";
-					       return stream;
-    }
-    
+      os << " ( " << edge.Node0 << " , " << edge.Node1 << " ) ";
+      return os;
+    }    
   }
 }

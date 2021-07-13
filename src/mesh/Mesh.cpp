@@ -60,6 +60,13 @@ namespace chemfem{
         {
 	os << " " << std::setw(3) << k << " : " << (*it_cells) << std::endl;
         }
+
+      os << "\nEdges:\n";
+      std::vector<Edge>::const_iterator it_edges;
+      for(it_edges = mesh.Edges.begin(), k=0; it_edges != mesh.Edges.end(); ++it_edges, ++k)
+        {
+	os << " " << std::setw(3) << k << " : " << (*it_edges) << std::endl;
+        }
       return os;
     }
     
