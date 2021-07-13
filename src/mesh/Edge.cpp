@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "mesh/Edge.h"
 
 namespace chemfem{
@@ -24,6 +26,17 @@ namespace chemfem{
 	        << Neigh1 << ".\n"; 
     }
 
+    size_t Edge::GetNeighborByLocalIndex(int cell) const
+    {
+      if(cell == 0)
+        return Neigh0;
+      else if(cell == 1)
+        return Neigh1;
+      else
+        std::cerr << "Error in GetNeighborByIndex: The specified cell with local index " << cell
+		  << " is not associated with the edge.\n"; 
+    }
+
     void Edge::SetNeighbor(size_t neigh)
     {
       if(Neigh0 == -1)
@@ -31,7 +44,7 @@ namespace chemfem{
       else if(Neigh1 == -1)
         {
 	Neigh1 = neigh;
-	type = BOUNDARY_EDGE;
+	type = INTERFACE_EDGE;
         }
       else
         std::cerr << "Error: You try to assign a neighbor to the edge where the neighbors are already set.\n";
@@ -64,7 +77,9 @@ namespace chemfem{
     
     std::ostream& operator<<(std::ostream& os, const Edge& edge)
     {
-      os << " ( " << edge.Node0 << " , " << edge.Node1 << " ) ";
+      std::string type_str = edge.type==BOUNDARY_EDGE ? "boundary edge" : "interface edge"; 
+      os << " nodes: ( " << edge.Node0 << " , " << edge.Node1 << " ),  cells: ( "
+	 << edge.Neigh0 << " , " << edge.Neigh1 << " ) - " << type_str;
       return os;
     }    
   }

@@ -130,11 +130,15 @@ namespace chemfem{
       Edges.clear();
       
       std::vector<Cell>::iterator cell;
-
+      size_t cell_ind;
+      
       // Remove all edge information
-      for(cell = Cells.begin(); cell != Cells.end(); ++cell)
-	for(int k=0; k<3; ++k)
-	  cell->LocEdge[k] = -1;
+      for(cell = Cells.begin(), cell_ind=0; cell != Cells.end(); ++cell, ++cell_ind)
+	{
+	  cell->SetIndex(cell_ind);
+	  for(int k=0; k<3; ++k)
+	    cell->LocEdge[k] = -1;
+	}
 
       for(cell = Cells.begin(); cell != Cells.end(); ++cell)
 	{
@@ -156,7 +160,7 @@ namespace chemfem{
 		// Edge does not exist, add to edge list
 		new_edge.SetNeighbor(cell->Index());
 		Edges.push_back(new_edge);
-		cell->LocEdge[i] = Edges.size();
+		cell->LocEdge[i] = Edges.size()-1;
 	        }
 	    }
 	}

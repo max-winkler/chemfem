@@ -40,15 +40,15 @@ Vector exact_grad(double x, double y)
 
 int main()
 {
-  Mesh mesh = UnitSquareMesh(3);
+  Mesh mesh = UnitSquareMesh(10);
   // \todo Solution procedure not correct after regular refinement. Fix this!
-  const int max_iter = 7;
+  const int max_iter = 1;
 
   std::vector<double> l2_errors, h1_errors;
   
   for(int iter=0; iter<max_iter; ++iter)
     {
-      std::cout << " Computation on level " << iter << std::endl;
+      std::cout << " Computation on level " << iter+1 << std::endl;
       std::cout << "======================================\n";
       
       std::cout << "Nr of nodes : " << mesh.NrNodes() << std::endl;
@@ -56,7 +56,7 @@ int main()
 
       std::cout << mesh << std::endl;
       
-      LagrangeElement element(3);
+      LagrangeElement element(1);
       FESpace Space(mesh, element);
       
       std::cout << "Space:\n" << Space << std::endl;

@@ -56,7 +56,7 @@ namespace chemfem{
 	      int NrNeighs = it_edge->Type() == EdgeType::BOUNDARY_EDGE ? 1:2;
 	      for(int loc_ind=0; loc_ind < NrNeighs; ++loc_ind)
 		{
-		  int cell_ind = it_edge->GetNeighbor(loc_ind);
+		  int cell_ind = it_edge->GetNeighborByLocalIndex(loc_ind);
 		  Cell& cur_cell = mesh.Cells[cell_ind];
 
 		  int edge_ind = 0;

@@ -29,10 +29,16 @@ namespace chemfem{
       std::pair<size_t, size_t> GetNeighbors() const;
 
       /**
-       * Returns a reference to the neighbor cell which is not the cell specified in the argument
+       * Returns the index of the cell adjacent to the edge which is not the cell 
+       * specified in the argument
        */
       size_t GetNeighbor(size_t) const;
 
+      /**
+       * Returns the index of the cell adjacent to the edge. The input value is either 0 or 1.
+       */
+      size_t GetNeighborByLocalIndex(int) const;
+	    
       /**
        * Assigns a neighbor to the edge
        */
