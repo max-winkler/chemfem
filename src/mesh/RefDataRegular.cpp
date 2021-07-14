@@ -11,7 +11,7 @@ namespace chemfem{
   namespace mesh{
 
     RefDataRegular::RefDataRegular()
-      : RefData(4, 6, 9)
+      : RefData(4, 6, 9, 3)
     {            
       NewCells = DatNewCells;
       NewCellEdges = DatNewCellEdges;

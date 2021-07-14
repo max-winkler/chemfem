@@ -39,13 +39,17 @@ namespace chemfem{
 
     void Edge::SetNeighbor(size_t neigh)
     {
+      if(Neigh0 == neigh)
+        return;
+      
       if(Neigh0 == -1)
         Neigh0 = neigh;
-      else if(Neigh1 == -1)
+      else if(Neigh1 == -1 && Neigh1 != neigh)
         {
 	Neigh1 = neigh;
 	type = INTERFACE_EDGE;
         }
+      else if(Neigh1 == neigh || Neigh0 == neigh) {}
       else
         std::cerr << "Error: You try to assign a neighbor to the edge where the neighbors are already set.\n";
     }

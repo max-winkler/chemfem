@@ -3,8 +3,8 @@
 namespace chemfem{
   namespace mesh{
 
-    RefData::RefData(int NrNewCells, int NrNewNodes, int NrNewEdges)
-      : NrNewCells(NrNewCells), NrNewNodes(NrNewNodes), NrNewEdges(NrNewEdges)
+    RefData::RefData(int NrNewCells, int NrNewNodes, int NrNewEdges, int NrInteriorEdges)
+      : NrNewCells(NrNewCells), NrNewNodes(NrNewNodes), NrNewEdges(NrNewEdges), InteriorEdgesLen(NrInteriorEdges)
     {
       // NewNodeCoords = new double[2*NrNewNodes];
       // NewCells = new int[3*NrNewCells];

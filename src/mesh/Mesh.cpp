@@ -282,65 +282,92 @@ namespace chemfem{
 	size_t* new_edges = new size_t[nr_new_edges];
 
 	for(int i=0; i<nr_new_edges; ++i)
-	  new_edges[i] = -1;
-
-	// Copy old edges 
-	for(int i=0; i<3; ++i)
-	  if(cur_ref_data.OldEdgeNewEdge[i] != -1)
-	    new_edges[cur_ref_data.OldEdgeNewEdge[i]] = cur_cell.LocEdge[i];
+	  new_edges[i] = -1;         
 	
-	// Create or retrieve new edges
-	for(int i=0; i<nr_new_edges; ++i)
+	for(int i=0; i<3; ++i)
 	  {
-	    if(new_edges[i] != -1) continue;
-	    
-	    if(false) // Test if edge already exists
-	      {
-		
-	      }
+	    // Copy old edges 
+	    if(cur_ref_data.OldEdgeNewEdgeLen[i] == 1)
+	      new_edges[cur_ref_data.OldEdgeNewEdge[i][0]] = cur_cell.LocEdge[i];
 	    else
 	      {
-		// TODO: Create new edge
-		Edge edge(new_nodes[cur_ref_data.NewEdges[i][0]],
-			  new_nodes[cur_ref_data.NewEdges[i][1]],
+	        for(int j=0; j<cur_ref_data.OldEdgeNewEdgeLen[i]; ++j)
+		{
+		  int new_edge_idx = cur_ref_data.OldEdgeNewEdge[i][j];
+		  // Create new edge
+		  Edge edge(new_nodes[cur_ref_data.NewEdges[new_edge_idx][0]],
+			  new_nodes[cur_ref_data.NewEdges[new_edge_idx][1]],
 			  EdgeType::BOUNDARY_EDGE);
-		
+		  
+
+		  if(j == 0)
+		    {
+		      new_mesh->Edges[cur_cell.LocEdge[i]] = edge;
+		      new_edges[new_edge_idx] = cur_cell.LocEdge[i];		      
+		    }
+		  else
+		    {		      
+		      new_mesh->Edges.push_back(edge);		     
+		      new_edges[new_edge_idx] = new_mesh->Edges.size()-1;
+		    }
+		}
 	      }
 	  }
+
+	// Create interior edges
+	for(int i=0; i<cur_ref_data.InteriorEdgesLen; ++i)
+	  {
+	    Edge edge(new_nodes[cur_ref_data.NewEdges[cur_ref_data.InteriorEdges[i]][0]],
+		    new_nodes[cur_ref_data.NewEdges[cur_ref_data.InteriorEdges[i]][1]],
+		    EdgeType::BOUNDARY_EDGE);
+	    
+	    new_mesh->Edges.push_back(edge);
+	    new_edges[cur_ref_data.InteriorEdges[i]] = new_mesh->Edges.size()-1;
+	  }
+
+	size_t* new_cells = new size_t[cur_ref_data.NrNewCells];
 	
-	  
 	// Create new cells
 	for(int i=0; i<cur_ref_data.GetNrCells(); ++i)
 	  {
 	    // Get nodes of new cell
 	    size_t loc_nodes[3];
-	    for(size_t k=0; k<3; ++k)
-	      {
-	        loc_nodes[k] = new_nodes[cur_ref_data.NewCells[i][k]];
-	        std::cout << "node " << k << ": "
-			  << cur_ref_data.NewCells[i][k] << " : "
-			  << Nodes[new_nodes[cur_ref_data.NewCells[i][k]]].Index() << std::endl;
-	      }
+	    for(int j=0; j<3; ++j)
+	        loc_nodes[j] = new_nodes[cur_ref_data.NewCells[i][j]];
 
 	    // Create new cell
 	    Cell new_cell(loc_nodes[0], loc_nodes[1], loc_nodes[2]);
+
+	    // Create cell-edge relations
+	    for(int j=0; j<3; ++j)
+	      new_cell.LocEdge[j] = new_edges[cur_ref_data.NewCellEdges[i][j]];
 	    
 	    // Insert cell into cell list
 	    if(i==0)
 	      {
-		// Overwrite parent cell
-		new_mesh->Cells[idx] = new_cell;
-
-		
-		// neighs[idx] = 
+	        // Overwrite parent cell
+	        Cell old_cell = new_mesh->Cells[idx];
+	        new_mesh->Cells[idx] = new_cell;
+	        new_cells[i] = idx;
 	      }
 	    else
 	      {
 		// Create new cell at end of the list
 		new_mesh->Cells.push_back(new_cell);
-	      }
+		new_cells[i] = new_mesh->Cells.size()-1;
+	      }	    
 	  }
 
+	// Create edge-cell relations
+	for(int i=0; i<cur_ref_data.NrNewCells; ++i)
+	  {
+	    for(int j=0; j<3; ++j)
+	      {
+	        int edge_idx = cur_ref_data.NewCellEdges[i][j];
+	        new_mesh->Edges[new_edges[edge_idx]].SetNeighbor(new_cells[i]);
+	      }
+	  }
+	
 	// Mark neighbor for refinement
 	/*
 	if(Edges[cur_cell.LocEdge[(max_idx+1)%3]].Type() == INTERFACE_EDGE)
@@ -356,7 +383,7 @@ namespace chemfem{
         }     
 
       // not good but for testing only
-      new_mesh->CreateEdgeList();
+      //new_mesh->CreateEdgeList();
       std::cout << "final mesh:\n" << *new_mesh << std::endl;
       
       return *new_mesh;

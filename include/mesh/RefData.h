@@ -19,7 +19,7 @@ namespace chemfem{
     public:
 
       /// Constructor which initailized the number of new cells, nodes and edges
-      RefData(int, int, int);
+      RefData(int, int, int, int);
       ~RefData();
       
       /// Returns the number of nodes
@@ -57,9 +57,16 @@ namespace chemfem{
       /// Endpoints of the new edges
       const int (*NewEdges)[2];
       /// New vertices at the midpoint of an edge (-1 if no new vertex is inserted)
-      const int *NewEdgeVertices;
+      const int* NewEdgeVertices;
+      /// Innser sized of the OldEdgeNewEdge array
+      const int *OldEdgeNewEdgeLen;
       /// New edge indices related to the old ones (-1 if the edge was refined)
-      const int *OldEdgeNewEdge;
+      const int (*OldEdgeNewEdge)[2];
+      /// List of new interior edges
+      const int* InteriorEdges;
+      /// Length of the new interior edges list
+      const int InteriorEdgesLen;
+      
     };
     
   };
