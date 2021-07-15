@@ -4,6 +4,8 @@
 
 namespace chemfem{
   namespace mesh{
+
+    Edge::Edge() : Node0(0), Node1(1), Neigh0(-1), Neigh1(-1), type(BOUNDARY_EDGE) {}
     
     Edge::Edge(size_t Node0, size_t Node1, EdgeType type) : Node0(Node0), Node1(Node1), Neigh0(-1), Neigh1(-1), type(type)
     {
@@ -39,7 +41,7 @@ namespace chemfem{
 
     void Edge::SetNeighbor(size_t neigh)
     {
-      if(Neigh0 == neigh)
+      if(Neigh0 == neigh || Neigh1 == neigh)
         return;
       
       if(Neigh0 == -1)
@@ -51,7 +53,21 @@ namespace chemfem{
         }
       else if(Neigh1 == neigh || Neigh0 == neigh) {}
       else
-        std::cerr << "Error: You try to assign a neighbor to the edge where the neighbors are already set.\n";
+        {
+	std::cerr << "Error: You try to assign a neighbor to the edge where the neighbors are already set.\n";
+	std::cerr << "  Node0  = " << Node0  << ", Node1 = "  << Node1  << std::endl;
+	std::cerr << "  Neigh0 = " << Neigh0 << ", Neigh1 = " << Neigh1 << ", neigh = " << neigh << std::endl;
+        }
+    }
+
+    void Edge::UnsetNeighbor(size_t neigh)
+    {
+      if(Neigh0 == neigh)
+        Neigh0 = -1;
+      else if(Neigh1 == neigh)
+        Neigh1 = -1;
+      else
+        std::cerr << "Error: The cell with index " << neigh << " is not adjacent to the edge.\n";
     }
     
     EdgeType Edge::Type() const

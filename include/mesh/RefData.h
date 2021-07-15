@@ -62,6 +62,8 @@ namespace chemfem{
       const int *OldEdgeNewEdgeLen;
       /// New edge indices related to the old ones (-1 if the edge was refined)
       const int (*OldEdgeNewEdge)[2];
+      /// List of old edges to new cells
+      const int *OldEdgeNewCell;
       /// List of new interior edges
       const int* InteriorEdges;
       /// Length of the new interior edges list

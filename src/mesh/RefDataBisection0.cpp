@@ -7,6 +7,7 @@ static const int DatNewEdges[][2] = {{0, 1}, {1, 3}, {3, 2}, {2, 0}, {3,0}};
 static const int DatNewEdgeVertices[] = {-1, 3, -1};
 static const int DatOldEdgeNewEdgeLen[] = {1,2,1};
 static const int DatOldEdgeNewEdge[][2] = {{0}, {1,2}, {3}};
+static const int DatOldEdgeNewCell[] = {0, -1, 1};
 static const int DatInteriorEdges[] = {4};
 
 namespace chemfem{
@@ -22,6 +23,7 @@ namespace chemfem{
       NewEdgeVertices = DatNewEdgeVertices;
       OldEdgeNewEdge = DatOldEdgeNewEdge;
       OldEdgeNewEdgeLen = DatOldEdgeNewEdgeLen;
+      OldEdgeNewCell = DatOldEdgeNewCell;
       InteriorEdges = DatInteriorEdges;
     }
     

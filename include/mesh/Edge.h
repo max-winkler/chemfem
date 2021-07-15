@@ -19,6 +19,11 @@ namespace chemfem{
     public:     
 
       /**
+       * Default constructur
+       */
+      Edge();
+      
+      /**
        * Constructor which initializes an edge by the two cells which meet in the edge.
        */
       Edge(size_t, size_t, EdgeType);
@@ -43,6 +48,12 @@ namespace chemfem{
        * Assigns a neighbor to the edge
        */
       void SetNeighbor(size_t);
+      
+      /**
+       * Removes neighbor from the edge
+       */
+      void UnsetNeighbor(size_t);
+
       
       /**
        * Returns the edge type.
