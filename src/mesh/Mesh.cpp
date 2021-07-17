@@ -382,7 +382,8 @@ namespace chemfem{
 	        int edge_idx = cur_ref_data.NewCellEdges[i][j];
 
 	        // Do not set neighbor when edge was refined by neighbor
-	        if(edge_ref_infos.find(new_edges[edge_idx]) != edge_ref_infos.end())
+	        if(edge_ref_infos.find(new_edges[edge_idx]) != edge_ref_infos.end()
+		 && new_edges[edge_idx] != ref_edge_idx)
 		continue;
 	        
 	        new_mesh->Edges[new_edges[edge_idx]].SetNeighbor(new_cells[i]);
@@ -394,7 +395,8 @@ namespace chemfem{
 	  {
 	    if(cur_ref_data.OldEdgeNewEdgeLen[i] > 1) continue;
 	    
-	    if(edge_ref_infos.find(cur_cell.LocEdge[i]) != edge_ref_infos.end())
+	    if(edge_ref_infos.find(cur_cell.LocEdge[i]) != edge_ref_infos.end()
+	       && ! ref_edge_refined)
 	      {
 	        // Get index of new cell
 	        size_t cell_idx = new_cells[cur_ref_data.OldEdgeNewCell[i]];

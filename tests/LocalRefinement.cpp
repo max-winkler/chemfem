@@ -22,6 +22,7 @@ int main()
  
   std::vector<bool> marker(mesh.NrCells(), false);
 
+  marker[3] = true;
   marker[4] = true;
  
   mesh = mesh.Refine(marker);
