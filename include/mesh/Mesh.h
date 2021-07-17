@@ -45,6 +45,9 @@ namespace chemfem{
       
       /// Copy constructor
       Mesh(const Mesh&);
+
+      /// Load mesh from file
+      Mesh(const std::string&);
       
       /**
        * Destructor which frees all allocated memory by cells, nodes and edges.

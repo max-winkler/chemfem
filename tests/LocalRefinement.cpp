@@ -15,15 +15,16 @@ using namespace chemfem::fem;
 int main()
 {
   // Build up and refine mesh
-  Mesh mesh = UnitSquareMesh(3);
+  Mesh mesh("tests/mesh.dat");
 
   mesh.WriteVtk("mesh_old.vtk");
   std::cout << mesh << std::endl;
  
   std::vector<bool> marker(mesh.NrCells(), false);
 
-  marker[3] = true;
-  marker[4] = true;
+  marker[0] = true;
+  marker[7] = true;
+
  
   mesh = mesh.Refine(marker);
   if(!mesh.Check())

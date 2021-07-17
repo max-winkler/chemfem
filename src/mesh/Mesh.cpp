@@ -40,6 +40,60 @@ namespace chemfem{
       return *this;
     }
 
+    Mesh::Mesh(const std::string& filename)
+    {
+      std::ifstream file;
+      file.open(filename);
+
+      if(!file.is_open())
+        {
+	std::cerr << "Unable to open mesh file " << filename << std::endl;
+	return;
+        }
+            
+      enum row_type {NONE, VERTEX, CELL};
+      row_type type = NONE;
+      std::string line;
+
+      size_t node_idx = 0;
+      
+      while(getline(file, line))
+        {
+	// Trim line
+	line.erase(0,line.find_first_not_of(" "));
+	line.erase(line.find_last_not_of(" ")+1);
+
+	if(line.compare("Vertices:") == 0)
+	  type = VERTEX;
+	else if(line.compare("Cells:") == 0)
+	  type = CELL;
+	else
+	  {
+	    std::stringstream stream(line);
+	    std::vector<double> data;
+	    double data_tmp;
+	    
+	    while(stream >> data_tmp)
+	      data.push_back(data_tmp);
+
+	    switch(type)
+	      {
+	      case NONE:
+	        std::cerr << "Error: Mesh file is broken.\n";
+	        std::cerr << "Detected data line before data type was specified.\n";
+	        break;
+	      case VERTEX:
+	        Nodes.push_back(Node(node_idx++, data[0], data[1]));
+	        break;
+	      case CELL:
+	        Cells.push_back(Cell((int)data[0], (int)data[1], (int)data[2]));
+	        break;
+	      }	    
+	  }
+        }
+      CreateEdgeList();
+    }
+    
     void Mesh::copy(const Mesh& other)
     {
       // \todo Find faster implementation. Edge list already created by the Refine routine.
