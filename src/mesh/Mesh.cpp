@@ -463,12 +463,12 @@ namespace chemfem{
 	if(ref_edge.Type() == INTERFACE_EDGE)
 	  {
 	    size_t neigh_cell = ref_edge.GetNeighbor(idx);
-	    if(std::find(marked_cell_idx.begin(), marked_cell_idx.end(), neigh_cell) != marked_cell_idx.end())
-	      continue;
-
-	    std::cout << "I also have to refine the neighbor with index " << neigh_cell << std::endl;
-	    marked_cell_idx.push_back(neigh_cell);
-
+	    if(std::find(marked_cell_idx.begin(), marked_cell_idx.end(), neigh_cell) == marked_cell_idx.end())
+	      {
+	        std::cout << "I also have to refine the neighbor with index " << neigh_cell << std::endl;
+	        marked_cell_idx.push_back(neigh_cell);
+	      }
+	    
 	    // Create refinement information for the neighbor	        		      
 	    EdgeRefInfo ref_info;
 	    ref_info.new_inner_vertex = new_nodes[cur_ref_data.NewEdgeVertices[(max_idx+1)%3]];
@@ -480,6 +480,7 @@ namespace chemfem{
 		    << ", new edges are " << new_edges[cur_ref_data.OldEdgeNewEdge[(max_idx+1)%3][0]]
 		    << " and " << new_edges[cur_ref_data.OldEdgeNewEdge[(max_idx+1)%3][1]] << std::endl;
 	    edge_ref_infos[ref_edge_idx] = ref_info;
+	      
 	  }
 
 	// Delete edge ref info

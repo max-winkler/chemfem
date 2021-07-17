@@ -16,6 +16,7 @@ int main()
 {
   // Build up and refine mesh
   Mesh mesh("tests/mesh.dat");
+  // Mesh mesh = UnitSquareMesh(3);
 
   mesh.WriteVtk("mesh_old.vtk");
   std::cout << mesh << std::endl;
@@ -23,6 +24,7 @@ int main()
   std::vector<bool> marker(mesh.NrCells(), false);
 
   marker[0] = true;
+  marker[3] = true;
   marker[7] = true;
 
  
