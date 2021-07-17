@@ -16,19 +16,37 @@ int main()
 {
   // Build up and refine mesh
   Mesh mesh("tests/mesh.dat");
-  // Mesh mesh = UnitSquareMesh(3);
+  //Mesh mesh = UnitSquareMesh(3);
 
+  const double mu = 0.2;
+  
   mesh.WriteVtk("mesh_old.vtk");
-  std::cout << mesh << std::endl;
- 
-  std::vector<bool> marker(mesh.NrCells(), false);
+  for(int lvl=0; lvl<4; ++lvl)
+    mesh.Refine();
+  
+  for(int lvl=0; lvl<6; ++lvl)
+    {
+      size_t nr_cells = mesh.NrCells();
+      std::cout << "Refinement level " << lvl << ": " << nr_cells << " cells.\n";
+      
+      std::vector<bool> marker(nr_cells, false);
+        
+      for(size_t i=0; i<nr_cells; ++i)
+        {
+	const Cell cell = mesh.GetCell(i);
+	const Node center = cell.Barycenter();
+	const double h = mesh.MaxDiameter();
+	
+	double dist = sqrt(pow(center.getX(), 2.) + pow(center.getY(), 2.));
 
-  marker[0] = true;
-  marker[3] = true;
-  marker[7] = true;
+	if(cell.Diameter() > h*pow(dist, 1-mu))
+	  marker[i] = true;
+        }
+      
+      mesh.Refine(marker);
+    }
+  
 
- 
-  mesh = mesh.Refine(marker);
   if(!mesh.Check())
     {
       std::cerr << "The mesh is broken!\n";

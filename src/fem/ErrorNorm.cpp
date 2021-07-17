@@ -5,7 +5,7 @@
 
 using chemfem::linalg::DenseMatrix;
 using chemfem::mesh::Node;
-using chemfem::mesh::Cell;
+using chemfem::mesh::CellInfo;
 using chemfem::quadrature::QuadratureFormula;
 
 namespace chemfem{
@@ -37,12 +37,12 @@ namespace chemfem{
       Vector Weights, Xi, Eta;
       quad.FormulaData(Weights, Xi, Eta);
       
-      std::vector<Cell>::const_iterator it_cell;
+      std::vector<CellInfo>::const_iterator it_cell;
       size_t CellInd;
         for(it_cell = mesh.GetCellList().begin(), CellInd = 0;
 	  it_cell != mesh.GetCellList().end(); ++it_cell, ++CellInd)
 	{
-	  const Cell& cell = *it_cell;
+	  const CellInfo& cell = *it_cell;
 
 	  const Node& x0 = mesh.Nodes[cell.LocNode[0]];
 	  Vector b(2);

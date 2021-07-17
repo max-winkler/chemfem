@@ -75,20 +75,24 @@ namespace chemfem{
       Mesh& RefineUniform();	
 
       /**
+       * Refine all elements
+       */
+      void Refine();
+      
+      /**
        * Refine the mesh according to the refinement description of the cells.
        */
-      Mesh& Refine(const std::vector<bool>&);
-      
+      void Refine(const std::vector<bool>&);
+
       /**
        * Returns a reference to the cell list of the mesh.
        */
-      const std::vector<Cell>& GetCellList() const;
+      const std::vector<CellInfo>& GetCellList() const;
 
       /**
        * Check if the mesh data structure is broken
        */
       bool Check();
-
 
       /**
        * Returns the volume of the parallelogram which is spanned by the vertices of the cell.
@@ -99,6 +103,16 @@ namespace chemfem{
        * Returns the Jacobian of the reference transformation.
        */
       chemfem::linalg::DenseMatrix Jacobian(size_t) const;
+
+      /**
+       * Returns a cell object which contains connectivity information and references to the nodes and edges.
+       */
+      Cell GetCell(size_t i) const;
+
+      /**
+       * Returns the mesh parameter h, i.e., the maximal element diameter.
+       */
+      double MaxDiameter() const;
       
       /**
        * Console output of the mesh information
@@ -107,7 +121,7 @@ namespace chemfem{
 
     private:
       std::vector<Node> Nodes;
-      std::vector<Cell> Cells;
+      std::vector<CellInfo> Cells;
       std::vector<Edge> Edges;
 
       /// Copies a mesh and updates the pointers to nodes and edges

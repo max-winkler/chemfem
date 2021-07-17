@@ -10,7 +10,7 @@ using chemfem::linalg::SparseMatrixInserter;
 
 using chemfem::mesh::Mesh;
 using chemfem::mesh::Node;
-using chemfem::mesh::Cell;
+using chemfem::mesh::CellInfo;
 
 using chemfem::quadrature::QuadratureFormula;
 using chemfem::quadrature::QUAD_FORMULA;
@@ -66,7 +66,7 @@ namespace chemfem{
       
       // Iterate over all cells
       int CellInd;
-      std::vector<Cell>::const_iterator cell;
+      std::vector<CellInfo>::const_iterator cell;
       for(cell = TestSpace.mesh.Cells.begin(), CellInd=0;
 	  cell != TestSpace.mesh.Cells.end(); ++cell, ++CellInd)
 	{

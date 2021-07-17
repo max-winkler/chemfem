@@ -3,7 +3,7 @@
 namespace chemfem{
   namespace fem{
 
-    using chemfem::mesh::Cell;
+    using chemfem::mesh::CellInfo;
     using chemfem::mesh::Node;
     using chemfem::mesh::Edge;
     
@@ -45,10 +45,10 @@ namespace chemfem{
       if(refElement.Type() == Lagrange)
 	{
 	  // Interpolate nodes
-	  std::vector<Cell>::const_iterator it_cell;
+	  std::vector<CellInfo>::const_iterator it_cell;
 	  for(it_cell = mesh.Cells.begin(); it_cell != mesh.Cells.end(); ++it_cell)
 	    {
-	      const Cell& cell = *it_cell;
+	      const CellInfo& cell = *it_cell;
 	      size_t cell_ind = cell.Index();
 
 	      const size_t* LocalDof = GetLocalDofMap(cell_ind);

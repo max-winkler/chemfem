@@ -18,56 +18,11 @@ namespace chemfem{
       for(size_t i=0; i<n-1; ++i)
         for(size_t j=0; j<n-1; ++j)
 	{	    
-	  Cells.push_back(Cell(i*n+j, i*n+j+1, (i+1)*n+j+1));
-	  Cells.push_back(Cell(i*n+j, (i+1)*n+j+1, (i+1)*n+j));
+	  Cells.push_back(CellInfo(i*n+j, i*n+j+1, (i+1)*n+j+1));
+	  Cells.push_back(CellInfo(i*n+j, (i+1)*n+j+1, (i+1)*n+j));
 	}
       
       CreateEdgeList();
-
-      // Boundary edges
-      /*
-      for(size_t j=0; j<n-1; ++j)
-	{
-	  Edge edge(Nodes[j], Nodes[j+1]);
-	  std::vector<Edge>::iterator it = std::find(Edges.begin(), Edges.end(), edge);
-
-	  // TODO: Remove this test when it works.
-	  if(it == Edges.end())
-	    std::cerr << "The mesh is probably corrupt. A boundary edge was not "
-		    << "found in the edge list.\n";
-
-	  BdEdges.push_back(&(*it));
-	}
-
-      for(size_t i=0; i<n-1; ++i)
-	for(int k=0; k<2; ++k)
-	  {
-	    Edge edge(i*n+(k==1?n-1:0), (i+1)*n+(k==1?n-1:0));
-	    
-	    std::vector<Edge>::iterator it = std::find(Edges.begin(), Edges.end(), edge);
-
-	    if(it == Edges.end())
-	      {
-		std::cerr << "The mesh is probably corrupt. A boundary edge was not "
-			<< "found in the edge list.\n";		
-	      }
-	    
-	    BdEdges.push_back(&(*it));
-	  }
-      
-      for(size_t j=0; j<n-1; ++j)
-	{
-	  Edge edge(Nodes[(n-1)*n+j], Nodes[(n-1)*n+j+1]);
-	  std::set<Edge>::iterator it = Edges.find(edge);
-
-	  if(it == Edges.end())
-	    std::cerr << "The mesh is probably corrupt. A boundary edge was not "
-		    << "found in the edge list.\n";
-
-	  BdEdges.push_back(&(*it));
-	}
-      */
-    }
-    
+    }   
   }
 }
