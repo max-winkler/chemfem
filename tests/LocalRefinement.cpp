@@ -18,7 +18,7 @@ int main()
   Mesh mesh("tests/mesh.dat");
   //Mesh mesh = UnitSquareMesh(3);
 
-  const double mu = 0.2;
+  const double mu = 0.01;
   
   mesh.WriteVtk("mesh_old.vtk");
   for(int lvl=0; lvl<4; ++lvl)
