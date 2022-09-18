@@ -24,11 +24,10 @@ namespace chemfem{
     class Edge;
     
     /**
-     * Class which represents a single cell (triangle/tetrahedron) of a finite element triangulation.
-     * This class stored only the indices of the edges and nodes of the cell. On-the-fly, one can create
-     * the more detailled Cell class using Mesh::GetCell(size_t).
+     * Triangular cell object storing connectivity information and instances to nodes and edges.
+     * Class provides some useful methods used in assembly and error estimation routines.
      */
-    class CellInfo
+    class Cell
     {
       friend class Edge;
       friend class Mesh;
@@ -41,10 +40,10 @@ namespace chemfem{
       /**
        * Constructor creating a new cell by its given vertices.
        */
-      CellInfo(size_t, size_t, size_t);
+      Cell(size_t, size_t, size_t);
 
       /// Copy constructor
-      CellInfo(const CellInfo&);
+      Cell(const Cell&);
       
       /**
        * Returns the index Variable
@@ -65,7 +64,7 @@ namespace chemfem{
       /**
        * Console output of the cell
        */
-      friend std::ostream& operator<<(std::ostream&, const CellInfo&);
+      friend std::ostream& operator<<(std::ostream&, const Cell&);
       
     private:
       /// Stores the indices of the 3 vertices of the triangle
@@ -75,31 +74,7 @@ namespace chemfem{
       /// Stores the index of the cell. Merely used as temporary variable during FESpace::FESpace()
       size_t index;
     };
-
-    /**
-     * Triangular cell object storing connectivity information and instances to nodes and edges.
-     * Class provides some useful methods used in assembly and error estimation routines.
-     */
-    class Cell : public CellInfo
-    {
-    public:
-      /// Create a Cell instance
-      Cell(const CellInfo&, const Node&, const Node&, const Node&);
-      
-      /// Returns the coordinates of the element barycenter. Return value is an object of type Node.
-      const Node Barycenter() const;
-
-      /// Returns the volume of the cell
-      double Volume() const;
-
-      /// Returns the diameter (length of longest edge) of the cell
-      double Diameter() const;
-      
-    private:
-      const Node& Node0;
-      const Node& Node1;
-      const Node& Node2;
-    };    
+    
   };
 };
 

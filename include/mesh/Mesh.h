@@ -77,17 +77,17 @@ namespace chemfem{
       /**
        * Refine all elements
        */
-      void Refine();
+      Mesh& Refine();
       
       /**
        * Refine the mesh according to the refinement description of the cells.
        */
-      void Refine(const std::vector<bool>&);
+      Mesh& Refine(const std::vector<bool>&);
 
       /**
        * Returns a reference to the cell list of the mesh.
        */
-      const std::vector<CellInfo>& GetCellList() const;
+      const std::vector<Cell>& GetCellList() const;
 
       /**
        * Check if the mesh data structure is broken
@@ -103,16 +103,6 @@ namespace chemfem{
        * Returns the Jacobian of the reference transformation.
        */
       chemfem::linalg::DenseMatrix Jacobian(size_t) const;
-
-      /**
-       * Returns a cell object which contains connectivity information and references to the nodes and edges.
-       */
-      Cell GetCell(size_t i) const;
-
-      /**
-       * Returns the mesh parameter h, i.e., the maximal element diameter.
-       */
-      double MaxDiameter() const;
       
       /**
        * Console output of the mesh information
@@ -121,7 +111,7 @@ namespace chemfem{
 
     private:
       std::vector<Node> Nodes;
-      std::vector<CellInfo> Cells;
+      std::vector<Cell> Cells;
       std::vector<Edge> Edges;
 
       /// Copies a mesh and updates the pointers to nodes and edges

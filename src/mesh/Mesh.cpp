@@ -86,7 +86,7 @@ namespace chemfem{
 	        Nodes.push_back(Node(node_idx++, data[0], data[1]));
 	        break;
 	      case CELL:
-	        Cells.push_back(CellInfo((int)data[0], (int)data[1], (int)data[2]));
+	        Cells.push_back(Cell(data[0], data[1], data[2]));
 	        break;
 	      }	    
 	  }
@@ -110,7 +110,7 @@ namespace chemfem{
         os << " " << std::setw(3) << k << " : " << (*it_nodes) << std::endl;
 
       os << "\nCells:\n";
-      std::vector<CellInfo>::const_iterator it_cells;
+      std::vector<Cell>::const_iterator it_cells;
       for(it_cells = mesh.Cells.begin(), k=0; it_cells != mesh.Cells.end(); ++it_cells, ++k)
         {
 	os << " " << std::setw(3) << k << " : " << (*it_cells) << std::endl;
@@ -128,12 +128,6 @@ namespace chemfem{
     size_t Mesh::NrCells() const { return Cells.size(); }
     size_t Mesh::NrNodes() const { return Nodes.size(); }
     size_t Mesh::NrEdges() const { return Edges.size(); }    
-
-    Cell Mesh::GetCell(size_t i) const
-    {
-      CellInfo info = Cells[i];
-      return Cell(info, Nodes[info.LocNode[0]], Nodes[info.LocNode[1]], Nodes[info.LocNode[2]]);
-    }
     
     void Mesh::WriteVtk(const std::string& filename) const
     {
@@ -158,12 +152,12 @@ namespace chemfem{
 	ofs << it->getX() << " " << it->getY() << " 0" << std::endl;
       
       ofs << "CELLS " << nr_cells << " " << 4*nr_cells << std::endl;
-      for (std::vector<CellInfo>::const_iterator it = Cells.begin(); it != Cells.end(); ++it)	
+      for (std::vector<Cell>::const_iterator it = Cells.begin(); it != Cells.end(); ++it)	
 	ofs << "3 " <<  it->LocNode[0] << " " << it->LocNode[1]
 	    << " " << it->LocNode[2] << std::endl;
       
       ofs << "CELL_TYPES " << nr_cells << std::endl;
-      for (std::vector<CellInfo>::const_iterator it = Cells.begin(); it != Cells.end(); ++it)	
+      for (std::vector<Cell>::const_iterator it = Cells.begin(); it != Cells.end(); ++it)	
 	ofs << 5 << std::endl;
       ofs << std::endl;
 
@@ -178,7 +172,7 @@ namespace chemfem{
 	ofs << *it << std::endl;
     }
 
-    const std::vector<CellInfo>& Mesh::GetCellList() const
+    const std::vector<Cell>& Mesh::GetCellList() const
     {
       return Cells;
     }
@@ -190,7 +184,7 @@ namespace chemfem{
       // Remove old edges
       Edges.clear();
       
-      std::vector<CellInfo>::iterator cell;
+      std::vector<Cell>::iterator cell;
       size_t cell_ind;
       
       // Remove all edge information
@@ -240,19 +234,16 @@ namespace chemfem{
       size_t new_inner_vertex;
     };
 
-    void Mesh::Refine()
+    Mesh& Mesh::Refine()
     {
-      Refine(std::vector<bool>(NrCells(), true));
+      return Refine(std::vector<bool>(NrCells(), true));
     }
     
-    void Mesh::Refine(const std::vector<bool>& cell_marker)
+    Mesh& Mesh::Refine(const std::vector<bool>& cell_marker)
     {
-<<<<<<< HEAD
-=======
       // Copy the mesh
       Mesh* new_mesh = new Mesh(*this);
       
->>>>>>> mesh_reimplementation
       // Refinement descriptors
       RefData ref_data[]
         = {RefDataBisection0(), RefDataBisection1(), RefDataBisection2()};
@@ -273,13 +264,7 @@ namespace chemfem{
 	size_t idx = marked_cell_idx.front();
 	marked_cell_idx.pop_front();
 	
-<<<<<<< HEAD
-	// std::cout << "I am about to refine element " << idx << std::endl;
-
-	CellInfo cur_cell = Cells[idx];
-=======
 	Cell cur_cell = new_mesh->Cells[idx];
->>>>>>> mesh_reimplementation
 
 	// determine largest index
 	size_t max_idx = 0;
@@ -288,15 +273,9 @@ namespace chemfem{
 	
 	// Print edge ref infos
 	/*
-<<<<<<< HEAD
-	std::cout << "Edge ref infos available for ";
-	for(std::map<size_t, EdgeRefInfo>::const_iterator it = edge_ref_infos.begin();
-	    it != edge_ref_infos.end(); ++it)
-=======
 	  std::cout << "Edge ref infos available for ";
 	  for(std::map<size_t, EdgeRefInfo>::const_iterator it = edge_ref_infos.begin();
 	  it != edge_ref_infos.end(); ++it)
->>>>>>> mesh_reimplementation
 	  {
 	  std::cout << it->first << " ";
 	  }
@@ -423,7 +402,7 @@ namespace chemfem{
 	        loc_nodes[j] = new_nodes[cur_ref_data.NewCells[i][j]];
 
 	    // Create new cell
-	    CellInfo new_cell(loc_nodes[0], loc_nodes[1], loc_nodes[2]);
+	    Cell new_cell(loc_nodes[0], loc_nodes[1], loc_nodes[2]);
 
 	    // Create cell-edge relations
 	    for(int j=0; j<3; ++j)
@@ -470,11 +449,6 @@ namespace chemfem{
 	      {
 	        // Get index of new cell
 	        size_t cell_idx = new_cells[cur_ref_data.OldEdgeNewCell[i]];
-<<<<<<< HEAD
-	        //std::cout << "I also have to refine the child cell " << cell_idx << std::endl;
-=======
-	        // std::cout << "I also have to refine the child cell " << cell_idx << std::endl;
->>>>>>> mesh_reimplementation
 	        marked_cell_idx.push_back(cell_idx);
 	      }
 	  }
@@ -485,36 +459,21 @@ namespace chemfem{
 	    size_t neigh_cell = ref_edge.GetNeighbor(idx);
 	    if(std::find(marked_cell_idx.begin(), marked_cell_idx.end(), neigh_cell) == marked_cell_idx.end())
 	      {
-<<<<<<< HEAD
-	        //std::cout << "I also have to refine the neighbor with index " << neigh_cell << std::endl;
-	        marked_cell_idx.push_back(neigh_cell);
-	      }
-	    
-=======
 	        // std::cout << "I also have to refine the neighbor with index " << neigh_cell << std::endl;
 	        marked_cell_idx.push_back(neigh_cell);
 	      }
 
->>>>>>> mesh_reimplementation
 	    // Create refinement information for the neighbor	        		      
 	    EdgeRefInfo ref_info;
 	    ref_info.new_inner_vertex = new_nodes[cur_ref_data.NewEdgeVertices[(max_idx+1)%3]];
 	    for(int k=0; k<2; ++k)		
 	      ref_info.new_edge[k] = new_edges[cur_ref_data.OldEdgeNewEdge[(max_idx+1)%3][k]];
 
-<<<<<<< HEAD
-	    /*
-	    std::cout << "CREATED Refinement info for edge " << ref_edge_idx << std::endl;
-	    std::cout << " inner node is " << ref_info.new_inner_vertex
-		    << ", new edges are " << new_edges[cur_ref_data.OldEdgeNewEdge[(max_idx+1)%3][0]]
-		    << " and " << new_edges[cur_ref_data.OldEdgeNewEdge[(max_idx+1)%3][1]] << std::endl;
-	    */
-=======
 	    //std::cout << "CREATED Refinement info for edge " << ref_edge_idx << std::endl;
 	    //std::cout << " inner node is " << ref_info.new_inner_vertex
 	    //	    << ", new edges are " << new_edges[cur_ref_data.OldEdgeNewEdge[(max_idx+1)%3][0]]
 	    //	    << " and " << new_edges[cur_ref_data.OldEdgeNewEdge[(max_idx+1)%3][1]] << std::endl;
->>>>>>> mesh_reimplementation
+
 	    edge_ref_infos[ref_edge_idx] = ref_info;
 	      
 	  }
@@ -523,13 +482,7 @@ namespace chemfem{
 	if(ref_edge_refined)
 	  edge_ref_infos.erase(ref_edge_idx);
 	
-<<<<<<< HEAD
-	// std::cout << "mesh after refinement step:\n" << *this << std::endl;
-        }     
 
-      // not good but for testing only
-      //CreateEdgeList();     
-=======
 	// std::cout << "mesh after refinement step:\n" << *new_mesh << std::endl;
         }     
 
@@ -538,7 +491,6 @@ namespace chemfem{
       //std::cout << "final mesh:\n" << *new_mesh << std::endl;
       
       return *new_mesh;
->>>>>>> mesh_reimplementation
     }
     
     /*
@@ -730,9 +682,9 @@ namespace chemfem{
 
     bool Mesh::Check()
     {
-      for(std::vector<CellInfo>::const_iterator it_cell = Cells.begin(); it_cell != Cells.end(); ++it_cell)
+      for(std::vector<Cell>::const_iterator it_cell = Cells.begin(); it_cell != Cells.end(); ++it_cell)
 	{
-	  const CellInfo& cell = *it_cell;
+	  const Cell& cell = *it_cell;
 
 	  for(int k=0; k<3; ++k)
 	    {
@@ -755,20 +707,6 @@ namespace chemfem{
 	}
       
       return true;      
-    }
-
-    double Mesh::MaxDiameter() const
-    {
-      double h = 0;
-      for(std::vector<CellInfo>::const_iterator it_cell = Cells.begin(); it_cell != Cells.end(); ++it_cell)
-        {
-	Cell cell(*it_cell, Nodes[it_cell->LocNode[0]], Nodes[it_cell->LocNode[1]], Nodes[it_cell->LocNode[2]]);
-
-	double h_cell = cell.Diameter();
-	if(h_cell > h)
-	  h = h_cell;
-        }
-      return h;
     }
     
     double Mesh::Determinant(size_t i) const

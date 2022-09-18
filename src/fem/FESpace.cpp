@@ -3,7 +3,7 @@
 namespace chemfem{
   namespace fem{
 
-    using chemfem::mesh::CellInfo;
+    using chemfem::mesh::Cell;
     using chemfem::mesh::Edge;
     using chemfem::mesh::EdgeType;
     
@@ -32,11 +32,11 @@ namespace chemfem{
       if(refElement.Type() == Lagrange)
 	{
 	  // Dofs in the vertices
-	  size_t i; std::vector<CellInfo>::iterator it_cell;
+	  size_t i; std::vector<Cell>::iterator it_cell;
 	  for(i=0, it_cell = mesh.Cells.begin();
 	      it_cell != mesh.Cells.end(); ++it_cell, ++i)
 	    {
-	      CellInfo& cell = *it_cell;
+	      Cell& cell = *it_cell;
 	      
 	      for(int j=0; j<3; ++j)
 		DofMap[i*DofPerCell+j] = cell.LocNode[j];
@@ -57,7 +57,7 @@ namespace chemfem{
 	      for(int loc_ind=0; loc_ind < NrNeighs; ++loc_ind)
 		{
 		  int cell_ind = it_edge->GetNeighborByLocalIndex(loc_ind);
-		  CellInfo& cur_cell = mesh.Cells[cell_ind];
+		  Cell& cur_cell = mesh.Cells[cell_ind];
 
 		  int edge_ind = 0;
 		  while(cur_cell.LocEdge[edge_ind] != idx_edge && edge_ind < 3)
@@ -93,7 +93,7 @@ namespace chemfem{
 	  if(refElement.Degree() >2)
 	    {
 	      // Numerate interior dofs
-	      std::vector<CellInfo>::const_iterator cell;
+	      std::vector<Cell>::const_iterator cell;
 	      for(cell = mesh.Cells.begin(); cell != mesh.Cells.end(); ++cell)
 		{
 		  size_t cell_ind = cell->Index();
@@ -117,7 +117,7 @@ namespace chemfem{
 	    continue;
 	  
 	  const Edge& edge = *it_edge;
-	  CellInfo& cell = mesh.Cells[edge.GetNeighbor(-1)];
+	  Cell& cell = mesh.Cells[edge.GetNeighbor(-1)];
 	  // TODO
 	  int edge_ind = 0;
 	  while(cell.LocEdge[edge_ind] != idx_edge && edge_ind < 3)
