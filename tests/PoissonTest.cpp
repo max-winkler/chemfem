@@ -40,9 +40,9 @@ Vector exact_grad(double x, double y)
 
 int main()
 {
-  Mesh mesh = UnitSquareMesh(10);
+  Mesh mesh = UnitSquareMesh(2);
   // \todo Solution procedure not correct after regular refinement. Fix this!
-  const int max_iter = 1;
+  const int max_iter = 8;
 
   std::vector<double> l2_errors, h1_errors;
   
@@ -54,7 +54,7 @@ int main()
       std::cout << "Nr of nodes : " << mesh.NrNodes() << std::endl;
       std::cout << "Nr of cells : " << mesh.NrCells() << std::endl;
 
-      std::cout << mesh << std::endl;
+      // std::cout << mesh << std::endl;
       
       LagrangeElement element(1);
       FESpace Space(mesh, element);
@@ -67,8 +67,6 @@ int main()
       Laplace.Assemble();
 
       SparseMatrix& Matrix = Laplace.SystemMatrix();
-
-      // std::cout << "Matrix = \n" << Matrix << std::endl;
       
       LinearForm F(Space);
       F.AddVolumeForce(f);
@@ -97,7 +95,10 @@ int main()
       h1_errors.push_back(h1_error);
 
       if(iter+1 < max_iter)
+        {
 	mesh = mesh.RefineUniform();
+	mesh = mesh.RefineUniform();
+        }
     }  
 
   std::cout << std::setw(10) << "Iteration"

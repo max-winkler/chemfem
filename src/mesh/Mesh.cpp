@@ -192,9 +192,7 @@ namespace chemfem{
     {
       // Copy the mesh
       Mesh* new_mesh = new Mesh(*this);
-
-      std::cout << "New mesh:\n" << *new_mesh << std::endl;
-
+      
       // Refinement descriptors
       RefData ref_data[]
         = {RefDataBisection0(), RefDataBisection1(), RefDataBisection2()};
@@ -215,8 +213,6 @@ namespace chemfem{
 	size_t idx = marked_cell_idx.front();
 	marked_cell_idx.pop_front();
 	
-	std::cout << "I am about to refine element " << idx << std::endl;
-
 	Cell cur_cell = new_mesh->Cells[idx];
 
 	// determine largest index
@@ -225,13 +221,15 @@ namespace chemfem{
 	if(cur_cell.LocNode[2] > cur_cell.LocNode[max_idx]) max_idx = 2;
 	
 	// Print edge ref infos
-	std::cout << "Edge ref infos available for ";
-	for(std::map<size_t, EdgeRefInfo>::const_iterator it = edge_ref_infos.begin();
-	    it != edge_ref_infos.end(); ++it)
+	/*
+	  std::cout << "Edge ref infos available for ";
+	  for(std::map<size_t, EdgeRefInfo>::const_iterator it = edge_ref_infos.begin();
+	  it != edge_ref_infos.end(); ++it)
 	  {
-	    std::cout << it->first << " ";
+	  std::cout << it->first << " ";
 	  }
 	std::cout << std::endl;
+	*/
 	
 	// Store edge index
 	size_t ref_edge_idx = cur_cell.LocEdge[(max_idx+1)%3];
@@ -242,7 +240,7 @@ namespace chemfem{
 	if(ref_edge_refined)
 	  edge_ref_info = edge_ref_infos[ref_edge_idx];
 	
-	std::cout << "I will refine edge " << ref_edge_idx << std::endl;
+	// std::cout << "I will refine edge " << ref_edge_idx << std::endl;
 	
 	// apply refinement to the cell
 	RefData& cur_ref_data = ref_data[max_idx];
@@ -257,7 +255,7 @@ namespace chemfem{
 	  {
 	    // Use vertex already created by neighbour
 	    new_nodes[3] = edge_ref_info.new_inner_vertex;
-	    std::cout << "EDGE REFINEMENT INFO FOUND! We use here node " << new_nodes[3] << std::endl;
+	    // std::cout << "EDGE REFINEMENT INFO FOUND! We use here node " << new_nodes[3] << std::endl;
 	  }
 	else
 	  {
@@ -400,7 +398,7 @@ namespace chemfem{
 	      {
 	        // Get index of new cell
 	        size_t cell_idx = new_cells[cur_ref_data.OldEdgeNewCell[i]];
-	        std::cout << "I also have to refine the child cell " << cell_idx << std::endl;
+	        // std::cout << "I also have to refine the child cell " << cell_idx << std::endl;
 	        marked_cell_idx.push_back(cell_idx);
 	      }
 	  }
@@ -409,11 +407,11 @@ namespace chemfem{
 	if(ref_edge.Type() == INTERFACE_EDGE)
 	  {
 	    size_t neigh_cell = ref_edge.GetNeighbor(idx);
-	    if(std::find(marked_cell_idx.begin(), marked_cell_idx.end(), neigh_cell) != marked_cell_idx.end())
-	      continue;
-
-	    std::cout << "I also have to refine the neighbor with index " << neigh_cell << std::endl;
-	    marked_cell_idx.push_back(neigh_cell);
+	    if(std::find(marked_cell_idx.begin(), marked_cell_idx.end(), neigh_cell) == marked_cell_idx.end())
+	      {
+	        // std::cout << "I also have to refine the neighbor with index " << neigh_cell << std::endl;
+	        marked_cell_idx.push_back(neigh_cell);
+	      }
 
 	    // Create refinement information for the neighbor	        		      
 	    EdgeRefInfo ref_info;
@@ -421,10 +419,10 @@ namespace chemfem{
 	    for(int k=0; k<2; ++k)		
 	      ref_info.new_edge[k] = new_edges[cur_ref_data.OldEdgeNewEdge[(max_idx+1)%3][k]];
 
-	    std::cout << "CREATED Refinement info for edge " << ref_edge_idx << std::endl;
-	    std::cout << " inner node is " << ref_info.new_inner_vertex
-		    << ", new edges are " << new_edges[cur_ref_data.OldEdgeNewEdge[(max_idx+1)%3][0]]
-		    << " and " << new_edges[cur_ref_data.OldEdgeNewEdge[(max_idx+1)%3][1]] << std::endl;
+	    //std::cout << "CREATED Refinement info for edge " << ref_edge_idx << std::endl;
+	    //std::cout << " inner node is " << ref_info.new_inner_vertex
+	    //	    << ", new edges are " << new_edges[cur_ref_data.OldEdgeNewEdge[(max_idx+1)%3][0]]
+	    //	    << " and " << new_edges[cur_ref_data.OldEdgeNewEdge[(max_idx+1)%3][1]] << std::endl;
 	    edge_ref_infos[ref_edge_idx] = ref_info;
 	  }
 
@@ -432,12 +430,12 @@ namespace chemfem{
 	if(ref_edge_refined)
 	  edge_ref_infos.erase(ref_edge_idx);
 	
-	std::cout << "mesh after refinement step:\n" << *new_mesh << std::endl;
+	// std::cout << "mesh after refinement step:\n" << *new_mesh << std::endl;
         }     
 
       // not good but for testing only
       //new_mesh->CreateEdgeList();
-      std::cout << "final mesh:\n" << *new_mesh << std::endl;
+      //std::cout << "final mesh:\n" << *new_mesh << std::endl;
       
       return *new_mesh;
     }
