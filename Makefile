@@ -31,7 +31,8 @@ TESTS = tests/SparseMatrixTest.o \
 	tests/MeshTest.o \
 	tests/PoissonTest.o \
 	tests/MeshRefineTest.o \
-	tests/LocalRefinement.o
+	tests/LocalRefinement.o \
+	tests/hat_function.o
 
 TESTS_BIN = $(TESTS:.o=)
 

@@ -42,7 +42,7 @@ int main()
 {
   Mesh mesh = UnitSquareMesh(10);
   // \todo Solution procedure not correct after regular refinement. Fix this!
-  const int max_iter = 1;
+  const int max_iter = 3;
 
   std::vector<double> l2_errors, h1_errors;
   
@@ -97,7 +97,7 @@ int main()
       h1_errors.push_back(h1_error);
 
       if(iter+1 < max_iter)
-	mesh = mesh.RefineUniform();
+	mesh.Refine();
     }  
 
   std::cout << std::setw(10) << "Iteration"
