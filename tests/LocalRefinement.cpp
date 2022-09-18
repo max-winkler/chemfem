@@ -15,8 +15,12 @@ using namespace chemfem::fem;
 int main()
 {
   // Build up and refine mesh
+<<<<<<< HEAD
   Mesh mesh("tests/mesh.dat");
   //Mesh mesh = UnitSquareMesh(3);
+=======
+  Mesh mesh = UnitSquareMesh(4);
+>>>>>>> mesh_reimplementation
 
   const double mu = 0.01;
   
@@ -47,6 +51,16 @@ int main()
     }
   
 
+<<<<<<< HEAD
+=======
+  marker[2] = true;
+  marker[3] = true;
+  marker[4] = true;
+  marker[8] = true;
+  marker[9] = true;
+ 
+  mesh = mesh.Refine(marker);
+>>>>>>> mesh_reimplementation
   if(!mesh.Check())
     {
       std::cerr << "The mesh is broken!\n";
@@ -54,9 +68,7 @@ int main()
     }
         
   mesh.WriteVtk("mesh.vtk");
-
   
- 
   return 0;
 }
   

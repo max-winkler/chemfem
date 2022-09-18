@@ -247,6 +247,12 @@ namespace chemfem{
     
     void Mesh::Refine(const std::vector<bool>& cell_marker)
     {
+<<<<<<< HEAD
+=======
+      // Copy the mesh
+      Mesh* new_mesh = new Mesh(*this);
+      
+>>>>>>> mesh_reimplementation
       // Refinement descriptors
       RefData ref_data[]
         = {RefDataBisection0(), RefDataBisection1(), RefDataBisection2()};
@@ -267,9 +273,13 @@ namespace chemfem{
 	size_t idx = marked_cell_idx.front();
 	marked_cell_idx.pop_front();
 	
+<<<<<<< HEAD
 	// std::cout << "I am about to refine element " << idx << std::endl;
 
 	CellInfo cur_cell = Cells[idx];
+=======
+	Cell cur_cell = new_mesh->Cells[idx];
+>>>>>>> mesh_reimplementation
 
 	// determine largest index
 	size_t max_idx = 0;
@@ -278,11 +288,17 @@ namespace chemfem{
 	
 	// Print edge ref infos
 	/*
+<<<<<<< HEAD
 	std::cout << "Edge ref infos available for ";
 	for(std::map<size_t, EdgeRefInfo>::const_iterator it = edge_ref_infos.begin();
 	    it != edge_ref_infos.end(); ++it)
+=======
+	  std::cout << "Edge ref infos available for ";
+	  for(std::map<size_t, EdgeRefInfo>::const_iterator it = edge_ref_infos.begin();
+	  it != edge_ref_infos.end(); ++it)
+>>>>>>> mesh_reimplementation
 	  {
-	    std::cout << it->first << " ";
+	  std::cout << it->first << " ";
 	  }
 	std::cout << std::endl;
 	*/
@@ -454,7 +470,11 @@ namespace chemfem{
 	      {
 	        // Get index of new cell
 	        size_t cell_idx = new_cells[cur_ref_data.OldEdgeNewCell[i]];
+<<<<<<< HEAD
 	        //std::cout << "I also have to refine the child cell " << cell_idx << std::endl;
+=======
+	        // std::cout << "I also have to refine the child cell " << cell_idx << std::endl;
+>>>>>>> mesh_reimplementation
 	        marked_cell_idx.push_back(cell_idx);
 	      }
 	  }
@@ -465,22 +485,36 @@ namespace chemfem{
 	    size_t neigh_cell = ref_edge.GetNeighbor(idx);
 	    if(std::find(marked_cell_idx.begin(), marked_cell_idx.end(), neigh_cell) == marked_cell_idx.end())
 	      {
+<<<<<<< HEAD
 	        //std::cout << "I also have to refine the neighbor with index " << neigh_cell << std::endl;
 	        marked_cell_idx.push_back(neigh_cell);
 	      }
 	    
+=======
+	        // std::cout << "I also have to refine the neighbor with index " << neigh_cell << std::endl;
+	        marked_cell_idx.push_back(neigh_cell);
+	      }
+
+>>>>>>> mesh_reimplementation
 	    // Create refinement information for the neighbor	        		      
 	    EdgeRefInfo ref_info;
 	    ref_info.new_inner_vertex = new_nodes[cur_ref_data.NewEdgeVertices[(max_idx+1)%3]];
 	    for(int k=0; k<2; ++k)		
 	      ref_info.new_edge[k] = new_edges[cur_ref_data.OldEdgeNewEdge[(max_idx+1)%3][k]];
 
+<<<<<<< HEAD
 	    /*
 	    std::cout << "CREATED Refinement info for edge " << ref_edge_idx << std::endl;
 	    std::cout << " inner node is " << ref_info.new_inner_vertex
 		    << ", new edges are " << new_edges[cur_ref_data.OldEdgeNewEdge[(max_idx+1)%3][0]]
 		    << " and " << new_edges[cur_ref_data.OldEdgeNewEdge[(max_idx+1)%3][1]] << std::endl;
 	    */
+=======
+	    //std::cout << "CREATED Refinement info for edge " << ref_edge_idx << std::endl;
+	    //std::cout << " inner node is " << ref_info.new_inner_vertex
+	    //	    << ", new edges are " << new_edges[cur_ref_data.OldEdgeNewEdge[(max_idx+1)%3][0]]
+	    //	    << " and " << new_edges[cur_ref_data.OldEdgeNewEdge[(max_idx+1)%3][1]] << std::endl;
+>>>>>>> mesh_reimplementation
 	    edge_ref_infos[ref_edge_idx] = ref_info;
 	      
 	  }
@@ -489,11 +523,22 @@ namespace chemfem{
 	if(ref_edge_refined)
 	  edge_ref_infos.erase(ref_edge_idx);
 	
+<<<<<<< HEAD
 	// std::cout << "mesh after refinement step:\n" << *this << std::endl;
         }     
 
       // not good but for testing only
       //CreateEdgeList();     
+=======
+	// std::cout << "mesh after refinement step:\n" << *new_mesh << std::endl;
+        }     
+
+      // not good but for testing only
+      //new_mesh->CreateEdgeList();
+      //std::cout << "final mesh:\n" << *new_mesh << std::endl;
+      
+      return *new_mesh;
+>>>>>>> mesh_reimplementation
     }
     
     /*
