@@ -14,31 +14,61 @@ using namespace chemfem::fem;
 
 int main()
 {
+  // Mesh refinement parameters
+  double mu     = 0.1;     // refinement strength
+  double d      = 0.5;     // refinement radius
+  int levels    = 10;      // maximum refinement levels
+    
   // Build up and refine mesh
   Mesh mesh = UnitSquareMesh(4);
 
   const double mu = 0.01;
   
   mesh.WriteVtk("mesh_old.vtk");
-  for(int lvl=0; lvl<4; ++lvl)
-    mesh.Refine();
 
-  std::vector<bool> marker(mesh.NrCells(), false);
-  
-  marker[2] = true;
-  marker[3] = true;
-  marker[4] = true;
-  marker[8] = true;
-  marker[9] = true;
- 
-  mesh = mesh.Refine(marker);
-
-  if(!mesh.Check())
+  for(int i=0; i<levels; ++i)
     {
-      std::cerr << "The mesh is broken!\n";
-      return -1;
+      std::cout << mesh << std::endl;
+
+      auto Cells = mesh.GetCellList();
+      
+      std::vector<bool> marker(mesh.NrCells(), false);
+
+      // Compute global mesh size
+      // TODO: Provide method in Mesh class to do this
+      double h = 0;
+      for(size_t c=0; c<mesh.NrCells(); ++c)
+        {
+          CellInfo info = mesh.GetCellInfo(c);
+
+          double hT = info.Diam();
+
+          if(hT > h)
+            h = hT;
+        }
+
+      // Mark elements to be refined according to the mesh refinement criterion
+      for(size_t c=0; c<mesh.NrCells(); ++c)
+        {
+          CellInfo info = mesh.GetCellInfo(c);
+
+          double hT = info.Diam();
+          double rT = info.Barycenter().Norm();
+          
+          if(hT > pow(rT/d, 1.-mu) * h)
+            {
+              std::cout << "Cell " << c << " has been marked for refinement.\n";
+              marker[c] = true;
+            }
+        }
+      
+      mesh = mesh.Refine(marker);
+      if(!mesh.Check())
+        {
+          std::cerr << "The mesh is broken!\n";
+          return -1;
+        }
     }
-        
   mesh.WriteVtk("mesh.vtk");
   
   return 0;

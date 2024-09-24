@@ -41,6 +41,11 @@ namespace chemfem{
        */
       size_t Index() const;
 
+      /**
+       * Computes the distance to another node
+       */
+      double Dist(const Node&) const;
+      
       friend std::ostream& operator<< (std::ostream&, const Node&);
     private:
       double x, y;

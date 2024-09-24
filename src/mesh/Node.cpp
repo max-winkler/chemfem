@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "mesh/Node.h"
 
 namespace chemfem{
@@ -13,6 +15,11 @@ namespace chemfem{
       return index;
     }
 
+    double Node::Dist(const Node& other) const
+    {
+      return sqrt(pow(x-other.x, 2.) + pow(y-other.y, 2.));
+    }
+    
     std::ostream& operator<< (std::ostream& stream, const Node& node)
     {
       stream << "(" << node.x << "," << node.y << ")";

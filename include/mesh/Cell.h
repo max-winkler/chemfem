@@ -28,9 +28,10 @@ namespace chemfem{
      * Class provides some useful methods used in assembly and error estimation routines.
      */
     class Cell
-    {
+    {      
       friend class Edge;
       friend class Mesh;
+      friend class CellInfo;
       friend class chemfem::fem::FESpace;
       friend class chemfem::fem::BilinearForm;
       friend class chemfem::fem::LinearForm;
