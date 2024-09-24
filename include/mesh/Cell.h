@@ -27,9 +27,10 @@ namespace chemfem{
      * Class which represents a single cell (triangle/tetrahedron) of a finite element triangulation.
      */
     class Cell
-    {
+    {      
       friend class Edge;
       friend class Mesh;
+      friend class CellInfo;
       friend class chemfem::fem::FESpace;
       friend class chemfem::fem::BilinearForm;
       friend class chemfem::fem::LinearForm;

@@ -9,6 +9,7 @@ OBJ = 	src/linalg/Vector.o \
 	src/mesh/Node.o \
 	src/mesh/Cell.o \
 	src/mesh/Edge.o \
+	src/mesh//CellInfo.o \
 	src/mesh/Mesh.o \
 	src/mesh/UnitSquareMesh.o \
 	src/mesh/RefData.o \
