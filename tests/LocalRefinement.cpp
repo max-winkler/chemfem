@@ -21,8 +21,6 @@ int main()
     
   // Build up and refine mesh
   Mesh mesh = UnitSquareMesh(4);
-
-  const double mu = 0.01;
   
   mesh.WriteVtk("mesh_old.vtk");
 
