@@ -660,10 +660,10 @@ namespace chemfem{
     {
       double x[3], y[3];
       for(int k=0; k<3; ++k)
-	{
-	  x[k] = Nodes[Cells[i].LocNode[k]].getX();
-	  y[k] = Nodes[Cells[i].LocNode[k]].getY();
-	}
+        {
+          x[k] = Nodes[Cells[i].LocNode[k]].getX();
+          y[k] = Nodes[Cells[i].LocNode[k]].getY();
+        }
       
       return (x[1]-x[0])*(y[2]-y[0]) - (x[2]-x[0])*(y[1]-y[0]);
     }
@@ -688,6 +688,12 @@ namespace chemfem{
       return Jac;
     }
 
+    CellInfo Mesh::GetCellInfo(size_t i) const
+    {
+      return CellInfo(Nodes[Cells[i].LocNode[0]],
+                      Nodes[Cells[i].LocNode[1]],
+                      Nodes[Cells[i].LocNode[2]]);
+    }
   };
 };
 

@@ -9,6 +9,7 @@
 #include "mesh/Node.h"
 #include "mesh/Cell.h"
 #include "mesh/Edge.h"
+#include "mesh/CellInfo.h"
 
 #include "linalg/Vector.h"
 
@@ -86,7 +87,6 @@ namespace chemfem{
        */
       bool Check();
 
-
       /**
        * Returns the volume of the parallelogram which is spanned by the vertices of the cell.
        */
@@ -96,7 +96,12 @@ namespace chemfem{
        * Returns the Jacobian of the reference transformation.
        */
       chemfem::linalg::DenseMatrix Jacobian(size_t) const;
-      
+
+      /**
+       * Create CellInfo object providing geometric computations for a mesh cell.
+       */
+      CellInfo GetCellInfo(size_t) const;
+            
       /**
        * Console output of the mesh information
        */
