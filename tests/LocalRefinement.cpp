@@ -20,7 +20,7 @@ int main()
   int levels    = 10;      // maximum refinement levels
     
   // Build up and refine mesh
-  Mesh mesh = UnitSquareMesh(4);
+  UnitSquareMesh mesh(4);
   
   mesh.WriteVtk("mesh_old.vtk");
 
@@ -60,7 +60,7 @@ int main()
             }
         }
       
-      mesh = mesh.Refine(marker);
+      mesh.Refine(marker);
       if(!mesh.Check())
         {
           std::cerr << "The mesh is broken!\n";

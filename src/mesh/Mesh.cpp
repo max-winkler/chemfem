@@ -3,6 +3,8 @@
 #include <iomanip>
 #include <map>
 #include <algorithm>
+#include <cmath>
+#include <cassert>
 
 #include "mesh/Mesh.h"
 
@@ -141,7 +143,10 @@ namespace chemfem{
 
       size_t nr_cells = NrCells();
       size_t nr_nodes = NrNodes();
-      
+
+      assert(Nodes.size() == nr_nodes);
+      assert(Cells.size() == nr_cells);
+ 
       ofs << "# vtk DataFile Version 3.0" << std::endl;
       ofs << "2D scalar" <<std::endl;
       ofs << "ASCII" <<std::endl;
@@ -168,6 +173,12 @@ namespace chemfem{
 
       Vector::const_iterator it;
       size_t i;
+      assert(x.size() == nr_nodes);
+
+      if (x.size() != nr_nodes) {
+        std::cerr << "Mismatch in size of x: expected " << nr_nodes << ", got " << x.size() << std::endl;
+      }
+      
       for (i=0, it = x.begin(); i<nr_nodes; ++it, ++i)
         ofs << *it << std::endl;
     }
@@ -221,11 +232,10 @@ namespace chemfem{
         }
     }
 
-    Mesh& Mesh::RefineUniform()
+    void Mesh::RefineUniform()
     {
       std::vector<bool> cell_marker(NrCells(), true);            
-      Refine(cell_marker);
-      return *this;
+      Refine(cell_marker);      
     }
 
     struct EdgeRefInfo
@@ -234,20 +244,16 @@ namespace chemfem{
       size_t new_inner_vertex;
     };
 
-    Mesh& Mesh::Refine()
+    void Mesh::Refine()
     {
-      return Refine(std::vector<bool>(NrCells(), true));
+      Refine(std::vector<bool>(NrCells(), true));
     }
     
-    Mesh& Mesh::Refine(const std::vector<bool>& cell_marker)
-    {
-      // Copy the mesh
-      Mesh* new_mesh = new Mesh(*this);
-      
+    void Mesh::Refine(const std::vector<bool>& cell_marker)
+    {     
       // Refinement descriptors
       RefData ref_data[]
         = {RefDataBisection0(), RefDataBisection1(), RefDataBisection2()};
-      RefDataBisection0 tmp;
       
       std::deque<size_t> marked_cell_idx;
 
@@ -264,13 +270,42 @@ namespace chemfem{
           size_t idx = marked_cell_idx.front();
           marked_cell_idx.pop_front();
 	
-          Cell cur_cell = new_mesh->Cells[idx];
+          Cell cur_cell = Cells[idx];
 
-          // determine largest index
+          // determine index opposite to refinement edge
           size_t max_idx = 0;
-          if(cur_cell.LocNode[1] > cur_cell.LocNode[0]) max_idx = 1;
-          if(cur_cell.LocNode[2] > cur_cell.LocNode[max_idx]) max_idx = 2;
-	
+          if(!cur_cell.orig)
+            {
+              // cell obtained by bisection before, choose largest index
+              if(cur_cell.LocNode[1] > cur_cell.LocNode[0]) max_idx = 1;
+              if(cur_cell.LocNode[2] > cur_cell.LocNode[max_idx]) max_idx = 2;
+            }
+          else
+            {
+              // original cell detected, choose vertex opposite longest edge
+              
+              // vertex coordinates
+              double x[3], y[3];
+              for(int i=0; i<3; ++i)
+                {
+                  x[i] = Nodes[cur_cell.LocNode[i]].getX();
+                  y[i] = Nodes[cur_cell.LocNode[i]].getY();
+                }
+
+              // edge lengths
+              double L[3];
+              for(int i=0; i<3; ++i)                
+                L[i] = sqrt(pow(x[(i+1)%3]-x[i], 2.) + pow(y[(i+1)%3]-y[i], 2.));
+
+              // index of longest edge
+              int max_edge_idx = 0;
+              if(L[1] > L[0]) max_edge_idx = 1;
+              if(L[2] > L[max_edge_idx]) max_edge_idx = 2;
+
+              // opposite vertex index
+              max_idx = (2+max_edge_idx)%3;              
+            }          
+          
           // Print edge ref infos
           /*
             std::cout << "Edge ref infos available for ";
@@ -403,7 +438,8 @@ namespace chemfem{
 
               // Create new cell
               Cell new_cell(loc_nodes[0], loc_nodes[1], loc_nodes[2]);
-
+              new_cell.orig = false;
+              
               // Create cell-edge relations
               for(int j=0; j<3; ++j)
                 new_cell.LocEdge[j] = new_edges[cur_ref_data.NewCellEdges[i][j]];
@@ -478,19 +514,19 @@ namespace chemfem{
 	      
             }
 
-          // Delete edge ref info
+          // Clean up
           if(ref_edge_refined)
             edge_ref_infos.erase(ref_edge_idx);
-	
 
+          delete[] new_cells;
+          delete[] new_edges;          
+          
           // std::cout << "mesh after refinement step:\n" << *new_mesh << std::endl;
         }     
 
       // not good but for testing only
       //new_mesh->CreateEdgeList();
-      //std::cout << "final mesh:\n" << *new_mesh << std::endl;
-      
-      return *new_mesh;
+      //std::cout << "final mesh:\n" << *new_mesh << std::endl;            
     }
     
     /*

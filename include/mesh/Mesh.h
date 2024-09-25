@@ -72,17 +72,17 @@ namespace chemfem{
       /**
        * Refine the mesh uniformly (all triangles are decomposed into 4 of equivalent size)
        */
-      Mesh& RefineUniform();	
+      void RefineUniform();	
 
       /**
        * Refine all elements
        */
-      Mesh& Refine();
+      void Refine();
       
       /**
        * Refine the mesh according to the refinement description of the cells.
        */
-      Mesh& Refine(const std::vector<bool>&);
+      void Refine(const std::vector<bool>&);
 
       /**
        * Returns a reference to the cell list of the mesh.

@@ -6,7 +6,7 @@
 namespace chemfem{
   namespace mesh{
 
-    Cell::Cell(size_t n1, size_t n2, size_t n3)
+    Cell::Cell(size_t n1, size_t n2, size_t n3) : index(0), orig(true)
     {
       LocNode[0] = n1;
       LocNode[1] = n2;
@@ -14,13 +14,10 @@ namespace chemfem{
     }
 
     Cell::Cell(const Cell& other)
-      : index(other.index)
+      : index(other.index), orig(other.orig)
     {
-      for(int k=0; k<3; ++k)
-	{
-	  LocNode[k] = other.LocNode[k];
-	  LocEdge[k] = other.LocEdge[k];
-	}
+      std::copy(other.LocNode, other.LocNode+3, LocNode);
+      std::copy(other.LocEdge, other.LocEdge+3, LocEdge);
     }
 
     std::ostream& operator<<(std::ostream& os, const Cell& cell)

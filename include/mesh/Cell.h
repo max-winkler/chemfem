@@ -74,6 +74,8 @@ namespace chemfem{
       int LocEdge[3];
       /// Stores the index of the cell. Merely used as temporary variable during FESpace::FESpace()
       size_t index;
+      /// A flag to figure our if the cell was obtained from the bisection of another cell
+      size_t orig;
     };
     
   };

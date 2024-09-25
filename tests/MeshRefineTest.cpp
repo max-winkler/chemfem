@@ -25,13 +25,13 @@ double c(double x, double y)
 int main()
 {
   // Build up and refine mesh
-  Mesh mesh = UnitSquareMesh(3);
+  UnitSquareMesh mesh(3);
   mesh.WriteVtk("mesh_old.vtk");
 
   for(int k=0; k<5; ++k)
     {
       std::cout << "Refinement #" << k << std::endl;
-      mesh = mesh.RefineUniform();  
+      mesh.RefineUniform();  
       mesh.Check();
     }
   mesh.WriteVtk("mesh.vtk");

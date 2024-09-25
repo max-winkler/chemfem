@@ -97,8 +97,8 @@ int main()
 
       if(iter+1 < max_iter)
         {
-	mesh = mesh.RefineUniform();
-	mesh = mesh.RefineUniform();
+          mesh.RefineUniform();
+          mesh.RefineUniform();
         }
     }  
 
