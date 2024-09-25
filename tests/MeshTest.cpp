@@ -6,7 +6,8 @@ using namespace chemfem::mesh;
 
 int main()
 {
-  Mesh mesh(UnitSquareMesh(10));
+  LShapeMesh mesh(5);
+  
   mesh.WriteVtk("mesh.vtk", Vector(mesh.NrNodes()));
   return 0;
 }

@@ -12,6 +12,7 @@ OBJ = 	src/linalg/Vector.o \
 	src/mesh//CellInfo.o \
 	src/mesh/Mesh.o \
 	src/mesh/UnitSquareMesh.o \
+	src/mesh/LShapeMesh.o \
 	src/mesh/RefData.o \
 	src/mesh/RefDataRegular.o \
 	src/mesh/RefDataBisection0.o \
@@ -32,8 +33,7 @@ TESTS = tests/SparseMatrixTest.o \
 	tests/MeshTest.o \
 	tests/PoissonTest.o \
 	tests/MeshRefineTest.o \
-	tests/LocalRefinement.o \
-	tests/hat_function.o
+	tests/LocalRefinement.o
 
 TESTS_BIN = $(TESTS:.o=)
 

@@ -34,7 +34,6 @@ namespace chemfem{
     class Mesh
     {
       // Friend declarations
-      friend class UnitSquareMesh;
       friend class chemfem::fem::FESpace;
       friend class chemfem::fem::BilinearForm;
       friend class chemfem::fem::LinearForm;
@@ -116,15 +115,17 @@ namespace chemfem{
       friend std::ostream& operator<<(std::ostream&, const Mesh&);
 
     private:
+
+      /// Copies a mesh and updates the pointers to nodes and edges
+      void copy(const Mesh&);
+
+    protected:
+      void CreateEdgeList();
+      
       std::vector<Node> Nodes;
       std::vector<Cell> Cells;
       std::vector<Edge> Edges;
 
-      /// Copies a mesh and updates the pointers to nodes and edges
-      void copy(const Mesh&);
-      
-      void CreateEdgeList();
-      
     };
     
   };

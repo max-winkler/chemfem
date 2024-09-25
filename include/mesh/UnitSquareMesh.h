@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-#include "mesh/Mesh.h"
+#include "mesh/LShapeMesh.h"
 
 namespace chemfem{
   namespace mesh{
