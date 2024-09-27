@@ -26,7 +26,12 @@ namespace chemfem{
       
     public:
       FEExpression(ExpressionType); 
-      FEExpression(ExpressionType, ScalarFunction); 
+      FEExpression(ExpressionType, ScalarFunction);
+
+      // \todo These functions are added to avoid these friend declarations. Use these functions in BilinearForm and LinearForm too.
+      ExpressionType GetType() const;
+      double EvalCoeff(double x, double y) const;
+        
     private:
       ExpressionType Type;
       ScalarFunction Coeff;

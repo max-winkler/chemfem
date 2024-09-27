@@ -8,6 +8,15 @@ namespace chemfem{
 
     FEExpression::FEExpression(ExpressionType Type)
       : Type(Type), Coeff(nullptr) {}
-    
+
+    ExpressionType FEExpression::GetType() const
+    {
+      return Type;
+    }
+
+    double FEExpression::EvalCoeff(double x, double y) const
+    {
+      return Coeff(x,y);
+    }
   }
 }

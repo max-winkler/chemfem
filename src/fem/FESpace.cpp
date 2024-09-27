@@ -179,6 +179,11 @@ namespace chemfem{
       return nr_free_dof;
     }
 
+    size_t FESpace::NrLocalDof() const
+    {
+      return DofPerCell;
+    }
+
     const Element& FESpace::RefElement() const
     {
       return refElement;

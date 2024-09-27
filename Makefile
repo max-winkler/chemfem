@@ -26,14 +26,16 @@ OBJ = 	src/linalg/Vector.o \
 	src/fem/FEExpression.o \
 	src/fem/LinearForm.o \
 	src/fem/BilinearForm.o \
-	src/fem/ErrorNorm.o
+	src/fem/ErrorNorm.o \
+	src/fem/ErrorEstimator.o	
 
 TESTS = tests/SparseMatrixTest.o \
 	tests/DenseMatrixTest.o \
 	tests/MeshTest.o \
 	tests/PoissonTest.o \
 	tests/MeshRefineTest.o \
-	tests/LocalRefinement.o
+	tests/LocalRefinement.o \
+	tests/AdaptivityTest.o
 
 TESTS_BIN = $(TESTS:.o=)
 

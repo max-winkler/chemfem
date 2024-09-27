@@ -37,6 +37,11 @@ namespace chemfem{
        * Returns the number of free DOFs (DOFs that are not fixed by essential boundary conditions).
        */
       size_t NrFreeDof() const;
+
+      /**
+       * Returns the number of local degrees of freedom
+       */
+      size_t NrLocalDof() const;
       
       /**
        * Returns the global index of a local degree of freedom. The first argument 

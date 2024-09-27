@@ -15,6 +15,7 @@ namespace chemfem::fem{
   class BilinearForm;
   class LinearForm;
   class ErrorNorm;
+  class ErrorEstimator;
 }
 
 namespace chemfem{
@@ -32,10 +33,13 @@ namespace chemfem{
       friend class Edge;
       friend class Mesh;
       friend class CellInfo;
+
+      // \todo There forward declarations are not nice. We should avoid this and offer getter-functions for the required things.
       friend class chemfem::fem::FESpace;
       friend class chemfem::fem::BilinearForm;
       friend class chemfem::fem::LinearForm;
       friend class chemfem::fem::ErrorNorm;
+      friend class chemfem::fem::ErrorEstimator;
       
     public:
       /**
