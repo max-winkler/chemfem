@@ -1,6 +1,9 @@
 #include <iomanip>
 
 #include "mesh/CellInfo.h"
+#include "linalg/Vector.h"
+
+using chemfem::linalg::Vector;
 
 namespace chemfem{
   namespace mesh{
@@ -47,6 +50,17 @@ namespace chemfem{
         }
     }
 
+    chemfem::linalg::Vector CellInfo::Normal(int k) const
+    {
+      Vector n(2);
+
+      n[0] = LocNode[(k+1)%3].getY() - LocNode[k].getY();
+      n[1] = LocNode[k].getX() - LocNode[(k+1)%3].getX();
+
+      n *= (1./n.Norm());
+      return n;
+    }
+    
     std::ostream& operator<<(std::ostream& os, const CellInfo& info)
     {
       os << "( ";

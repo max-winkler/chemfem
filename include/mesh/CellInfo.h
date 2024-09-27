@@ -40,6 +40,11 @@ namespace chemfem{
        * Returns the element's barycenter
        */
       chemfem::linalg::Vector Barycenter() const;
+
+      /**
+       * Returns the normal vector at the k-th edge
+       */
+      chemfem::linalg::Vector Normal(int) const;
       
       /**
        * Console output of the cell info

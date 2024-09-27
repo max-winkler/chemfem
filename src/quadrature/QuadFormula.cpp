@@ -97,6 +97,22 @@ namespace chemfem{
 	  Weights[15] = 0.01084645180365496;
 
 	  break;
+
+    case LINE_GAUSS_5:
+
+      Weights[0] = 0.5 * 0.236926885;
+      Weights[1] = 0.5 * 0.478628670;
+      Weights[2] = 0.5 * 0.568888889;
+      Weights[3] = 0.5 * 0.478628670;
+      Weights[4] = 0.5 * 0.236926885;
+
+      Xi[0] = 0.5 * (1 - 0.906179846);
+      Xi[1] = 0.5 * (1 - 0.538469310);
+      Xi[2] = 0.5 * (1 + 0.000000000);
+      Xi[3] = 0.5 * (1 + 0.538469310);
+      Xi[3] = 0.5 * (1 + 0.906179846);
+      
+      break;
 	default:
 	  std::cerr << "Quadrature formula not implemented yet\n";
 	}

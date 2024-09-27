@@ -40,10 +40,14 @@ namespace chemfem{
       
       // Initialize quadrature formulas
       QuadratureFormula QuadFormula(QUAD_FORMULA::GAUSS_7);
+      QuadratureFormula LineQuadFormula(QUAD_FORMULA::LINE_GAUSS_5);
       
       Vector Xi, Eta, Weights;
       QuadFormula.FormulaData(Weights, Xi, Eta);
 
+      Vector XiLine, EtaLine, WeightsLine;
+      QuadFormula.FormulaData(WeightsLine, XiLine, EtaLine);
+      
       // Iterators for quadrature points
       Vector::const_iterator Wq, Xiq, Etaq;
 
@@ -64,7 +68,8 @@ namespace chemfem{
           Vector b(2); b[0] = x0.getX(); b[1] = x0.getY();
                       
           DenseMatrix Jac = mesh.Jacobian(CellInd);
-
+          DenseMatrix InvJac(Jac.Transpose().Invert());
+          
           double Val = 0.;
           
           // Iterate over all terms
@@ -87,12 +92,42 @@ namespace chemfem{
                     }
                       
                   break;
+                case EDGE_JUMP:
+                  for(int edge=0; edge<3; ++edge)
+                    {
+                      // Normal vector
+                      Vector n = Info.Normal(edge);
+                      
+                      // Iterate over quadrature points
+                      for(Wq = WeightsLine.begin(), Xiq = XiLine.begin(); Wq != WeightsLine.end(); ++Wq, ++Xiq)
+                        {
+                          // Compute gradient in quadrature point
+                          Vector GradValue(2);
+                          
+                          for(size_t k=0; k<Space.NrLocalDof(); ++k)
+                            {
+                              // Line coordinates to triangle coordinates
+                              double xi, eta;
+                              switch(edge){
+                              case 0: xi = *Xiq;    eta = 0.; break;
+                              case 1: xi = 1.-*Xiq; eta = *Xiq; break;
+                              case 2: xi = 0.;      eta = 1.-*Xiq; break;
+                              }
+                              
+                              GradValue += Space.RefElement().Gradient(k, xi, eta);
+                            }
+                          
+                          // (InvJac*GradValue[k] - ...) * n * h;
+
+                        }
+                    }
+                
                 default:
                   if(CellInd == 0)
                     std::cerr << "WARNING: Expression type not valid or not implemented yet for error estimation.\n";
                   break;
                 }
-            }
+            }       
 
           Res[CellInd] = Val;
           

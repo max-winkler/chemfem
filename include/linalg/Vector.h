@@ -89,6 +89,11 @@ namespace chemfem{
        * Adds vector to another one.
        */
       Vector& operator+=(const Vector&);
+
+      /**
+       * Scale vector by a constant
+       */
+      Vector& operator*=(double);
             
       /**
        * Returns the scalar vector product a*v.

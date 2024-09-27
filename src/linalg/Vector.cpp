@@ -116,6 +116,14 @@ namespace chemfem{
 	}
       return *this;
     }
+
+    Vector& Vector::operator*=(double s)
+    {
+      for(size_t k=0; k<n; ++k)
+        data[k] = s*data[k];
+      
+      return *this;
+    }
     
     void Vector::axpy(double a, const Vector& b, Vector& x) const
     {
