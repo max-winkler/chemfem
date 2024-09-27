@@ -99,6 +99,12 @@ namespace chemfem{
 	  break;
 
     case LINE_GAUSS_5:
+      
+      Points = 5;
+      
+      Weights = Vector(5);
+      Xi = Vector(5);
+      Eta = Vector(5);
 
       Weights[0] = 0.5 * 0.236926885;
       Weights[1] = 0.5 * 0.478628670;

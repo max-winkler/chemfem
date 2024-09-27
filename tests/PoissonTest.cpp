@@ -41,8 +41,7 @@ Vector exact_grad(double x, double y)
 int main()
 {
   Mesh mesh = UnitSquareMesh(2);
-  // \todo Solution procedure not correct after regular refinement. Fix this!
-
+  
   const int max_iter = 8;
 
   std::vector<double> l2_errors, h1_errors;
@@ -94,7 +93,7 @@ int main()
       
       l2_errors.push_back(l2_error);
       h1_errors.push_back(h1_error);
-
+      
       if(iter+1 < max_iter)
         {
           mesh.RefineUniform();
