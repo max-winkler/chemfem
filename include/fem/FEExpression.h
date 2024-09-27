@@ -11,7 +11,8 @@ namespace chemfem{
     typedef double (*ScalarFunction)(double, double);
     typedef chemfem::linalg::Vector (*VectorFunction)(double, double);
     
-    enum ExpressionType {SECOND_ORDER, FIRST_ORDER, ZERO_ORDER, VOLUME_FORCE, NEUMANN_BC};
+    enum ExpressionType {SECOND_ORDER, FIRST_ORDER, ZERO_ORDER, VOLUME_FORCE, NEUMANN_BC,
+      VOLUME_RESIDUAL, EDGE_JUMP};
 
     /**
      * This class is used to store a single term in a partial differential equation.
@@ -24,6 +25,7 @@ namespace chemfem{
       friend class LinearForm;
       
     public:
+      FEExpression(ExpressionType); 
       FEExpression(ExpressionType, ScalarFunction); 
     private:
       ExpressionType Type;

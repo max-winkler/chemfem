@@ -5,6 +5,9 @@ namespace chemfem{
 
     FEExpression::FEExpression(ExpressionType Type, ScalarFunction Coeff)
       : Type(Type), Coeff(Coeff) {}
+
+    FEExpression::FEExpression(ExpressionType Type)
+      : Type(Type), Coeff(nullptr) {}
     
   }
 }
