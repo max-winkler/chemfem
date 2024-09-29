@@ -4,6 +4,7 @@
 #include "quadrature/QuadFormula.h"
 
 using chemfem::linalg::DenseMatrix;
+using chemfem::mesh::Mesh;
 using chemfem::mesh::Node;
 using chemfem::mesh::Cell;
 using chemfem::quadrature::QuadratureFormula;

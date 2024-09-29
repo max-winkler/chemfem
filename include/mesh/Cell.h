@@ -75,7 +75,7 @@ namespace chemfem{
       /// Stores the indices of the 3 vertices of the triangle
       size_t LocNode[3];
       /// Store the indices of the 3 edges of the triangle
-      int LocEdge[3];
+      size_t LocEdge[3];
       /// Stores the index of the cell. Merely used as temporary variable during FESpace::FESpace()
       size_t index;
       /// A flag to figure our if the cell was obtained from the bisection of another cell

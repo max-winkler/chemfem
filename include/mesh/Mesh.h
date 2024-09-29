@@ -92,6 +92,11 @@ namespace chemfem{
       const std::vector<Cell>& GetCellList() const;
 
       /**
+       * Returns a reference to the edge list of the mesh.
+       */
+      const std::vector<Edge>& GetEdgeList() const;
+      
+      /**
        * Check if the mesh data structure is broken
        */
       bool Check();

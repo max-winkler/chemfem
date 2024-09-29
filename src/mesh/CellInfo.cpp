@@ -1,4 +1,5 @@
 #include <iomanip>
+#include <cmath>
 
 #include "mesh/CellInfo.h"
 #include "linalg/Vector.h"
@@ -59,6 +60,12 @@ namespace chemfem{
 
       n *= (1./n.Norm());
       return n;
+    }
+
+    double CellInfo::EdgeLength(int k) const
+    {
+      return sqrt(pow(LocNode[(k+1)%3].getX() - LocNode[k].getX(), 2.) +
+	        pow(LocNode[(k+1)%3].getY() - LocNode[k].getY(), 2.));
     }
     
     std::ostream& operator<<(std::ostream& os, const CellInfo& info)

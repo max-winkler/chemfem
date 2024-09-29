@@ -4,8 +4,6 @@
 #include "fem/Element.h"
 #include "mesh/Mesh.h"
 
-using chemfem::mesh::Mesh;
-
 namespace chemfem{
   namespace fem{   
 
@@ -26,7 +24,7 @@ namespace chemfem{
        * Initialize the finite element space by a reference to the mesh, the finite element 
        * type.
        */
-      FESpace(Mesh&, Element&);
+      FESpace(chemfem::mesh::Mesh&, Element&);
 
       /**
        * Returns the number of degrees of freedom.
@@ -63,7 +61,7 @@ namespace chemfem{
       /**
        * Returns a reference to the finite element mesh.
        */
-      const Mesh& GetMesh() const;
+      const chemfem::mesh::Mesh& GetMesh() const;
 
       /**
        * Returns a pointer to the first element of the local Dof map for the i-th cell.
@@ -100,7 +98,7 @@ namespace chemfem{
       
       Element& refElement;
 
-      Mesh& mesh;
+      chemfem::mesh::Mesh& mesh;
 
       /**
        * Saves a list of the global indices where Dirichlet boundary conditions are imposed.

@@ -8,6 +8,7 @@
 #include "fem/LagrangeElement.h"
 #include "fem/FEFunction.h"
 #include "fem/ErrorEstimator.h"
+#include "mesh/UnitSquareMesh.h"
 #include "mesh/LShapeMesh.h"
 #include "linalg/SparseMatrix.h"
 
@@ -17,6 +18,7 @@ using namespace chemfem::mesh;
 
 double f(double x, double y)
 {
+  return 1.;
   return exp(-pow((x+0.5) / 0.2, 2.) - pow((y-0.5)/0.2, 2.));
 }
 
@@ -24,8 +26,8 @@ double f(double x, double y)
 int main()
 {
   LShapeMesh mesh(10);
-
-  const int max_iter = 8;
+  std::cout << mesh << std::endl;
+  const int max_iter = 20;
 
   for(int iter=0; iter<max_iter; ++iter)
     {
@@ -62,8 +64,9 @@ int main()
 
       // ESTIMATE
       ErrorEstimator Estimator(Sol);
-      Estimator.AddVolumeResidualTerm(f);
-
+      // Estimator.AddVolumeResidualTerm(f);
+      Estimator.AddEdgeJumpTerm();
+        
       Vector Errors = Estimator.Assemble();
 
       // MARK

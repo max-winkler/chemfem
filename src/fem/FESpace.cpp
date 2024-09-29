@@ -3,6 +3,7 @@
 namespace chemfem{
   namespace fem{
 
+    using chemfem::mesh::Mesh;
     using chemfem::mesh::Cell;
     using chemfem::mesh::Edge;
     using chemfem::mesh::EdgeType;

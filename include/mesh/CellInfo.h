@@ -45,6 +45,11 @@ namespace chemfem{
        * Returns the normal vector at the k-th edge
        */
       chemfem::linalg::Vector Normal(int) const;
+
+      /**
+       * Returns length of the k-th edge
+       */
+      double EdgeLength(int) const;
       
       /**
        * Console output of the cell info

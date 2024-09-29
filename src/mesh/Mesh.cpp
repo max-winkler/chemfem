@@ -187,7 +187,12 @@ namespace chemfem{
     {
       return Cells;
     }
-    
+
+    const std::vector<Edge>& Mesh::GetEdgeList() const
+    {
+      return Edges;
+    }
+
     void Mesh::CreateEdgeList()
     {
       std::cerr << "WARNING: The routine CreateEdgeList is very slow and should be avoided\n";
