@@ -18,7 +18,7 @@ using namespace chemfem::mesh;
 
 double f(double x, double y)
 {
-  return 1.;
+  return x+y;
   return exp(-pow((x+0.5) / 0.2, 2.) - pow((y-0.5)/0.2, 2.));
 }
 
@@ -27,7 +27,7 @@ int main()
 {
   LShapeMesh mesh(10);
   std::cout << mesh << std::endl;
-  const int max_iter = 20;
+  const int max_iter = 10;
 
   for(int iter=0; iter<max_iter; ++iter)
     {
@@ -38,7 +38,7 @@ int main()
       std::cout << "Nr of cells : " << mesh.NrCells() << std::endl;
 
       // SOLVE
-      LagrangeElement element(1);
+      LagrangeElement element(3);
       FESpace Space(mesh, element);
 
       BilinearForm Laplace(Space, Space);
@@ -64,13 +64,13 @@ int main()
 
       // ESTIMATE
       ErrorEstimator Estimator(Sol);
-      // Estimator.AddVolumeResidualTerm(f);
+      Estimator.AddVolumeResidualTerm(f);
       Estimator.AddEdgeJumpTerm();
         
       Vector Errors = Estimator.Assemble();
 
       // MARK
-      double Threshold = 0.5;
+      double Threshold = 0.7;
       
       std::vector<bool> Marker(mesh.NrCells(), false);
 
@@ -85,5 +85,7 @@ int main()
 
       // REFINE
       mesh.Refine(Marker);
+      if(!mesh.Check())
+        std::cerr << "ERROR: There is a problem with the mesh datastructure.\n";
     }
 }

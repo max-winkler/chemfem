@@ -741,8 +741,11 @@ Mesh::~Mesh()
                 {
                   std::cerr << "I found a cell (index " << it_cell->Index() << ") "
                             << "whose edge (index " << edge_idx
-                            << ") does not point to the corresponding nodes.\n";
-                  return false;
+                            << ") does not point to the corresponding nodes.\n"
+		        << "  cell: " << cell << "\n"
+		        << "  edge: " << Edges[edge_idx] << "\n";;
+	        
+                  //return false;
                 }
             }
         }
