@@ -26,7 +26,7 @@ namespace chemfem{
 	  std::vector<MatrixEntry>::const_iterator it_tmp = it;
 
 	  // Sum up double entries
-	  while(*it_tmp == *it) ++it;
+	  while(it != Entries.end() && *it_tmp == *it) ++it;
 	}
 
       M.Col = new size_t[M.nnz];
@@ -43,7 +43,7 @@ namespace chemfem{
 	  std::vector<MatrixEntry>::const_iterator it_tmp = it;
 
 	  // Sum up double entries
-	  while(*it_tmp == *it)
+	  while(it != Entries.end() && *it_tmp == *it)
 	    {
 	      val += it->entry;
 	      ++it;
@@ -64,7 +64,7 @@ namespace chemfem{
       while(pos < M.nnz)
 	{
 	  size_t NrEntriesRow = 0;
-	  while(RowFull[pos] == RowFull[pos+NrEntriesRow])
+	  while(pos+NrEntriesRow < M.nnz && RowFull[pos] == RowFull[pos+NrEntriesRow])
 	    ++NrEntriesRow;
 	  
 	  M.Row[RowFull[pos]+1] = M.Row[RowFull[pos]] + NrEntriesRow;
