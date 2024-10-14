@@ -25,7 +25,8 @@ double f(double x, double y)
 
 int main()
 {
-  LShapeMesh mesh(3);
+//  LShapeMesh mesh(3);
+  UnitSquareMesh mesh(6);
   std::cout << mesh << std::endl;
   const int max_iter = 20;
 
@@ -69,7 +70,7 @@ int main()
       Vector Errors = Estimator.Assemble();
 
       // MARK
-      double Threshold = 0.8;
+      double Threshold = 0.9;
       
       std::vector<bool> Marker(mesh.NrCells(), false);
 

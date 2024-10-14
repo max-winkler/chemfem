@@ -284,6 +284,32 @@ namespace chemfem{
               // cell obtained by bisection before, choose largest index
               if(cur_cell.LocNode[1] > cur_cell.LocNode[0]) max_idx = 1;
               if(cur_cell.LocNode[2] > cur_cell.LocNode[max_idx]) max_idx = 2;
+
+	      // THE REST OF THIS BLOCK IS FOR TESTING ONLY. REMOVE LATER!!!
+	      size_t le_max_idx = 0;
+              double x[3], y[3];
+              for(int i=0; i<3; ++i)
+                {
+                  x[i] = Nodes[cur_cell.LocNode[i]].getX();
+                  y[i] = Nodes[cur_cell.LocNode[i]].getY();
+                }
+
+              // edge lengths
+              double L[3];
+              for(int i=0; i<3; ++i)                
+                L[i] = sqrt(pow(x[(i+1)%3]-x[i], 2.) + pow(y[(i+1)%3]-y[i], 2.));
+
+              // index of longest edge
+              int max_edge_idx = 0;
+              if(L[1] > L[0]) max_edge_idx = 1;
+              if(L[2] > L[max_edge_idx]) max_edge_idx = 2;
+
+              // opposite vertex index
+              le_max_idx = (2+max_edge_idx)%3;
+
+	      std::cout << "Using refinement through edge opposite to " << max_idx << ", longest edge is " << le_max_idx << std::endl;
+		  
+	      //assert(le_max_idx == max_idx);
             }
           else
             {
@@ -308,8 +334,8 @@ namespace chemfem{
               if(L[2] > L[max_edge_idx]) max_edge_idx = 2;
 
               // opposite vertex index
-              max_idx = (2+max_edge_idx)%3;              
-            }          
+              max_idx = (2+max_edge_idx)%3;
+            }
           
           // Print edge ref infos
           /*
@@ -535,7 +561,7 @@ namespace chemfem{
         }     
 
       // not good but for testing only
-      //new_mesh->CreateEdgeList();
+      CreateEdgeList();
       //std::cout << "final mesh:\n" << *new_mesh << std::endl;            
     }
     
