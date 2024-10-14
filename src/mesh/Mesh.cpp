@@ -486,13 +486,16 @@ namespace chemfem{
           for(int i=0; i<3; ++i)
             {
               if(cur_ref_data.OldEdgeNewEdgeLen[i] > 1) continue;
-	    
+
+	      // If we refined along the wrong edge one of the child elements must be refined further
               if(edge_ref_infos.find(cur_cell.LocEdge[i]) != edge_ref_infos.end()
                  && ! ref_edge_refined)
                 {
                   // Get index of new cell
                   size_t cell_idx = new_cells[cur_ref_data.OldEdgeNewCell[i]];
                   marked_cell_idx.push_back(cell_idx);
+
+		  std::cout << "Added child for refinement. This causes a mistake I think.\n";
                 }
             }
 	

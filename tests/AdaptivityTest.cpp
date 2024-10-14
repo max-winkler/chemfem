@@ -56,11 +56,10 @@ int main()
       Vector X(Matrix.Solve(Vec));
       
       Vector Res(Matrix*X - Vec);
-      std::cout << "Error of equation system: " << Res.Norm() << std::endl;
       
       FEFunction Sol(Space);
       Sol.CreateFunction(X);
-      Sol.WriteVtk("solution.vtk");
+      Sol.WriteVtk("solution_" + std::to_string(iter) + ".vtk");
 
       // ESTIMATE
       ErrorEstimator Estimator(Sol);
