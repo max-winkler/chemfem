@@ -25,9 +25,9 @@ double f(double x, double y)
 
 int main()
 {
-  LShapeMesh mesh(10);
+  LShapeMesh mesh(3);
   std::cout << mesh << std::endl;
-  const int max_iter = 10;
+  const int max_iter = 20;
 
   for(int iter=0; iter<max_iter; ++iter)
     {
@@ -38,7 +38,7 @@ int main()
       std::cout << "Nr of cells : " << mesh.NrCells() << std::endl;
 
       // SOLVE
-      LagrangeElement element(3);
+      LagrangeElement element(1);
       FESpace Space(mesh, element);
 
       BilinearForm Laplace(Space, Space);
@@ -70,7 +70,7 @@ int main()
       Vector Errors = Estimator.Assemble();
 
       // MARK
-      double Threshold = 0.7;
+      double Threshold = 0.8;
       
       std::vector<bool> Marker(mesh.NrCells(), false);
 

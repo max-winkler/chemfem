@@ -156,6 +156,8 @@ namespace chemfem{
                         }
                     }	                          
                   break;
+	      default:
+	        break;
                 }
             }       
 

@@ -1,15 +1,29 @@
 #include <iostream>
+#include <vector>
 
-#include "mesh/UnitSquareMesh.h"
+#include "mesh/Mesh.h"
 
 using namespace chemfem::mesh;
 
 int main()
 {
-  LShapeMesh mesh(5);
+  Mesh mesh("tests/mesh.dat");
 
-  mesh.Refine();
-  mesh.Refine();
+  mesh.WriteVtk("mesh_old.vtk", Vector(mesh.NrNodes()));
+  
+  std::vector<bool> marker(mesh.NrCells(), false);
+
+  marker[0] = true;
+  marker[2] = true;
+
+  mesh.Refine(marker);
+
+  std::cout << mesh;
+  
+  marker[0] = true;
+  marker[4] = true;
+
+  mesh.Refine(marker);
   
   mesh.WriteVtk("mesh.vtk", Vector(mesh.NrNodes()));
   return 0;

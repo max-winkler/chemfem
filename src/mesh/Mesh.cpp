@@ -381,10 +381,8 @@ namespace chemfem{
                   new_edges[cur_ref_data.OldEdgeNewEdge[i][0]] = cur_cell.LocEdge[i];
 
                   // Unset edge-cell relation
-                  if(edge_ref_infos.find(cur_cell.LocEdge[i]) == edge_ref_infos.end())
-                    {
-                      Edges[cur_cell.LocEdge[i]].UnsetNeighbor(idx);
-                    }
+                  if(edge_ref_infos.find(cur_cell.LocEdge[i]) == edge_ref_infos.end())                    
+		Edges[cur_cell.LocEdge[i]].UnsetNeighbor(idx);                    
                 }	   	      
               else
                 {
@@ -395,7 +393,7 @@ namespace chemfem{
                         new_edges[cur_ref_data.OldEdgeNewEdge[i][j]] = edge_ref_info.new_edge[1-j];
                     }
                   else
-                    {		  	        
+                    {
                       // Create new edges
                       for(int j=0; j<cur_ref_data.OldEdgeNewEdgeLen[i]; ++j)
                         {
@@ -407,7 +405,8 @@ namespace chemfem{
 		  
                           if(j == 0)
                             {
-                              Edges[cur_cell.LocEdge[i]] = edge;
+			// WARNING: This overwrites the original edge and loosing neighbor information
+                              Edges[cur_cell.LocEdge[i]] = edge; 
                               new_edges[new_edge_idx] = cur_cell.LocEdge[i];
                             }
                           else
@@ -474,7 +473,10 @@ namespace chemfem{
                   // Do not set neighbor when edge was refined by neighbor
                   if(edge_ref_infos.find(new_edges[edge_idx]) != edge_ref_infos.end()
                      && new_edges[edge_idx] != ref_edge_idx)
-                    continue;
+		{
+		  std::cout << "Case A - after this we have an error :(\n";
+		  continue;
+		}
 	        
                   Edges[new_edges[edge_idx]].SetNeighbor(new_cells[i]);
                 }
