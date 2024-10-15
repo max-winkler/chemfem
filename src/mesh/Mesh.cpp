@@ -531,7 +531,7 @@ namespace chemfem{
               size_t neigh_cell = ref_edge.GetNeighbor(idx);
               if(std::find(marked_cell_idx.begin(), marked_cell_idx.end(), neigh_cell) == marked_cell_idx.end())
                 {
-                  // std::cout << "I also have to refine the neighbor with index " << neigh_cell << std::endl;
+                  std::cout << "I also have to refine the neighbor with index " << neigh_cell << std::endl;
                   marked_cell_idx.push_back(neigh_cell);
                 }
 
