@@ -284,32 +284,6 @@ namespace chemfem{
               // cell obtained by bisection before, choose largest index
               if(cur_cell.LocNode[1] > cur_cell.LocNode[0]) max_idx = 1;
               if(cur_cell.LocNode[2] > cur_cell.LocNode[max_idx]) max_idx = 2;
-
-	      // THE REST OF THIS BLOCK IS FOR TESTING ONLY. REMOVE LATER!!!
-	      size_t le_max_idx = 0;
-              double x[3], y[3];
-              for(int i=0; i<3; ++i)
-                {
-                  x[i] = Nodes[cur_cell.LocNode[i]].getX();
-                  y[i] = Nodes[cur_cell.LocNode[i]].getY();
-                }
-
-              // edge lengths
-              double L[3];
-              for(int i=0; i<3; ++i)                
-                L[i] = sqrt(pow(x[(i+1)%3]-x[i], 2.) + pow(y[(i+1)%3]-y[i], 2.));
-
-              // index of longest edge
-              int max_edge_idx = 0;
-              if(L[1] > L[0]) max_edge_idx = 1;
-              if(L[2] > L[max_edge_idx]) max_edge_idx = 2;
-
-              // opposite vertex index
-              le_max_idx = (2+max_edge_idx)%3;
-
-	      std::cout << "Using refinement through edge opposite to " << max_idx << ", longest edge is " << le_max_idx << std::endl;
-		  
-	      //assert(le_max_idx == max_idx);
             }
           else
             {
@@ -335,18 +309,7 @@ namespace chemfem{
 
               // opposite vertex index
               max_idx = (2+max_edge_idx)%3;
-            }
-          
-          // Print edge ref infos
-          /*
-            std::cout << "Edge ref infos available for ";
-            for(std::map<size_t, EdgeRefInfo>::const_iterator it = edge_ref_infos.begin();
-            it != edge_ref_infos.end(); ++it)
-            {
-            std::cout << it->first << " ";
-            }
-            std::cout << std::endl;
-          */
+            }          
 	
           // Store edge index
           size_t ref_edge_idx = cur_cell.LocEdge[(max_idx+1)%3];
@@ -372,7 +335,6 @@ namespace chemfem{
             {
               // Use vertex already created by neighbour
               new_nodes[3] = edge_ref_info.new_inner_vertex;
-              // std::cout << "EDGE REFINEMENT INFO FOUND! We use here node " << new_nodes[3] << std::endl;
             }
           else
             {
@@ -406,7 +368,7 @@ namespace chemfem{
                 {
                   new_edges[cur_ref_data.OldEdgeNewEdge[i][0]] = cur_cell.LocEdge[i];
 
-                  // Unset edge-cell relation
+                  // Unset edge-cell relation if edge not refined by neighbor
                   if(edge_ref_infos.find(cur_cell.LocEdge[i]) == edge_ref_infos.end())                    
 		Edges[cur_cell.LocEdge[i]].UnsetNeighbor(idx);                    
                 }	   	      
@@ -448,12 +410,13 @@ namespace chemfem{
           // Create interior edges
           for(int i=0; i<cur_ref_data.InteriorEdgesLen; ++i)
             {
-              Edge edge(new_nodes[cur_ref_data.NewEdges[cur_ref_data.InteriorEdges[i]][0]],
-                        new_nodes[cur_ref_data.NewEdges[cur_ref_data.InteriorEdges[i]][1]],
+	    int new_edge_idx = cur_ref_data.InteriorEdges[i]; 
+              Edge edge(new_nodes[cur_ref_data.NewEdges[new_edge_idx][0]],
+                        new_nodes[cur_ref_data.NewEdges[new_edge_idx][1]],
                         EdgeType::BOUNDARY_EDGE);
 	    
               Edges.push_back(edge);
-              new_edges[cur_ref_data.InteriorEdges[i]] = Edges.size()-1;
+              new_edges[new_edge_idx] = Edges.size()-1;
             }
 
           size_t* new_cells = new size_t[cur_ref_data.NrNewCells];
@@ -496,11 +459,12 @@ namespace chemfem{
                 {
                   int edge_idx = cur_ref_data.NewCellEdges[i][j];
 
-                  // Do not set neighbor when edge was refined by neighbor
+                  // Do not set neighbor when edge not to be refined was refined by neighbor
+	        // In this case we will refine one of the children
                   if(edge_ref_infos.find(new_edges[edge_idx]) != edge_ref_infos.end()
                      && new_edges[edge_idx] != ref_edge_idx)
 		{
-		  std::cout << "Case A - after this we have an error :(\n";
+		  std::cout << "Case A - We have to further refine a child element\n";
 		  continue;
 		}
 	        
@@ -521,7 +485,7 @@ namespace chemfem{
                   size_t cell_idx = new_cells[cur_ref_data.OldEdgeNewCell[i]];
                   marked_cell_idx.push_back(cell_idx);
 
-		  std::cout << "Added child for refinement. This causes a mistake I think.\n";
+	        std::cout << "Case A1 - Added child for refinement.\n";
                 }
             }
 	
@@ -531,7 +495,7 @@ namespace chemfem{
               size_t neigh_cell = ref_edge.GetNeighbor(idx);
               if(std::find(marked_cell_idx.begin(), marked_cell_idx.end(), neigh_cell) == marked_cell_idx.end())
                 {
-                  // std::cout << "I also have to refine the neighbor with index " << neigh_cell << std::endl;
+                  std::cout << "Case A2 - Added neighbor " << neigh_cell << " for refinement\n";
                   marked_cell_idx.push_back(neigh_cell);
                 }
 
