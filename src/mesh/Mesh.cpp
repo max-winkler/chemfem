@@ -463,10 +463,7 @@ namespace chemfem{
 	        // In this case we will refine one of the children
                   if(edge_ref_infos.find(new_edges[edge_idx]) != edge_ref_infos.end()
                      && new_edges[edge_idx] != ref_edge_idx)
-		{
-		  std::cout << "Case A - We have to further refine a child element\n";
 		  continue;
-		}
 	        
                   Edges[new_edges[edge_idx]].SetNeighbor(new_cells[i]);
                 }
@@ -484,8 +481,6 @@ namespace chemfem{
                   // Get index of new cell
                   size_t cell_idx = new_cells[cur_ref_data.OldEdgeNewCell[i]];
                   marked_cell_idx.push_back(cell_idx);
-
-	        std::cout << "Case A1 - Added child for refinement.\n";
                 }
             }
 	
@@ -495,7 +490,7 @@ namespace chemfem{
               size_t neigh_cell = ref_edge.GetNeighbor(idx);
               if(std::find(marked_cell_idx.begin(), marked_cell_idx.end(), neigh_cell) == marked_cell_idx.end())
                 {
-                  std::cout << "Case A2 - Added neighbor " << neigh_cell << " for refinement\n";
+                  std::cout << "I also have to refine the neighbor with index " << neigh_cell << std::endl;
                   marked_cell_idx.push_back(neigh_cell);
                 }
 
