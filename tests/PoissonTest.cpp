@@ -102,9 +102,9 @@ int main()
     }  
 
   std::cout << std::setw(10) << "Iteration"
-	    << std::setw(20) << "L2-error" << std::setw(20) << "L2-eoc"
-	    << std::setw(20) << "H1-error" << std::setw(20) << "H1-eoc"
-	    << std::endl;
+	  << std::setw(20) << "L2-error" << std::setw(20) << "L2-eoc"
+	  << std::setw(20) << "H1-error" << std::setw(20) << "H1-eoc"
+	  << std::endl;
   
   for(int iter=0; iter<max_iter; ++iter)
     {
