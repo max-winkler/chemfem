@@ -18,14 +18,15 @@ namespace chemfem{
 
     size_t Edge::GetNeighbor(size_t cell) const
     {
-      if(Neigh0 == cell)
+      if(Neigh0 == (long)cell)
         return Neigh1;
-      else if(Neigh1 == cell)
+      else if(Neigh1 == (long)cell)
         return Neigh0;
-      else
-        std::cerr << "Error in GetNeighbor: The specified cell with index " << cell
-	        << " is not associated with the edge. The edge connects " << Neigh0 << " and "
-	        << Neigh1 << ".\n"; 
+
+      std::cerr << "Error in GetNeighbor: The specified cell with index " << cell
+	      << " is not associated with the edge. The edge connects " << Neigh0 << " and "
+	      << Neigh1 << ".\n";
+      return -1;
     }
 
     size_t Edge::GetNeighborByLocalIndex(int cell) const
@@ -34,9 +35,10 @@ namespace chemfem{
         return Neigh0;
       else if(cell == 1)
         return Neigh1;
-      else
-        std::cerr << "Error in GetNeighborByIndex: The specified cell with local index " << cell
-		  << " is not associated with the edge.\n"; 
+
+      std::cerr << "Error in GetNeighborByIndex: The specified cell with local index " << cell
+		<< " is not associated with the edge.\n";
+      return -1;
     }
 
     void Edge::SetNeighbor(size_t neigh)

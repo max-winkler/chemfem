@@ -9,25 +9,26 @@
 #include "fem/FEFunction.h"
 #include "fem/ErrorEstimator.h"
 #include "mesh/UnitSquareMesh.h"
-#include "mesh/LShapeMesh.h"
 #include "linalg/SparseMatrix.h"
 
 using namespace chemfem::fem;
 using namespace chemfem::linalg;
 using namespace chemfem::mesh;
 
+// Regression test for the Newest-Vertex-Bisection closure in Mesh::Refine.
+// Error-driven adaptive refinement of UnitSquareMesh(6) with Threshold=0.9 used to
+// produce a non-conforming mesh: a hanging node appeared after the 3rd refinement
+// step, and deeper refinement corrupted the edge-neighbor relations. Mesh::Check()
+// detects both, so this test must run through all levels with exit code 0.
+
 double f(double x, double y)
 {
   return x+y;
-  return exp(-pow((x+0.5) / 0.2, 2.) - pow((y-0.5)/0.2, 2.));
 }
-
 
 int main()
 {
-//  LShapeMesh mesh(3);
   UnitSquareMesh mesh(6);
-  std::cout << mesh << std::endl;
   const int max_iter = 20;
 
   for(int iter=0; iter<max_iter; ++iter)
@@ -86,6 +87,13 @@ int main()
       // REFINE
       mesh.Refine(Marker);
       if(!mesh.Check())
-        std::cerr << "ERROR: There is a problem with the mesh datastructure.\n";
+        {
+          std::cerr << "ERROR: There is a problem with the mesh datastructure "
+                     << "after refinement step " << iter+1 << ".\n";
+          return 1;
+        }
     }
+
+  std::cout << "AdaptivityTest was successful.\n";
+  return 0;
 }

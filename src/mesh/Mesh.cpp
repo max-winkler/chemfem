@@ -368,10 +368,10 @@ namespace chemfem{
                 {
                   new_edges[cur_ref_data.OldEdgeNewEdge[i][0]] = cur_cell.LocEdge[i];
 
-                  // Unset edge-cell relation if edge not refined by neighbor
-                  if(edge_ref_infos.find(cur_cell.LocEdge[i]) == edge_ref_infos.end())                    
-		Edges[cur_cell.LocEdge[i]].UnsetNeighbor(idx);                    
-                }	   	      
+                  // The current cell is replaced by its children, so it is no longer a
+                  // neighbor of this edge. The child taking over the edge is registered below.
+                  Edges[cur_cell.LocEdge[i]].UnsetNeighbor(idx);
+                }
               else
                 {
                   if(ref_edge_refined)
@@ -382,7 +382,13 @@ namespace chemfem{
                     }
                   else
                     {
-                      // Create new edges
+                      // Create new edges. Both halves are appended to the edge list and the
+                      // slot of the old edge is left untouched. Reusing that slot for the first
+                      // half would make the slot index ambiguous: it is also the key under which
+                      // the refinement info for the *whole* old edge is stored for the neighbor
+                      // on the other side. Keeping the old edge intact lets that neighbor still
+                      // find its correct edge and neighbor relations. The stale slot is harmless
+                      // because CreateEdgeList() rebuilds the whole edge list at the end.
                       for(int j=0; j<cur_ref_data.OldEdgeNewEdgeLen[i]; ++j)
                         {
                           int new_edge_idx = cur_ref_data.OldEdgeNewEdge[i][j];
@@ -390,18 +396,9 @@ namespace chemfem{
                           Edge edge(new_nodes[cur_ref_data.NewEdges[new_edge_idx][0]],
                                     new_nodes[cur_ref_data.NewEdges[new_edge_idx][1]],
                                     EdgeType::BOUNDARY_EDGE);
-		  
-                          if(j == 0)
-                            {
-			// WARNING: This overwrites the original edge and loosing neighbor information
-                              Edges[cur_cell.LocEdge[i]] = edge; 
-                              new_edges[new_edge_idx] = cur_cell.LocEdge[i];
-                            }
-                          else
-                            {
-                              Edges.push_back(edge);		     
-                              new_edges[new_edge_idx] = Edges.size()-1;
-                            }
+
+                          Edges.push_back(edge);
+                          new_edges[new_edge_idx] = Edges.size()-1;
                         }
                     }
                 }
@@ -459,12 +456,6 @@ namespace chemfem{
                 {
                   int edge_idx = cur_ref_data.NewCellEdges[i][j];
 
-                  // Do not set neighbor when edge not to be refined was refined by neighbor
-	        // In this case we will refine one of the children
-                  if(edge_ref_infos.find(new_edges[edge_idx]) != edge_ref_infos.end()
-                     && new_edges[edge_idx] != ref_edge_idx)
-		  continue;
-	        
                   Edges[new_edges[edge_idx]].SetNeighbor(new_cells[i]);
                 }
             }
@@ -474,9 +465,10 @@ namespace chemfem{
             {
               if(cur_ref_data.OldEdgeNewEdgeLen[i] > 1) continue;
 
-	      // If we refined along the wrong edge one of the child elements must be refined further
-              if(edge_ref_infos.find(cur_cell.LocEdge[i]) != edge_ref_infos.end()
-                 && ! ref_edge_refined)
+	      // If we refined along the wrong edge one of the child elements must be refined further.
+	      // This is independent of whether the refinement edge of the current cell was already
+	      // bisected by a neighbor, since the loop only visits the two edges that are not refined.
+              if(edge_ref_infos.find(cur_cell.LocEdge[i]) != edge_ref_infos.end())
                 {
                   // Get index of new cell
                   size_t cell_idx = new_cells[cur_ref_data.OldEdgeNewCell[i]];
@@ -484,8 +476,10 @@ namespace chemfem{
                 }
             }
 	
-          // Add neighbor to marked cell list
-          if(ref_edge.Type() == INTERFACE_EDGE)
+          // Add neighbor to marked cell list. If the refinement edge was already bisected by
+          // the neighbor we are just consuming that refinement info here, so the neighbor is
+          // already refined and must neither be marked again nor be given new refinement info.
+          if(!ref_edge_refined && ref_edge.Type() == INTERFACE_EDGE)
             {
               size_t neigh_cell = ref_edge.GetNeighbor(idx);
               if(std::find(marked_cell_idx.begin(), marked_cell_idx.end(), neigh_cell) == marked_cell_idx.end())
@@ -713,6 +707,8 @@ Mesh::~Mesh()
 
     bool Mesh::Check()
     {
+      bool ok = true;
+
       for(std::vector<Cell>::const_iterator it_cell = Cells.begin(); it_cell != Cells.end(); ++it_cell)
         {
           const Cell& cell = *it_cell;
@@ -722,8 +718,11 @@ Mesh::~Mesh()
               const size_t edge_idx = cell.LocEdge[k];
 
               if(cell.EdgeIndex(edge_idx) != k)
-                std::cerr << "The edge index seems to be wrong.\n";
-	      
+                {
+                  std::cerr << "The edge index seems to be wrong.\n";
+                  ok = false;
+                }
+
               if(!((Edges[edge_idx].Node0 == cell.LocNode[k]
                     && Edges[edge_idx].Node1 == cell.LocNode[(k+1)%3])
                    || (Edges[edge_idx].Node1 == cell.LocNode[k]
@@ -734,13 +733,56 @@ Mesh::~Mesh()
                             << ") does not point to the corresponding nodes.\n"
 		        << "  cell: " << cell << "\n"
 		        << "  edge: " << Edges[edge_idx] << "\n";;
-	        
-                  //return false;
+
+                  ok = false;
                 }
             }
         }
-      
-      return true;      
+
+      // Detect hanging nodes: CreateEdgeList() only pairs edges that share
+      // both endpoints exactly, so if a neighbor was bisected while this
+      // cell was not, the long edge stays a BOUNDARY_EDGE even though a
+      // node from the neighbor sits in its interior (non-conforming mesh).
+      const double tol = 1e-10;
+      for(size_t e=0; e<Edges.size(); ++e)
+        {
+          const Edge& edge = Edges[e];
+          if(edge.Type() != BOUNDARY_EDGE) continue;
+
+          const Node& P0 = Nodes[edge.Node0];
+          const Node& P1 = Nodes[edge.Node1];
+
+          double dx = P1.getX() - P0.getX();
+          double dy = P1.getY() - P0.getY();
+          double len2 = dx*dx + dy*dy;
+
+          for(size_t n=0; n<Nodes.size(); ++n)
+            {
+              if(n == edge.Node0 || n == edge.Node1) continue;
+
+              const Node& P = Nodes[n];
+              double px = P.getX() - P0.getX();
+              double py = P.getY() - P0.getY();
+
+              // Parameter of the projection of P onto the line through P0-P1
+              double t = (px*dx + py*dy) / len2;
+              if(t <= tol || t >= 1.-tol) continue;
+
+              // Distance of P from that line
+              double dist = std::fabs(px*dy - py*dx) / std::sqrt(len2);
+              if(dist < tol)
+                {
+                  std::cerr << "Hanging node detected: node " << n
+                            << " lies in the interior of edge " << e
+                            << " (nodes " << edge.Node0 << ", " << edge.Node1 << "), "
+                            << "which is only marked as a boundary edge. "
+                            << "A neighboring cell was probably not refined consistently.\n";
+                  ok = false;
+                }
+            }
+        }
+
+      return ok;
     }
     
     double Mesh::Determinant(size_t i) const
