@@ -173,12 +173,12 @@ namespace chemfem{
 
       Vector::const_iterator it;
       size_t i;
-      assert(x.size() == nr_nodes);
+      assert(x.size() >= nr_nodes);
 
-      if (x.size() != nr_nodes) {
-        std::cerr << "Mismatch in size of x: expected " << nr_nodes << ", got " << x.size() << std::endl;
+      if (x.size() < nr_nodes) {
+        std::cerr << "Mismatch in size of x: expected at least " << nr_nodes << ", got " << x.size() << std::endl;
       }
-      
+
       for (i=0, it = x.begin(); i<nr_nodes; ++it, ++i)
         ofs << *it << std::endl;
     }
