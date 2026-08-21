@@ -43,17 +43,18 @@ namespace chemfem{
 
     void Edge::SetNeighbor(size_t neigh)
     {
-      if(Neigh0 == neigh || Neigh1 == neigh)
+      const long n = (long)neigh;
+
+      if(Neigh0 == n || Neigh1 == n)
         return;
-      
+
       if(Neigh0 == -1)
-        Neigh0 = neigh;
-      else if(Neigh1 == -1 && Neigh1 != neigh)
+        Neigh0 = n;
+      else if(Neigh1 == -1)
         {
-	Neigh1 = neigh;
+	Neigh1 = n;
 	type = INTERFACE_EDGE;
         }
-      else if(Neigh1 == neigh || Neigh0 == neigh) {}
       else
         {
 	std::cerr << "Error: You try to assign a neighbor to the edge where the neighbors are already set.\n";
@@ -64,9 +65,9 @@ namespace chemfem{
 
     void Edge::UnsetNeighbor(size_t neigh)
     {
-      if(Neigh0 == neigh)
+      if(Neigh0 == (long)neigh)
         Neigh0 = -1;
-      else if(Neigh1 == neigh)
+      else if(Neigh1 == (long)neigh)
         Neigh1 = -1;
       else
         std::cerr << "Error: The cell with index " << neigh << " is not adjacent to the edge.\n";

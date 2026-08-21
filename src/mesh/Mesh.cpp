@@ -26,13 +26,11 @@ namespace chemfem{
     Mesh::Mesh(const Mesh& other)
       : Nodes(other.Nodes), Cells(other.Cells), Edges(other.Edges)
     {
-      std::cout << "Mesh copied\n";
       copy(other);
     }
 
     Mesh& Mesh::operator=(const Mesh& other)
     {
-      std::cout << "Mesh copied by =\n";
       Nodes = other.Nodes;
       Cells = other.Cells;
       Edges = other.Edges;
@@ -195,8 +193,9 @@ namespace chemfem{
 
     void Mesh::CreateEdgeList()
     {
-      std::cerr << "WARNING: The routine CreateEdgeList is very slow and should be avoided\n";
-      
+      /// \todo This routine is very slow (it searches the whole edge list for every
+      /// edge of every cell) and should be avoided where possible.
+
       // Remove old edges
       Edges.clear();
       
@@ -319,9 +318,7 @@ namespace chemfem{
           EdgeRefInfo edge_ref_info;
           if(ref_edge_refined)
             edge_ref_info = edge_ref_infos[ref_edge_idx];
-	
-          // std::cout << "I will refine edge " << ref_edge_idx << std::endl;
-	
+
           // apply refinement to the cell
           RefData& cur_ref_data = ref_data[max_idx];
 	
@@ -483,10 +480,7 @@ namespace chemfem{
             {
               size_t neigh_cell = ref_edge.GetNeighbor(idx);
               if(std::find(marked_cell_idx.begin(), marked_cell_idx.end(), neigh_cell) == marked_cell_idx.end())
-                {
-                  std::cout << "I also have to refine the neighbor with index " << neigh_cell << std::endl;
-                  marked_cell_idx.push_back(neigh_cell);
-                }
+                marked_cell_idx.push_back(neigh_cell);
 
               // Create refinement information for the neighbor	        		      
               EdgeRefInfo ref_info;
@@ -494,13 +488,7 @@ namespace chemfem{
               for(int k=0; k<2; ++k)		
                 ref_info.new_edge[k] = new_edges[cur_ref_data.OldEdgeNewEdge[(max_idx+1)%3][k]];
 
-              //std::cout << "CREATED Refinement info for edge " << ref_edge_idx << std::endl;
-              //std::cout << " inner node is " << ref_info.new_inner_vertex
-              //	    << ", new edges are " << new_edges[cur_ref_data.OldEdgeNewEdge[(max_idx+1)%3][0]]
-              //	    << " and " << new_edges[cur_ref_data.OldEdgeNewEdge[(max_idx+1)%3][1]] << std::endl;
-
               edge_ref_infos[ref_edge_idx] = ref_info;
-	      
             }
 
           // Clean up
@@ -508,14 +496,11 @@ namespace chemfem{
             edge_ref_infos.erase(ref_edge_idx);
 
           delete[] new_cells;
-          delete[] new_edges;          
-          
-          // std::cout << "mesh after refinement step:\n" << *new_mesh << std::endl;
-        }     
+          delete[] new_edges;
+        }
 
       // not good but for testing only
       CreateEdgeList();
-      //std::cout << "final mesh:\n" << *new_mesh << std::endl;            
     }
     
     /*
