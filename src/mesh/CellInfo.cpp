@@ -2,9 +2,10 @@
 #include <cmath>
 
 #include "mesh/CellInfo.h"
-#include "linalg/Vector.h"
+#include "linalg/Vector2D.h"
 
-using chemfem::linalg::Vector;
+using chemfem::linalg::Coordinate;
+using chemfem::linalg::Vector2D;
 
 namespace chemfem{
   namespace mesh{
@@ -30,16 +31,12 @@ namespace chemfem{
       return 0.5*((x[1]-x[0])*(y[2]-y[0]) - (x[2]-x[0])*(y[1]-y[0]));
     }
 
-    chemfem::linalg::Vector CellInfo::Barycenter() const
+    chemfem::linalg::Coordinate CellInfo::Barycenter() const
     {
       double x[3], y[3];
       GetCellCoords(x, y);
-  
-      chemfem::linalg::Vector b(2);
-      b[0] = (x[0] + x[1] + x[2])/3.;
-      b[1] = (y[0] + y[1] + y[2])/3.;
 
-      return b;
+      return Coordinate{(x[0] + x[1] + x[2])/3., (y[0] + y[1] + y[2])/3.};
     }
 
     void CellInfo::GetCellCoords(double* x, double* y) const
@@ -51,14 +48,12 @@ namespace chemfem{
         }
     }
 
-    chemfem::linalg::Vector CellInfo::Normal(int k) const
+    chemfem::linalg::Vector2D CellInfo::Normal(int k) const
     {
-      Vector n(2);
+      Vector2D n(LocNode[(k+1)%3].getY() - LocNode[k].getY(),
+                 LocNode[k].getX() - LocNode[(k+1)%3].getX());
 
-      n[0] = LocNode[(k+1)%3].getY() - LocNode[k].getY();
-      n[1] = LocNode[k].getX() - LocNode[(k+1)%3].getX();
-
-      n *= (1./n.Norm());
+      n *= 1./n.Norm();
       return n;
     }
 

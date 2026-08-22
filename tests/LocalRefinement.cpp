@@ -50,7 +50,7 @@ int main()
           CellInfo info = mesh.GetCellInfo(c);
 
           double hT = info.Diam();
-          double rT = info.Barycenter().Norm();
+          double rT = (info.Barycenter() - Coordinate{0., 0.}).Norm();
           
           if(hT > pow(rT/d, 1.-mu) * h)
             {

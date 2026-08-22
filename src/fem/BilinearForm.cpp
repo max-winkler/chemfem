@@ -4,7 +4,10 @@
 #include "mesh/Mesh.h"
 #include "quadrature/QuadFormula.h"
 
+using chemfem::linalg::Coordinate;
 using chemfem::linalg::DenseMatrix;
+using chemfem::linalg::Matrix2D;
+using chemfem::linalg::Vector2D;
 using chemfem::linalg::SparseMatrix;
 using chemfem::linalg::SparseMatrixInserter;
 
@@ -58,8 +61,8 @@ namespace chemfem{
       Vector Xi, Eta, Weights;
       QuadFormula.FormulaData(Weights, Xi, Eta);
 
-      Vector *GradTest = new Vector[TestSpace.DofPerCell];
-      Vector *GradTrial = new Vector[TrialSpace.DofPerCell];
+      Vector2D *GradTest = new Vector2D[TestSpace.DofPerCell];
+      Vector2D *GradTrial = new Vector2D[TrialSpace.DofPerCell];
 
       double *ValueTest = new double[TestSpace.DofPerCell];
       double *ValueTrial = new double[TrialSpace.DofPerCell];
@@ -73,10 +76,10 @@ namespace chemfem{
           double det = TestSpace.mesh.Determinant(CellInd);
 
           Node& x0 = TestSpace.mesh.Nodes[cell->LocNode[0]];
-          Vector b(2); b[0] = x0.getX(); b[1] = x0.getY();
-	  
-          DenseMatrix Jac = TestSpace.mesh.Jacobian(CellInd);
-          DenseMatrix InvJac(Jac.Transpose().Invert());
+          const Coordinate b{x0.getX(), x0.getY()};
+
+          const Matrix2D Jac = TestSpace.mesh.Jacobian(CellInd);
+          const Matrix2D InvJac = Jac.Transpose().Invert();
 
           DenseMatrix LocMatrix(TestSpace.DofPerCell, TrialSpace.DofPerCell);
 
@@ -87,17 +90,11 @@ namespace chemfem{
               Wq != Weights.end(); ++Wq, ++Xiq, ++Etaq)
             {
               // Determine Quadrature points in world element
-              Vector XiEtaq(2);
-              XiEtaq[0] = *Xiq;
-              XiEtaq[1] = *Etaq;
-
-              Vector XYq = b + Jac*XiEtaq;
+              const Coordinate XiEtaq{*Xiq, *Etaq};
+              const Coordinate XYq = b + Jac*XiEtaq;
 
               for(int k=0; k<TestSpace.DofPerCell; ++k)
                 {
-                  // Transformed to physical coordinates right here. The product does
-                  // not depend on the second loop index of the second order term
-                  // below, where it used to be recomputed for every pair (k,l).
                   GradTest[k] = InvJac * TestSpace.RefElement().Gradient(k, *Xiq, *Etaq);
                   GradTrial[k] = InvJac * TrialSpace.RefElement().Gradient(k, *Xiq, *Etaq);
                   ValueTest[k] = TestSpace.RefElement().Value(k, *Xiq, *Etaq);
@@ -110,7 +107,7 @@ namespace chemfem{
                 {
                   if(&TestSpace.mesh == &TrialSpace.mesh)
                     {
-                      double CoeffVal = Term->Coeff(Coordinate{XYq[0], XYq[1]});
+                      double CoeffVal = Term->Coeff(XYq);
 		      
                       switch(Term->Type)
                         {

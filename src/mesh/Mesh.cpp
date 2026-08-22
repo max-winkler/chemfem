@@ -840,9 +840,7 @@ Mesh::~Mesh()
       return (x[1]-x[0])*(y[2]-y[0]) - (x[2]-x[0])*(y[1]-y[0]);
     }
     
-    using chemfem::linalg::DenseMatrix;
-    
-    DenseMatrix Mesh::Jacobian(size_t i) const
+    chemfem::linalg::Matrix2D Mesh::Jacobian(size_t i) const
     {
       double x[3], y[3];
       for(int k=0; k<3; ++k)
@@ -850,14 +848,9 @@ Mesh::~Mesh()
           x[k] = Nodes[Cells[i].LocNode[k]].getX();
           y[k] = Nodes[Cells[i].LocNode[k]].getY();
         }
-      
-      DenseMatrix Jac(2,2);
-      Jac.data[0] =  x[1] - x[0];
-      Jac.data[1] =  x[2] - x[0];
-      Jac.data[2] =  y[1] - y[0];
-      Jac.data[3] =  y[2] - y[0];
 
-      return Jac;
+      return chemfem::linalg::Matrix2D(x[1] - x[0], x[2] - x[0],
+                                       y[1] - y[0], y[2] - y[0]);
     }
 
     CellInfo Mesh::GetCellInfo(size_t i) const

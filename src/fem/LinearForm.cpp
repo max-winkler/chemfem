@@ -55,9 +55,9 @@ namespace chemfem{
 	  double det = TestSpace.mesh.Determinant(CellInd);
 	  
 	  Node& x0 = TestSpace.mesh.Nodes[cell->LocNode[0]];
-	  Vector b(2); b[0] = x0.getX(); b[1] = x0.getY();
-	  
-	  DenseMatrix Jac = TestSpace.mesh.Jacobian(CellInd);
+	  const chemfem::linalg::Coordinate b{x0.getX(), x0.getY()};
+
+	  const chemfem::linalg::Matrix2D Jac = TestSpace.mesh.Jacobian(CellInd);
 
 	  Vector LocVec(TestSpace.DofPerCell);
 	  
@@ -68,11 +68,8 @@ namespace chemfem{
 	      Wq != Weights.end(); ++Wq, ++Xiq, ++Etaq)
 	    {
 	      // Determine Quadrature points in world element
-	      Vector XiEtaq(2);
-	      XiEtaq[0] = *Xiq;
-	      XiEtaq[1] = *Etaq;
-
-	      Vector XYq = b + Jac*XiEtaq;
+	      const chemfem::linalg::Coordinate XiEtaq{*Xiq, *Etaq};
+	      const chemfem::linalg::Coordinate XYq = b + Jac*XiEtaq;
 
 	      // Function value of test functions
 	      for(int k=0; k<TestSpace.DofPerCell; ++k)
@@ -82,7 +79,7 @@ namespace chemfem{
 	      for(std::vector<FEExpression>::const_iterator Term = Terms.begin();
 		  Term != Terms.end(); ++Term)
 		{
-		  double CoeffVal = Term->Coeff(Coordinate{XYq[0], XYq[1]});
+		  double CoeffVal = Term->Coeff(XYq);
 			
 		  switch(Term->Type)
 		    {

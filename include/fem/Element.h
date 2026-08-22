@@ -1,9 +1,9 @@
 #ifndef _ELEMENT_H_
 #define _ELEMENT_H_
 
-#include "linalg/Vector.h"
+#include "linalg/Vector2D.h"
 
-using chemfem::linalg::Vector;
+using chemfem::linalg::Vector2D;
 
 namespace chemfem{
   namespace fem{
@@ -47,7 +47,7 @@ namespace chemfem{
       /**
        * Returns the gradient of the trial function.
        */ 
-      virtual Vector Gradient(int, double, double) const = 0;
+      virtual Vector2D Gradient(int, double, double) const = 0;
       
     protected:
       FEType type;

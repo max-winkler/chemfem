@@ -6,6 +6,8 @@
 #include <set>
 #include <string>
 
+#include "linalg/Matrix2D.h"
+
 #include "mesh/Node.h"
 #include "mesh/Cell.h"
 #include "mesh/Edge.h"
@@ -109,7 +111,7 @@ namespace chemfem{
       /**
        * Returns the Jacobian of the reference transformation.
        */
-      chemfem::linalg::DenseMatrix Jacobian(size_t) const;
+      chemfem::linalg::Matrix2D Jacobian(size_t) const;
 
       /**
        * Create CellInfo object providing geometric computations for a mesh cell.

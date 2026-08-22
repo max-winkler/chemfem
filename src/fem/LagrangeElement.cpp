@@ -1,10 +1,11 @@
 #include "fem/LagrangeElement.h"
 
 #include <cmath>
+#include <iostream>
 
-#include "linalg/DenseMatrix.h"
+#include "linalg/Vector2D.h"
 
-using chemfem::linalg::DenseMatrix;
+using chemfem::linalg::Vector2D;
 
 namespace chemfem{
   namespace fem{
@@ -84,15 +85,16 @@ namespace chemfem{
       return 0.;
     }
 
-    Vector LagrangeElement::Gradient(int i, double x, double y) const
+    Vector2D LagrangeElement::Gradient(int i, double x, double y) const
     {           
       double lambda[3] = {1.-x-y, x, y};
 
       if(x > 1 || y > 1 || x < 0 || y < 0 || x+y > 1)
 	std::cerr << "Invalid quadrature point.\n";
       
-      Vector grad_L(3);
-            
+      // Derivatives with respect to the three barycentric coordinates
+      double grad_L[3] = {0., 0., 0.};
+
       switch(degree)
 	{
 	case 1:
@@ -174,16 +176,9 @@ namespace chemfem{
 	  break;
 	}
 
-      // Chain rule with the derivative of the barycentric coordinates,
-      //   d(lambda_0,lambda_1,lambda_2)/d(x,y) = ( -1  1  0 )
-      //                                          ( -1  0  1 ).
-      // That matrix is constant, so the product is written out here instead of
-      // building a DenseMatrix on every call.
-      Vector grad(2);
-      grad[0] = grad_L[1] - grad_L[0];
-      grad[1] = grad_L[2] - grad_L[0];
-
-      return grad;
+      // Chain rule with  d(lambda_0,lambda_1,lambda_2)/d(x,y) = ( -1  1  0 )
+      //                                                           ( -1  0  1 )
+      return Vector2D(grad_L[1] - grad_L[0], grad_L[2] - grad_L[0]);
     }
     
   }

@@ -6,7 +6,10 @@
 #include "quadrature/QuadFormula.h"
 #include "mesh/Mesh.h"
 
+using chemfem::linalg::Coordinate;
 using chemfem::linalg::DenseMatrix;
+using chemfem::linalg::Matrix2D;
+using chemfem::linalg::Vector2D;
 using chemfem::mesh::Mesh;
 using chemfem::mesh::Node;
 using chemfem::mesh::Edge;
@@ -66,10 +69,10 @@ namespace chemfem{
           double det = mesh.Determinant(CellInd);
                       
           const Node& x0 = mesh.Nodes[Cell->LocNode[0]];
-          Vector b(2); b[0] = x0.getX(); b[1] = x0.getY();
-                      
-          DenseMatrix Jac = mesh.Jacobian(CellInd);
-          DenseMatrix InvJac(Jac.Transpose().Invert());
+          const Coordinate b{x0.getX(), x0.getY()};
+
+          const Matrix2D Jac = mesh.Jacobian(CellInd);
+          const Matrix2D InvJac = Jac.Transpose().Invert();
           
           double Val = 0.;
           
@@ -83,13 +86,10 @@ namespace chemfem{
                   for(Wq = Weights.begin(), Xiq = Xi.begin(), Etaq = Eta.begin();
                       Wq != Weights.end(); ++Wq, ++Xiq, ++Etaq)
                     {
-                      Vector XiEtaq(2);
-                      XiEtaq[0] = *Xiq;
-                      XiEtaq[1] = *Etaq;
+                      const Coordinate XiEtaq{*Xiq, *Etaq};
+                      const Coordinate XYq = b + Jac*XiEtaq;
 
-                      Vector XYq = b + Jac*XiEtaq;
-
-                      Val += (*Wq) * pow(Info.Diam() * Term->EvalCoeff(Coordinate{XYq[0], XYq[1]}), 2.) * det;
+                      Val += (*Wq) * pow(Info.Diam() * Term->EvalCoeff(XYq), 2.) * det;
                     }
 	        
 	        if(CellInd == 0)
@@ -99,7 +99,7 @@ namespace chemfem{
                   for(int edge_idx=0; edge_idx<3; ++edge_idx)
                     {
                       // Normal vector
-                      Vector n = Info.Normal(edge_idx);
+                      Vector2D n = Info.Normal(edge_idx);
 		  double hE = Info.EdgeLength(edge_idx);
 
 		  // Get neighbor cell
@@ -112,8 +112,8 @@ namespace chemfem{
 		  
 		  const mesh::Cell& NeighCell = mesh.GetCellList()[NeighCellInd];
 
-		  DenseMatrix NeighJac = mesh.Jacobian(NeighCellInd);
-		  DenseMatrix NeighInvJac(Jac.Transpose().Invert());		  
+		  const Matrix2D NeighJac = mesh.Jacobian(NeighCellInd);
+		  const Matrix2D NeighInvJac = NeighJac.Transpose().Invert();
 
 		  size_t neigh_edge_idx = NeighCell.EdgeIndex(Cell->LocEdge[edge_idx]);
 		  
@@ -121,8 +121,8 @@ namespace chemfem{
                       for(Wq = WeightsLine.begin(), Xiq = XiLine.begin(); Wq != WeightsLine.end(); ++Wq, ++Xiq)
                         {
                           // Compute gradient in quadrature point
-                          Vector GradValue(2);
-		      Vector NeighGradValue(2);
+                          Vector2D GradValue;
+		      Vector2D NeighGradValue;
 		      
                           for(size_t k=0; k<Space.NrLocalDof(); ++k)
                             {

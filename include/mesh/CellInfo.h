@@ -5,7 +5,8 @@
 
 #include "mesh/Node.h"
 
-#include "linalg/Vector.h"
+#include "linalg/Coordinate.h"
+#include "linalg/Vector2D.h"
 
 namespace chemfem{
   namespace mesh{
@@ -39,12 +40,12 @@ namespace chemfem{
       /**
        * Returns the element's barycenter
        */
-      chemfem::linalg::Vector Barycenter() const;
+      chemfem::linalg::Coordinate Barycenter() const;
 
       /**
        * Returns the normal vector at the k-th edge
        */
-      chemfem::linalg::Vector Normal(int) const;
+      chemfem::linalg::Vector2D Normal(int) const;
 
       /**
        * Returns length of the k-th edge

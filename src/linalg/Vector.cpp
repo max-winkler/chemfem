@@ -71,9 +71,6 @@ namespace chemfem{
     {
       const size_t n_ = v.size();
 
-      // Reuse the buffer whenever the length does not change. Assigning a vector of
-      // the same length is by far the most frequent case in the assembly routines,
-      // where local gradients are overwritten in every quadrature point.
       if(data == NULL || n != n_)
 	{
 	  delete[] data;

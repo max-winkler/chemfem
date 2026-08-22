@@ -30,9 +30,9 @@ double exact(const Coordinate& p)
   return 16.*p.x*(1.-p.x)*p.y*(1.-p.y);
 }
 
-Vector exact_grad(const Coordinate& p)
+Vector2D exact_grad(const Coordinate& p)
 {
-  Vector grad(2);
+  Vector2D grad;
   grad[0] = 16.*p.y*(1.-p.y)*(1.-2.*p.x); 
   grad[1] = 16.*p.x*(1.-p.x)*(1.-2.*p.y);
   return grad;

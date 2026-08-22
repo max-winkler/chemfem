@@ -62,7 +62,7 @@ namespace chemfem{
 
 		  // TODO: Each cell sharing this note has written this variable already.
 		  // This may lead to performance lost. Can we improve this?
-		  Vec[LocalDof[k]] = u(Coordinate{x,y});
+		  Vec[LocalDof[k]] = u(chemfem::linalg::Coordinate{x,y});
 		}
 
 	      if(refElement.Degree() < 2) continue;
@@ -101,7 +101,7 @@ namespace chemfem{
 			}
 		      
 		      Vec[DofMap[cell_ind*DofPerCell + 3 + l*DofPerEdge + k]]
-			= u(Coordinate{x,y});		      
+			= u(chemfem::linalg::Coordinate{x,y});		      
 		    } // loop over edges
 
 		  if(refElement.Degree() < 3) continue;
@@ -134,7 +134,7 @@ namespace chemfem{
 			  break;
 			}
 		      Vec[DofMap[cell_ind*DofPerCell + 3 + 3*DofPerEdge + k]]
-			= u(Coordinate{x,y});
+			= u(chemfem::linalg::Coordinate{x,y});
 		    }
 		  
 		} // loop over cells

@@ -46,11 +46,10 @@ namespace chemfem{
 	  const Cell& cell = *it_cell;
 
 	  const Node& x0 = mesh.Nodes[cell.LocNode[0]];
-	  Vector b(2);
-	  b[0] = x0.getX(); b[1] = x0.getY();
-	  
-	  DenseMatrix Jac = mesh.Jacobian(CellInd);
-	  DenseMatrix InvJac(Jac.Transpose().Invert());
+	  const chemfem::linalg::Coordinate b{x0.getX(), x0.getY()};
+
+	  const chemfem::linalg::Matrix2D Jac = mesh.Jacobian(CellInd);
+	  const chemfem::linalg::Matrix2D InvJac = Jac.Transpose().Invert();
 	  
 	  double det = Jac.Determinant();
 	  
@@ -62,10 +61,8 @@ namespace chemfem{
 	  for(Xiq = Xi.begin(), Etaq = Eta.begin(), Wq = Weights.begin();
 	      Xiq != Xi.end(); ++Xiq, ++Etaq, ++Wq)
 	    {
-	      Vector XiEtaq(2);
-	      XiEtaq[0] = *Xiq, XiEtaq[1] = *Etaq;
-
-	      Vector XYq = b + Jac*XiEtaq;
+	      const chemfem::linalg::Coordinate XiEtaq{*Xiq, *Etaq};
+	      const chemfem::linalg::Coordinate XYq = b + Jac*XiEtaq;
 	      
 	      if(norm == L2 || norm == H1)
 		{
@@ -78,24 +75,23 @@ namespace chemfem{
 		      fe_value += dof_value * form_value;
 		    }
 		  // Value of exact solution
-		  double ex_value = Value(Coordinate{XYq[0], XYq[1]});
+		  double ex_value = Value(XYq);
 
 		  double diff = fe_value - ex_value;
 		  loc_error += (*Wq) * pow(diff, 2.);
 		}
 	      if(norm == H1 || norm == H1_SEMI)
 		{
-		  Vector fe_grad(2);
+		  chemfem::linalg::Vector2D fe_grad;
 		  for(int k=0; k<Space.RefElement().NrDof(); ++k)
 		    {
-		      Vector form_grad = Space.RefElement().Gradient(k, *Xiq, *Etaq);
 		      double dof_value = (*FESolution)[LocalDof[k]];
-		      fe_grad += dof_value*form_grad;
+		      fe_grad += dof_value * Space.RefElement().Gradient(k, *Xiq, *Etaq);
 		    }
-		  
-		  Vector ex_grad = Gradient(Coordinate{XYq[0], XYq[1]});
-		  
-		  Vector diff = ex_grad - InvJac*fe_grad;
+
+		  chemfem::linalg::Vector2D ex_grad = Gradient(XYq);
+
+		  chemfem::linalg::Vector2D diff = ex_grad - InvJac*fe_grad;
 		  loc_error += (*Wq) * dot(diff, diff);
 		}
 	    } // loop over quadrature points

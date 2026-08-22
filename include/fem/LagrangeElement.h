@@ -22,7 +22,7 @@ namespace chemfem{
        */
       double Value(int, double, double) const;
 
-      Vector Gradient(int, double, double) const;
+      Vector2D Gradient(int, double, double) const;
 
     };    
   };
