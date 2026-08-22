@@ -95,8 +95,11 @@ namespace chemfem{
 
               for(int k=0; k<TestSpace.DofPerCell; ++k)
                 {
-                  GradTest[k] = TestSpace.RefElement().Gradient(k, *Xiq, *Etaq);
-                  GradTrial[k] = TrialSpace.RefElement().Gradient(k, *Xiq, *Etaq);
+                  // Transformed to physical coordinates right here. The product does
+                  // not depend on the second loop index of the second order term
+                  // below, where it used to be recomputed for every pair (k,l).
+                  GradTest[k] = InvJac * TestSpace.RefElement().Gradient(k, *Xiq, *Etaq);
+                  GradTrial[k] = InvJac * TrialSpace.RefElement().Gradient(k, *Xiq, *Etaq);
                   ValueTest[k] = TestSpace.RefElement().Value(k, *Xiq, *Etaq);
                   ValueTrial[k] = TrialSpace.RefElement().Value(k, *Xiq, *Etaq);
                 }
@@ -118,7 +121,7 @@ namespace chemfem{
                               {
                                 LocMatrix[k][l] += 
                                   (*Wq) * CoeffVal
-                                  * dot(InvJac*GradTest[k], InvJac*GradTrial[l])
+                                  * dot(GradTest[k], GradTrial[l])
                                   * det;
                               }
 		  
