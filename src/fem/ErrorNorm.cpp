@@ -78,7 +78,7 @@ namespace chemfem{
 		      fe_value += dof_value * form_value;
 		    }
 		  // Value of exact solution
-		  double ex_value = Value(XYq[0], XYq[1]);
+		  double ex_value = Value(Coordinate{XYq[0], XYq[1]});
 
 		  double diff = fe_value - ex_value;
 		  loc_error += (*Wq) * pow(diff, 2.);
@@ -93,7 +93,7 @@ namespace chemfem{
 		      fe_grad += dof_value*form_grad;
 		    }
 		  
-		  Vector ex_grad = Gradient(XYq[0], XYq[1]);
+		  Vector ex_grad = Gradient(Coordinate{XYq[0], XYq[1]});
 		  
 		  Vector diff = ex_grad - InvJac*fe_grad;
 		  loc_error += (*Wq) * dot(diff, diff);

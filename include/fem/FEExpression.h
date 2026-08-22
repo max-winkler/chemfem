@@ -4,6 +4,7 @@
 #include <functional>
 #include <vector>
 
+#include "fem/Coordinate.h"
 #include "linalg/Vector.h"
 
 namespace chemfem{
@@ -15,8 +16,8 @@ namespace chemfem{
      * functor or a bound member function are all accepted. Plain function pointers
      * convert implicitly, so &f keeps working wherever it worked before.
      */
-    typedef std::function<double(double, double)> ScalarFunction;
-    typedef std::function<chemfem::linalg::Vector(double, double)> VectorFunction;
+    typedef std::function<double(const Coordinate&)> ScalarFunction;
+    typedef std::function<chemfem::linalg::Vector(const Coordinate&)> VectorFunction;
     
     enum ExpressionType {SECOND_ORDER, FIRST_ORDER, ZERO_ORDER, VOLUME_FORCE, NEUMANN_BC,
       VOLUME_RESIDUAL, EDGE_JUMP};
@@ -37,7 +38,7 @@ namespace chemfem{
 
       // \todo These functions are added to avoid these friend declarations. Use these functions in BilinearForm and LinearForm too.
       ExpressionType GetType() const;
-      double EvalCoeff(double x, double y) const;
+      double EvalCoeff(const Coordinate&) const;
         
     private:
       ExpressionType Type;

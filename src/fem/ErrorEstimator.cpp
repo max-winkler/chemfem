@@ -89,7 +89,7 @@ namespace chemfem{
 
                       Vector XYq = b + Jac*XiEtaq;
 
-                      Val += (*Wq) * pow(Info.Diam() * Term->EvalCoeff(XYq[0], XYq[1]), 2.) * det;
+                      Val += (*Wq) * pow(Info.Diam() * Term->EvalCoeff(Coordinate{XYq[0], XYq[1]}), 2.) * det;
                     }
 	        
 	        if(CellInd == 0)

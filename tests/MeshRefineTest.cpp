@@ -12,12 +12,12 @@ using namespace chemfem::mesh;
 using namespace chemfem::linalg;
 using namespace chemfem::fem;
 
-double f(double x, double y)
+double f(const Coordinate& p)
 {
-  return 10.*sin(2*x*M_PI)*cos(2*y*M_PI);
+  return 10.*sin(2*p.x*M_PI)*cos(2*p.y*M_PI);
 }
 
-double c(double x, double y)
+double c(const Coordinate& p)
 {
   return 1.;
 }

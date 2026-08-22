@@ -82,7 +82,7 @@ namespace chemfem{
 	      for(std::vector<FEExpression>::const_iterator Term = Terms.begin();
 		  Term != Terms.end(); ++Term)
 		{
-		  double CoeffVal = Term->Coeff(XYq[0], XYq[1]);
+		  double CoeffVal = Term->Coeff(Coordinate{XYq[0], XYq[1]});
 			
 		  switch(Term->Type)
 		    {

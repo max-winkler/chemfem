@@ -18,7 +18,7 @@ using chemfem::quadrature::QUAD_FORMULA;
 namespace chemfem{
   namespace fem{
 
-    double Identity(double x, double y) {return 1.;}
+    double Identity(const Coordinate&) {return 1.;}
     
     BilinearForm::BilinearForm(const FESpace& TrialSpace, const FESpace& TestSpace)
       : TrialSpace(TrialSpace), TestSpace(TestSpace), Matrix(0,0),
@@ -107,7 +107,7 @@ namespace chemfem{
                 {
                   if(&TestSpace.mesh == &TrialSpace.mesh)
                     {
-                      double CoeffVal = Term->Coeff(XYq[0], XYq[1]);
+                      double CoeffVal = Term->Coeff(Coordinate{XYq[0], XYq[1]});
 		      
                       switch(Term->Type)
                         {

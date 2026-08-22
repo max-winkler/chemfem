@@ -15,26 +15,26 @@ using namespace chemfem::fem;
 using namespace chemfem::linalg;
 using namespace chemfem::mesh;
 
-double f(double x, double y)
+double f(const Coordinate& p)
 {
-  return 32.*(x*(1.-x) + y*(1.-y)) + 16.*x*(1.-x)*y*(1.-y);
+  return 32.*(p.x*(1.-p.x) + p.y*(1.-p.y)) + 16.*p.x*(1.-p.x)*p.y*(1.-p.y);
 }
 
-double c(double x, double y)
+double c(const Coordinate& p)
 {
   return 1.;
 }
 
-double exact(double x, double y)
+double exact(const Coordinate& p)
 {
-  return 16.*x*(1.-x)*y*(1.-y);
+  return 16.*p.x*(1.-p.x)*p.y*(1.-p.y);
 }
 
-Vector exact_grad(double x, double y)
+Vector exact_grad(const Coordinate& p)
 {
   Vector grad(2);
-  grad[0] = 16.*y*(1.-y)*(1.-2.*x); 
-  grad[1] = 16.*x*(1.-x)*(1.-2.*y);
+  grad[0] = 16.*p.y*(1.-p.y)*(1.-2.*p.x); 
+  grad[1] = 16.*p.x*(1.-p.x)*(1.-2.*p.y);
   return grad;
 }
 

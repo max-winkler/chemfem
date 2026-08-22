@@ -21,9 +21,9 @@ using namespace chemfem::mesh;
 // step, and deeper refinement corrupted the edge-neighbor relations. Mesh::Check()
 // detects both, so this test must run through all levels with exit code 0.
 
-double f(double x, double y)
+double f(const Coordinate& p)
 {
-  return x+y;
+  return p.x+p.y;
 }
 
 int main()

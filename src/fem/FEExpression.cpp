@@ -14,9 +14,9 @@ namespace chemfem{
       return Type;
     }
 
-    double FEExpression::EvalCoeff(double x, double y) const
+    double FEExpression::EvalCoeff(const Coordinate& p) const
     {
-      return Coeff(x,y);
+      return Coeff(p);
     }
   }
 }
