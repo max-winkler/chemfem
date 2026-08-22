@@ -1,5 +1,5 @@
 CPP_INCLUDE = -Iinclude
-CPP_FLAGS   = -g -O2 -Wall
+CPP_FLAGS   = -g -O2 -Wall -MMD -MP
 
 OBJ = 	src/linalg/Vector.o \
 	src/linalg/SparseMatrix.o \
@@ -43,7 +43,11 @@ TESTS_BIN = $(TESTS:.o=)
 %.o: %.cpp
 	g++ -c $< ${CPP_INCLUDE} ${CPP_FLAGS} -o $@
 
+# Header dependencies recorded by -MMD, so that a changed header rebuilds
+# every object that includes it
+-include $(OBJ:.o=.d) $(TESTS:.o=.d)
+
 tests: $(OBJ) $(TESTS)
 	$(foreach TEST,$(TESTS_BIN),g++ $(OBJ) $(TEST).o -o $(TEST);)
 clean:
-	rm -f src/linalg/*.o src/mesh/*.o src/fem/*.o tests/*.o
+	rm -f src/*/*.o src/*/*.d tests/*.o tests/*.d
