@@ -1,6 +1,7 @@
 #ifndef _FE_EXPRESSION_H_
 #define _FE_EXPRESSION_H_
 
+#include <functional>
 #include <vector>
 
 #include "linalg/Vector.h"
@@ -8,8 +9,14 @@
 namespace chemfem{
   namespace fem{
 
-    typedef double (*ScalarFunction)(double, double);
-    typedef chemfem::linalg::Vector (*VectorFunction)(double, double);
+    /**
+     * Coefficients, right hand sides and exact solutions are passed as std::function,
+     * so that they may carry state: a plain function, a lambda with captures, a
+     * functor or a bound member function are all accepted. Plain function pointers
+     * convert implicitly, so &f keeps working wherever it worked before.
+     */
+    typedef std::function<double(double, double)> ScalarFunction;
+    typedef std::function<chemfem::linalg::Vector(double, double)> VectorFunction;
     
     enum ExpressionType {SECOND_ORDER, FIRST_ORDER, ZERO_ORDER, VOLUME_FORCE, NEUMANN_BC,
       VOLUME_RESIDUAL, EDGE_JUMP};

@@ -28,13 +28,13 @@ namespace chemfem{
        * Adds a volume force. This is a function handle to the function defining the right-hand 
        * side of the partial differential equation.
        */
-      void AddVolumeForce(double (*)(double, double));
+      void AddVolumeForce(ScalarFunction);
 
       /**
        * Adds a Neumann boundary condition. Requires a function handle to the function definiting the 
        * boundary condition.
        */
-      void AddNeumannBC(double (*)(double, double));
+      void AddNeumannBC(ScalarFunction);
 
       /**
        * Assembles the load vector. Before calling this routine all terms that are required should be 

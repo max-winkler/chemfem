@@ -17,13 +17,13 @@ namespace chemfem{
 
     LinearForm::LinearForm(const FESpace& TestSpace) : TestSpace(TestSpace) {}
 
-    void LinearForm::AddVolumeForce(double (*F)(double, double))
+    void LinearForm::AddVolumeForce(ScalarFunction F)
     {
       FEExpression Expression(VOLUME_FORCE, F);
       Terms.push_back(Expression);
     }
 
-    void LinearForm::AddNeumannBC(double (*G)(double, double))
+    void LinearForm::AddNeumannBC(ScalarFunction G)
     {
       FEExpression Expression(VOLUME_FORCE, G);
       Terms.push_back(Expression);

@@ -2,6 +2,7 @@
 #define _FE_SPACE_H_
 
 #include "fem/Element.h"
+#include "fem/FEExpression.h"
 #include "mesh/Mesh.h"
 
 namespace chemfem{
@@ -71,7 +72,7 @@ namespace chemfem{
       /**
        * Interpolates a smooth function into the finite element space 
        */
-      FEFunction Interpolate(double (*)(double, double));
+      FEFunction Interpolate(ScalarFunction);
       
     private:
       /**

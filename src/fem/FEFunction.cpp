@@ -33,7 +33,7 @@ namespace chemfem{
       this->Data = Data;
     }
 
-    FEFunction FESpace::Interpolate(double (*u)(double, double))
+    FEFunction FESpace::Interpolate(ScalarFunction u)
     {
       // TODO: This functions seems to be wrong for P2 elements.
       // Check this!

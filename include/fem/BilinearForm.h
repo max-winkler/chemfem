@@ -33,13 +33,13 @@ namespace chemfem{
        * In case of a(x)=1 this corresponds to the Laplace operator. In this case
        * the function AddLaplaceTerm should be used.
        */
-      void AddDiffusionTerm(double (*)(double, double));
+      void AddDiffusionTerm(ScalarFunction);
 
       /**
        * Adds a reaction term (c u,v) to the bilinear form. The reaction parameter
-       * is given as a function pointer.
+       * is given as a coefficient function.
        */      
-      void AddReactionTerm(double (*)(double, double));
+      void AddReactionTerm(ScalarFunction);
 
       /**
        * Assembles the finite element matrix. 

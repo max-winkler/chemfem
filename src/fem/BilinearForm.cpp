@@ -24,7 +24,7 @@ namespace chemfem{
       : TrialSpace(TrialSpace), TestSpace(TestSpace), Matrix(0,0),
 	DirichletRhs(TestSpace.NrDof()) {}
 
-    void BilinearForm::AddDiffusionTerm(double (*DiffusionCoeff)(double, double))
+    void BilinearForm::AddDiffusionTerm(ScalarFunction DiffusionCoeff)
     {
       FEExpression expression(SECOND_ORDER, DiffusionCoeff);
       Terms.push_back(expression);
@@ -36,7 +36,7 @@ namespace chemfem{
       Terms.push_back(expression);
     }
 
-    void BilinearForm::AddReactionTerm(double (*ReactionCoeff)(double, double))
+    void BilinearForm::AddReactionTerm(ScalarFunction ReactionCoeff)
     {
       FEExpression expression(ZERO_ORDER, ReactionCoeff);
       Terms.push_back(expression);
