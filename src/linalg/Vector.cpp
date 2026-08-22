@@ -69,13 +69,19 @@ namespace chemfem{
 
     Vector& Vector::operator=(const Vector& v)
     {
-      size_t n_ = v.size();
+      const size_t n_ = v.size();
 
-      n = n_;
-      if(data != NULL) // TODO: Reuse memory if possible
-	delete[] data;
-      data = new double[n];
-      
+      // Reuse the buffer whenever the length does not change. Assigning a vector of
+      // the same length is by far the most frequent case in the assembly routines,
+      // where local gradients are overwritten in every quadrature point.
+      if(data == NULL || n != n_)
+	{
+	  delete[] data;
+
+	  n = n_;
+	  data = new double[n];
+	}
+
       std::copy(v.data, v.data+n, data);
       return *this;
     }
