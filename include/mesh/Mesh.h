@@ -128,6 +128,13 @@ namespace chemfem{
 
     protected:
       void CreateEdgeList();
+
+      /**
+       * Returns the local index of the newest vertex of the cell, i.e. the vertex
+       * opposite to the refinement edge. The refinement edge of the cell is
+       * therefore LocEdge[(NewestVertex(cell)+1)%3].
+       */
+      int NewestVertex(const Cell&) const;
       
       std::vector<Node> Nodes;
       std::vector<Cell> Cells;

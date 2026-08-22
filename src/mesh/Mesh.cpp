@@ -252,7 +252,46 @@ namespace chemfem{
     {
       Refine(std::vector<bool>(NrCells(), true));
     }
-    
+
+    int Mesh::NewestVertex(const Cell& cell) const
+    {
+      if(!cell.orig)
+        {
+          // Cell obtained by bisection before. The vertex inserted by that bisection is
+          // the newest one, and since nodes are appended to the node list it carries the
+          // largest index. Refine() only bisects cells whose refinement edge is shared
+          // with the neighbor, which is what keeps this property intact.
+          int max_idx = 0;
+          if(cell.LocNode[1] > cell.LocNode[0]) max_idx = 1;
+          if(cell.LocNode[2] > cell.LocNode[max_idx]) max_idx = 2;
+
+          return max_idx;
+        }
+
+      // Original cell detected, choose vertex opposite longest edge
+
+      // vertex coordinates
+      double x[3], y[3];
+      for(int i=0; i<3; ++i)
+        {
+          x[i] = Nodes[cell.LocNode[i]].getX();
+          y[i] = Nodes[cell.LocNode[i]].getY();
+        }
+
+      // edge lengths
+      double L[3];
+      for(int i=0; i<3; ++i)
+        L[i] = sqrt(pow(x[(i+1)%3]-x[i], 2.) + pow(y[(i+1)%3]-y[i], 2.));
+
+      // index of longest edge
+      int max_edge_idx = 0;
+      if(L[1] > L[0]) max_edge_idx = 1;
+      if(L[2] > L[max_edge_idx]) max_edge_idx = 2;
+
+      // opposite vertex index
+      return (2+max_edge_idx)%3;
+    }
+
     void Mesh::Refine(const std::vector<bool>& cell_marker)
     {     
       // Refinement descriptors
@@ -269,52 +308,65 @@ namespace chemfem{
       for(it_marker = cell_marker.begin(), k=0; it_marker != cell_marker.end(); ++it_marker, ++k)
         if(*it_marker) marked_cell_idx.push_back(k);
       
+      // Guards against a non-terminating compatibility chain below. A chain may only defer
+      // cells, never bisect, so it cannot be longer than the number of cells in the mesh.
+      size_t deferrals = 0;
+
       while(!marked_cell_idx.empty())
         {
           size_t idx = marked_cell_idx.front();
+
+          size_t max_idx = NewestVertex(Cells[idx]);
+          size_t ref_edge_idx = Cells[idx].LocEdge[(max_idx+1)%3];
+          bool ref_edge_refined = (edge_ref_infos.find(ref_edge_idx) != edge_ref_infos.end());
+
+          // A cell must only be bisected once it is compatible with its neighbor, i.e. once
+          // both share the same refinement edge. Bisecting an incompatible cell first and
+          // repairing the neighbor afterwards would insert the new vertex before the
+          // neighbor's children exist, so that vertex would no longer be the one with the
+          // largest index in those children and NewestVertex() would pick the wrong one.
+          // If the refinement edge was already bisected by the neighbor there is nothing to
+          // make compatible: we are consuming that refinement info here.
+          if(!ref_edge_refined && Edges[ref_edge_idx].Type() == INTERFACE_EDGE)
+            {
+              size_t neigh_idx = Edges[ref_edge_idx].GetNeighbor(idx);
+              size_t neigh_max_idx = NewestVertex(Cells[neigh_idx]);
+
+              if(Cells[neigh_idx].LocEdge[(neigh_max_idx+1)%3] != ref_edge_idx)
+                {
+                  // Refine the neighbor first. The current cell stays in the queue and is
+                  // reconsidered afterwards, when the child that inherited the refinement
+                  // edge has become its neighbor.
+                  if(++deferrals > NrCells())
+                    {
+                      std::cerr << "Error in Refine: the compatibility chain of cell " << idx
+                                << " does not terminate. The refinement edges of the mesh "
+                                << "are inconsistent.\n";
+
+                      // Leave a consistent (though possibly non-conforming) data structure
+                      // behind, so that Check() can report what is wrong with the mesh.
+                      CreateEdgeList();
+                      return;
+                    }
+
+                  // Refining the neighbor here also satisfies a mark it may already carry.
+                  std::deque<size_t>::iterator it_marked
+                    = std::find(marked_cell_idx.begin(), marked_cell_idx.end(), neigh_idx);
+                  if(it_marked != marked_cell_idx.end())
+                    marked_cell_idx.erase(it_marked);
+
+                  marked_cell_idx.push_front(neigh_idx);
+                  continue;
+                }
+            }
+
+          deferrals = 0;
           marked_cell_idx.pop_front();
-	
+
           Cell cur_cell = Cells[idx];
 
-          // determine index opposite to refinement edge
-          size_t max_idx = 0;
-          if(!cur_cell.orig)
-            {
-              // cell obtained by bisection before, choose largest index
-              if(cur_cell.LocNode[1] > cur_cell.LocNode[0]) max_idx = 1;
-              if(cur_cell.LocNode[2] > cur_cell.LocNode[max_idx]) max_idx = 2;
-            }
-          else
-            {
-              // original cell detected, choose vertex opposite longest edge
-              
-              // vertex coordinates
-              double x[3], y[3];
-              for(int i=0; i<3; ++i)
-                {
-                  x[i] = Nodes[cur_cell.LocNode[i]].getX();
-                  y[i] = Nodes[cur_cell.LocNode[i]].getY();
-                }
-
-              // edge lengths
-              double L[3];
-              for(int i=0; i<3; ++i)                
-                L[i] = sqrt(pow(x[(i+1)%3]-x[i], 2.) + pow(y[(i+1)%3]-y[i], 2.));
-
-              // index of longest edge
-              int max_edge_idx = 0;
-              if(L[1] > L[0]) max_edge_idx = 1;
-              if(L[2] > L[max_edge_idx]) max_edge_idx = 2;
-
-              // opposite vertex index
-              max_idx = (2+max_edge_idx)%3;
-            }          
-	
-          // Store edge index
-          size_t ref_edge_idx = cur_cell.LocEdge[(max_idx+1)%3];
-          bool ref_edge_refined = (edge_ref_infos.find(ref_edge_idx) != edge_ref_infos.end());
           Edge ref_edge = Edges[ref_edge_idx];
-	
+
           EdgeRefInfo edge_ref_info;
           if(ref_edge_refined)
             edge_ref_info = edge_ref_infos[ref_edge_idx];
@@ -423,6 +475,12 @@ namespace chemfem{
               for(int j=0; j<3; ++j)
                 loc_nodes[j] = new_nodes[cur_ref_data.NewCells[i][j]];
 
+              // NewestVertex() identifies the newest vertex of a bisected cell by its node
+              // index, so the vertex inserted by this bisection has to be the largest one in
+              // every child. Should this ever fire, the cell was bisected before it was
+              // compatible with its neighbor.
+              assert(new_nodes[3] == std::max({loc_nodes[0], loc_nodes[1], loc_nodes[2]}));
+
               // Create new cell
               Cell new_cell(loc_nodes[0], loc_nodes[1], loc_nodes[2]);
               new_cell.orig = false;
@@ -457,30 +515,30 @@ namespace chemfem{
                 }
             }
 
-          // Add child to marked cell list
+          // No child needs to be refined further to repair a half-bisected edge: a cell is only
+          // bisected once it shares its refinement edge with the neighbor, and that neighbor is
+          // handled in the very next iteration. Refinement info therefore never outlives the
+          // pair it belongs to, so the two edges that are handed down unsplit cannot carry any.
           for(int i=0; i<3; ++i)
             {
               if(cur_ref_data.OldEdgeNewEdgeLen[i] > 1) continue;
-
-	      // If we refined along the wrong edge one of the child elements must be refined further.
-	      // This is independent of whether the refinement edge of the current cell was already
-	      // bisected by a neighbor, since the loop only visits the two edges that are not refined.
-              if(edge_ref_infos.find(cur_cell.LocEdge[i]) != edge_ref_infos.end())
-                {
-                  // Get index of new cell
-                  size_t cell_idx = new_cells[cur_ref_data.OldEdgeNewCell[i]];
-                  marked_cell_idx.push_back(cell_idx);
-                }
+              assert(edge_ref_infos.find(cur_cell.LocEdge[i]) == edge_ref_infos.end());
             }
-	
+
           // Add neighbor to marked cell list. If the refinement edge was already bisected by
           // the neighbor we are just consuming that refinement info here, so the neighbor is
           // already refined and must neither be marked again nor be given new refinement info.
           if(!ref_edge_refined && ref_edge.Type() == INTERFACE_EDGE)
             {
+              // The neighbor shares the refinement edge (this is ensured before the cell is
+              // bisected), so it is handled next and consumes the refinement info right away.
               size_t neigh_cell = ref_edge.GetNeighbor(idx);
-              if(std::find(marked_cell_idx.begin(), marked_cell_idx.end(), neigh_cell) == marked_cell_idx.end())
-                marked_cell_idx.push_back(neigh_cell);
+              std::deque<size_t>::iterator it_marked
+                = std::find(marked_cell_idx.begin(), marked_cell_idx.end(), neigh_cell);
+              if(it_marked != marked_cell_idx.end())
+                marked_cell_idx.erase(it_marked);
+
+              marked_cell_idx.push_front(neigh_cell);
 
               // Create refinement information for the neighbor	        		      
               EdgeRefInfo ref_info;
