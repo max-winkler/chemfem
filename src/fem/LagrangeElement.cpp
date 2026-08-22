@@ -91,10 +91,6 @@ namespace chemfem{
       if(x > 1 || y > 1 || x < 0 || y < 0 || x+y > 1)
 	std::cerr << "Invalid quadrature point.\n";
       
-      DenseMatrix dLdX(2,3);
-      dLdX[0][0] = -1.; dLdX[0][1] = 1.; dLdX[0][2] = 0.;
-      dLdX[1][0] = -1.; dLdX[1][1] = 0.; dLdX[1][2] = 1.;
-
       Vector grad_L(3);
             
       switch(degree)
@@ -178,7 +174,16 @@ namespace chemfem{
 	  break;
 	}
 
-      return dLdX*grad_L;
+      // Chain rule with the derivative of the barycentric coordinates,
+      //   d(lambda_0,lambda_1,lambda_2)/d(x,y) = ( -1  1  0 )
+      //                                          ( -1  0  1 ).
+      // That matrix is constant, so the product is written out here instead of
+      // building a DenseMatrix on every call.
+      Vector grad(2);
+      grad[0] = grad_L[1] - grad_L[0];
+      grad[1] = grad_L[2] - grad_L[0];
+
+      return grad;
     }
     
   }
