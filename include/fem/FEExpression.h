@@ -35,14 +35,18 @@ namespace chemfem{
     public:
       FEExpression(ExpressionType); 
       FEExpression(ExpressionType, ScalarFunction);
+      FEExpression(ExpressionType, VectorFunction);
 
       // \todo These functions are added to avoid these friend declarations. Use these functions in BilinearForm and LinearForm too.
       ExpressionType GetType() const;
       double EvalCoeff(const chemfem::linalg::Coordinate&) const;
+      chemfem::linalg::Vector2D EvalVectorCoeff(const chemfem::linalg::Coordinate&) const;
         
     private:
       ExpressionType Type;
       ScalarFunction Coeff;
+      /// Used instead of Coeff by the terms whose coefficient is vector valued
+      VectorFunction VecCoeff;
     };
     
   };

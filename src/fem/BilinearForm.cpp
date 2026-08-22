@@ -39,6 +39,12 @@ namespace chemfem{
       Terms.push_back(expression);
     }
 
+    void BilinearForm::AddConvectionTerm(VectorFunction ConvectionField)
+    {
+      FEExpression expression(FIRST_ORDER, ConvectionField);
+      Terms.push_back(expression);
+    }
+
     void BilinearForm::AddReactionTerm(ScalarFunction ReactionCoeff)
     {
       FEExpression expression(ZERO_ORDER, ReactionCoeff);
@@ -107,33 +113,46 @@ namespace chemfem{
                 {
                   if(&TestSpace.mesh == &TrialSpace.mesh)
                     {
-                      double CoeffVal = Term->Coeff(XYq);
-		      
                       switch(Term->Type)
                         {
                         case SECOND_ORDER:
-			  
-                          for(int k=0; k<TestSpace.DofPerCell; ++k)
-                            for(int l=0; l<TrialSpace.DofPerCell; ++l)
-                              {
-                                LocMatrix[k][l] += 
-                                  (*Wq) * CoeffVal
-                                  * dot(GradTest[k], GradTrial[l])
-                                  * det;
-                              }
-		  
-                          break;
-                          /*
-                            case FIRST_ORDER:
+                          {
+                            const double CoeffVal = Term->Coeff(XYq);
 
-                            break;
-                          */
+                            for(int k=0; k<TestSpace.DofPerCell; ++k)
+                              for(int l=0; l<TrialSpace.DofPerCell; ++l)
+                                {
+                                  LocMatrix[k][l] +=
+                                    (*Wq) * CoeffVal
+                                    * dot(GradTest[k], GradTrial[l])
+                                    * det;
+                                }
+                          }
+                          break;
+
+                        case FIRST_ORDER:
+                          {
+                            const Vector2D ConvectionField = Term->VecCoeff(XYq);
+
+                            for(int k=0; k<TestSpace.DofPerCell; ++k)
+                              for(int l=0; l<TrialSpace.DofPerCell; ++l)
+                                {
+                                  LocMatrix[k][l] +=
+                                    (*Wq) * dot(ConvectionField, GradTrial[l]) * ValueTest[k]
+                                    * det;
+                                }
+                          }
+                          break;
+
                         case ZERO_ORDER:
-                          for(int k=0; k<TestSpace.DofPerCell; ++k)
-                            for(int l=0; l<TrialSpace.DofPerCell; ++l)
-                              LocMatrix[k][l] += (*Wq) * CoeffVal * ValueTest[k]
-                                * ValueTrial[l] * det;
-			  			
+                          {
+                            const double CoeffVal = Term->Coeff(XYq);
+
+                            for(int k=0; k<TestSpace.DofPerCell; ++k)
+                              for(int l=0; l<TrialSpace.DofPerCell; ++l)
+                                LocMatrix[k][l] += (*Wq) * CoeffVal * ValueTest[k]
+                                  * ValueTrial[l] * det;
+                          }
                           break;
 			  
                         default:

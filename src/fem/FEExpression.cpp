@@ -6,6 +6,9 @@ namespace chemfem{
     FEExpression::FEExpression(ExpressionType Type, ScalarFunction Coeff)
       : Type(Type), Coeff(Coeff) {}
 
+    FEExpression::FEExpression(ExpressionType Type, VectorFunction VecCoeff)
+      : Type(Type), VecCoeff(VecCoeff) {}
+
     FEExpression::FEExpression(ExpressionType Type)
       : Type(Type), Coeff(nullptr) {}
 
@@ -17,6 +20,11 @@ namespace chemfem{
     double FEExpression::EvalCoeff(const chemfem::linalg::Coordinate& p) const
     {
       return Coeff(p);
+    }
+
+    chemfem::linalg::Vector2D FEExpression::EvalVectorCoeff(const chemfem::linalg::Coordinate& p) const
+    {
+      return VecCoeff(p);
     }
   }
 }

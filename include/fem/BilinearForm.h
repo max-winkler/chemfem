@@ -36,6 +36,12 @@ namespace chemfem{
       void AddDiffusionTerm(ScalarFunction);
 
       /**
+       * Adds a convection term (b.grad u, v) to the bilinear form. The convection
+       * field b is given as a vector valued coefficient function.
+       */
+      void AddConvectionTerm(VectorFunction);
+
+      /**
        * Adds a reaction term (c u,v) to the bilinear form. The reaction parameter
        * is given as a coefficient function.
        */      
