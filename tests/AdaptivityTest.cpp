@@ -7,7 +7,7 @@
 #include "fem/BilinearForm.h"
 #include "fem/LagrangeElement.h"
 #include "fem/FEFunction.h"
-#include "fem/ErrorEstimator.h"
+#include "fem/GenericEstimator.h"
 #include "mesh/UnitSquareMesh.h"
 #include "linalg/SparseMatrix.h"
 
@@ -30,6 +30,8 @@ int main()
 {
   UnitSquareMesh mesh(6);
   const int max_iter = 20;
+
+  GenericEstimator Estimator = GenericEstimator::Residual(f);
 
   for(int iter=0; iter<max_iter; ++iter)
     {
@@ -64,11 +66,7 @@ int main()
       Sol.WriteVtk("solution_" + std::to_string(iter) + ".vtk");
 
       // ESTIMATE
-      ErrorEstimator Estimator(Sol);
-      Estimator.AddVolumeResidualTerm(f);
-      Estimator.AddEdgeJumpTerm();
-        
-      Vector Errors = Estimator.Assemble();
+      Vector Errors = Estimator.Assemble(Sol);
 
       // MARK
       double Threshold = 0.9;

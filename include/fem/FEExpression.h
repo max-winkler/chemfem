@@ -19,8 +19,7 @@ namespace chemfem{
     typedef std::function<double(const chemfem::linalg::Coordinate&)> ScalarFunction;
     typedef std::function<chemfem::linalg::Vector2D(const chemfem::linalg::Coordinate&)> VectorFunction;
     
-    enum ExpressionType {SECOND_ORDER, FIRST_ORDER, ZERO_ORDER, VOLUME_FORCE, NEUMANN_BC,
-      VOLUME_RESIDUAL, EDGE_JUMP};
+    enum ExpressionType {SECOND_ORDER, FIRST_ORDER, ZERO_ORDER, VOLUME_FORCE, NEUMANN_BC};
 
     /**
      * This class is used to store a single term in a partial differential equation.

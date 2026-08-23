@@ -27,7 +27,6 @@ OBJ = 	src/linalg/Vector.o \
 	src/fem/LinearForm.o \
 	src/fem/BilinearForm.o \
 	src/fem/ErrorNorm.o \
-	src/fem/ErrorEstimator.o \
 	src/fem/GenericEstimator.o	
 
 TESTS = tests/SparseMatrixTest.o \
