@@ -27,7 +27,8 @@ OBJ = 	src/linalg/Vector.o \
 	src/fem/LinearForm.o \
 	src/fem/BilinearForm.o \
 	src/fem/ErrorNorm.o \
-	src/fem/ErrorEstimator.o	
+	src/fem/ErrorEstimator.o \
+	src/fem/GenericEstimator.o	
 
 TESTS = tests/SparseMatrixTest.o \
 	tests/DenseMatrixTest.o \
@@ -36,7 +37,9 @@ TESTS = tests/SparseMatrixTest.o \
 	tests/MeshRefineTest.o \
 	tests/LocalRefinement.o \
 	tests/AdaptivityTest.o \
-	tests/ConvectionTest.o
+	tests/ConvectionTest.o \
+	tests/EstimatorTest.o \
+	tests/DiffusionTest.o
 
 TESTS_BIN = $(TESTS:.o=)
 

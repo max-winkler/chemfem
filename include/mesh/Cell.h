@@ -16,6 +16,7 @@ namespace chemfem::fem{
   class LinearForm;
   class ErrorNorm;
   class ErrorEstimator;
+  class GenericEstimator;
 }
 
 namespace chemfem{
@@ -40,6 +41,7 @@ namespace chemfem{
       friend class chemfem::fem::LinearForm;
       friend class chemfem::fem::ErrorNorm;
       friend class chemfem::fem::ErrorEstimator;
+      friend class chemfem::fem::GenericEstimator;
       
     public:
       /**

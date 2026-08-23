@@ -24,6 +24,7 @@ namespace chemfem::fem{
   class LinearForm;
   class ErrorNorm;
   class ErrorEstimator;
+  class GenericEstimator;
 }
 
 typedef std::pair<std::set<chemfem::mesh::Edge>::iterator, bool> set_insert_res;
@@ -41,7 +42,8 @@ namespace chemfem{
       friend class chemfem::fem::BilinearForm;
       friend class chemfem::fem::LinearForm;
       friend class chemfem::fem::ErrorNorm;
-      friend class chemfem::fem::ErrorEstimator;      
+      friend class chemfem::fem::ErrorEstimator;
+      friend class chemfem::fem::GenericEstimator;
     public:
 
       /// Default constructor
