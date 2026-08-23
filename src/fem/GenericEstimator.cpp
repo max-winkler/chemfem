@@ -36,6 +36,37 @@ namespace chemfem{
       return dot(u.gradient - u_out.gradient, edge.normal);
     }
 
+    double GenericEstimator::VolumeResidual::operator()(const Coordinate& pos,
+                                                        const CellGeometry& cell,
+                                                        const SolutionState& u) const
+    {
+      // For P1 the Laplacian of u_h vanishes on every cell
+      const double residual = f(pos) + u.laplacian;
+
+      return cell.h * cell.h * residual * residual;
+    }
+
+    double GenericEstimator::EdgeJump::operator()(const Coordinate&,
+                                                  const CellGeometry&,
+                                                  const EdgeGeometry& edge,
+                                                  const SolutionState& u,
+                                                  const SolutionState& u_out) const
+    {
+      const double jump = NormalJump(u, u_out, edge);
+
+      return 0.5 * edge.h * jump * jump;
+    }
+
+    GenericEstimator GenericEstimator::Residual(ScalarFunction f)
+    {
+      GenericEstimator Estimator;
+
+      Estimator.AddVolumeTerm(VolumeResidual(f));
+      Estimator.AddEdgeTerm(EdgeJump(), INTERIOR_EDGES);
+
+      return Estimator;
+    }
+
     void GenericEstimator::AddVolumeTerm(VolumeIntegrand term)
     {
       VolumeTerms.push_back(term);

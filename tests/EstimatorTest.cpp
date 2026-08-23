@@ -57,32 +57,6 @@ Vector2D exact_grad(const Coordinate& p)
 // contributions balance.
 // ---------------------------------------------------------------------------------
 
-/// h_T^2 |f + Laplace(u_h)|^2
-struct VolumeResidual
-{
-  double operator()(const Coordinate& pos, const CellGeometry& cell,
-                    const SolutionState& u) const
-  {
-    // For P1 the Laplacian of u_h vanishes on every cell, u.laplacian is 0 then.
-    double residual = f(pos) + u.laplacian;
-
-    return cell.h * cell.h * residual * residual;
-  }
-};
-
-/// 1/2 h_E |[du_h/dn]|^2
-struct EdgeJump
-{
-  double operator()(const Coordinate& pos, const CellGeometry& cell,
-                    const EdgeGeometry& edge,
-                    const SolutionState& u, const SolutionState& u_out) const
-  {
-    double jump = NormalJump(u, u_out, edge);
-
-    return 0.5 * edge.h * jump * jump;
-  }
-};
-
 /// |u - u_h|_{H1(T)}^2, the exact error the estimator is measured against
 struct ExactErrorH1
 {
@@ -242,15 +216,13 @@ int main()
   // The estimator is built once. It stores only the terms, not a solution, so the
   // same object is evaluated for every mesh of both loops below.
   // ------------------------------------------------------------------------------
-  GenericEstimator Estimator;
-  Estimator.AddVolumeTerm(VolumeResidual());
-  Estimator.AddEdgeTerm(EdgeJump(), INTERIOR_EDGES);
+  GenericEstimator Estimator = GenericEstimator::Residual(f);
 
   GenericEstimator VolumePart;
-  VolumePart.AddVolumeTerm(VolumeResidual());
+  VolumePart.AddVolumeTerm(GenericEstimator::VolumeResidual(f));
 
   GenericEstimator EdgePart;
-  EdgePart.AddEdgeTerm(EdgeJump(), INTERIOR_EDGES);
+  EdgePart.AddEdgeTerm(GenericEstimator::EdgeJump(), INTERIOR_EDGES);
 
   GenericEstimator ExactError;
   ExactError.AddVolumeTerm(ExactErrorH1());
