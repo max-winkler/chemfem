@@ -1,5 +1,13 @@
 CPP_INCLUDE = -Iinclude
-CPP_FLAGS   = -g -O2 -Wall -MMD -MP
+
+CPP_DEBUG_FLAGS   = -g -O0 -Wall -Wextra -fno-omit-frame-pointer
+
+# -march=native ties the binaries to the CPU they were built on, and -ffast-math
+# reorders floating point arithmetic and drops the handling of NaN and Inf
+CPP_RELEASE_FLAGS = -O3 -march=native -mtune=native -ffast-math -funroll-loops \
+                    -DNDEBUG -Wall
+
+CPP_FLAGS = ${CPP_RELEASE_FLAGS}
 
 OBJ = 	src/linalg/Vector.o \
 	src/linalg/SparseMatrix.o \
@@ -45,11 +53,7 @@ TESTS_BIN = $(TESTS:.o=)
 %.o: %.cpp
 	g++ -c $< ${CPP_INCLUDE} ${CPP_FLAGS} -o $@
 
-# Header dependencies recorded by -MMD, so that a changed header rebuilds
-# every object that includes it
--include $(OBJ:.o=.d) $(TESTS:.o=.d)
-
 tests: $(OBJ) $(TESTS)
 	$(foreach TEST,$(TESTS_BIN),g++ $(OBJ) $(TEST).o -o $(TEST);)
 clean:
-	rm -f src/*/*.o src/*/*.d tests/*.o tests/*.d
+	rm -f src/*/*.o tests/*.o
