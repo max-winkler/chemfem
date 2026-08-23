@@ -55,5 +55,18 @@ TESTS_BIN = $(TESTS:.o=)
 
 tests: $(OBJ) $(TESTS)
 	$(foreach TEST,$(TESTS_BIN),g++ $(OBJ) $(TEST).o -o $(TEST);)
+
+# Object files do not record the flags they were built with, so switching the
+# build type has to start from scratch
+debug:
+	$(MAKE) clean
+	$(MAKE) CPP_FLAGS="${CPP_DEBUG_FLAGS}" tests
+
+release:
+	$(MAKE) clean
+	$(MAKE) CPP_FLAGS="${CPP_RELEASE_FLAGS}" tests
+
 clean:
 	rm -f src/*/*.o tests/*.o
+
+.PHONY: debug release clean
