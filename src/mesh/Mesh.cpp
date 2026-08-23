@@ -193,44 +193,42 @@ namespace chemfem{
 
     void Mesh::CreateEdgeList()
     {
-      /// \todo This routine is very slow (it searches the whole edge list for every
-      /// edge of every cell) and should be avoided where possible.
-
-      // Remove old edges
+      // Builds the edge list from scratch. Needed for the mesh constructors, which
+      // have no edge information yet. Refine() keeps its edges up to date itself.
       Edges.clear();
-      
-      std::vector<Cell>::iterator cell;
-      size_t cell_ind;
-      
-      // Remove all edge information
-      for(cell = Cells.begin(), cell_ind=0; cell != Cells.end(); ++cell, ++cell_ind)
-        {
-          cell->SetIndex(cell_ind);
-          for(int k=0; k<3; ++k)
-            cell->LocEdge[k] = -1;
-        }
 
-      for(cell = Cells.begin(); cell != Cells.end(); ++cell)
+      // Maps the two endpoints of an edge to its position in the edge list
+      std::map<std::pair<size_t, size_t>, size_t> known;
+
+      for(size_t c=0; c<Cells.size(); ++c)
         {
+          Cell& cell = Cells[c];
+          cell.SetIndex(c);
+
           for(int i=0; i<3; ++i)
             {
-              size_t Node0 = cell->LocNode[i], Node1 = cell->LocNode[(i+1)%3];
-              Edge new_edge(Node0, Node1, BOUNDARY_EDGE);
+              const size_t Node0 = cell.LocNode[i], Node1 = cell.LocNode[(i+1)%3];
+              const std::pair<size_t, size_t> endpoints(std::min(Node0, Node1),
+                                                        std::max(Node0, Node1));
 
-              // Check if edge already exists
-              std::vector<Edge>::iterator it = std::find(Edges.begin(), Edges.end(), new_edge);
-              if(it != Edges.end())
+              std::map<std::pair<size_t, size_t>, size_t>::const_iterator it
+                = known.find(endpoints);
+
+              if(it != known.end())
                 {
                   // Edge exists, update the neighbor
-                  (*it).SetNeighbor(cell->Index());
-                  cell->LocEdge[i] = std::distance(Edges.begin(), it);
+                  Edges[it->second].SetNeighbor(c);
+                  cell.LocEdge[i] = it->second;
                 }
               else
                 {
                   // Edge does not exist, add to edge list
-                  new_edge.SetNeighbor(cell->Index());
+                  Edge new_edge(Node0, Node1, BOUNDARY_EDGE);
+                  new_edge.SetNeighbor(c);
+
                   Edges.push_back(new_edge);
-                  cell->LocEdge[i] = Edges.size()-1;
+                  known[endpoints] = Edges.size()-1;
+                  cell.LocEdge[i] = Edges.size()-1;
                 }
             }
         }
@@ -557,8 +555,35 @@ namespace chemfem{
           delete[] new_edges;
         }
 
-      // not good but for testing only
-      CreateEdgeList();
+      // The bisections kept the edge list up to date all along. Only the slots of the
+      // edges that were bisected are left over: they are deliberately not reused, so
+      // that they stay available as the key under which the refinement info for the
+      // neighbor is stored. Drop them and renumber.
+      std::vector<bool> referenced(Edges.size(), false);
+
+      for(size_t c=0; c<Cells.size(); ++c)
+        for(int i=0; i<3; ++i)
+          referenced[Cells[c].LocEdge[i]] = true;
+
+      std::vector<size_t> remap(Edges.size(), 0);
+      size_t next = 0;
+
+      for(size_t e=0; e<Edges.size(); ++e)
+        if(referenced[e])
+          {
+            remap[e] = next;
+            Edges[next++] = Edges[e];
+          }
+
+      Edges.resize(next);
+
+      for(size_t c=0; c<Cells.size(); ++c)
+        {
+          Cells[c].SetIndex(c);
+
+          for(int i=0; i<3; ++i)
+            Cells[c].LocEdge[i] = remap[Cells[c].LocEdge[i]];
+        }
     }
     
     /*
