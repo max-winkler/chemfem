@@ -123,7 +123,10 @@ struct Row
   double eta;
 };
 
-/// Rate s in eta ~ N^(-s) between two consecutive rows
+/**
+ * Rate s in eta ~ N^(-s) between two consecutive rows, N the number of degrees of
+ * freedom. On a uniform mesh N ~ h^(-2), so s translates into the order h^(2s).
+ */
 double Rate(const Row& a, const Row& b)
 {
   return log(a.eta/b.eta) / log(double(b.dofs)/double(a.dofs));
@@ -132,8 +135,8 @@ double Rate(const Row& a, const Row& b)
 void PrintTable(const std::string& caption, const std::vector<Row>& rows)
 {
   std::cout << "\n" << caption << "\n" << std::string(43, '=') << "\n";
-  std::cout << std::setw(9) << "Zellen" << std::setw(9) << "DOFs"
-            << std::setw(14) << "eta" << std::setw(9) << "Rate" << std::endl;
+  std::cout << std::setw(9) << "Cells" << std::setw(9) << "DOFs"
+            << std::setw(14) << "eta" << std::setw(9) << "Rate s" << std::endl;
 
   for(size_t i=0; i<rows.size(); ++i)
     {
@@ -225,8 +228,8 @@ int main()
       }
   }
 
-  PrintTable("Uniforme Verfeinerung", uniform);
-  PrintTable("Adaptive Verfeinerung (Doerfler, theta = 0.6)", adaptive);
+  PrintTable("Uniform refinement", uniform);
+  PrintTable("Adaptive refinement (Doerfler, theta = 0.6)", adaptive);
 
   // The adaptive row closest in size to the finest uniform one
   const Row& reference = uniform.back();
@@ -241,12 +244,12 @@ int main()
   const double gain = reference.eta / adaptive[best].eta;
 
   std::cout << "\n" << std::fixed << std::setprecision(3)
-            << "Rate adaptiv                 : " << rate
-            << "   (erwartet 1/2, optimal fuer P1)\n"
-            << "eta uniform / eta adaptiv    : " << gain
-            << "   bei " << reference.dofs << " gegen "
+            << "Rate adaptive                 : " << rate
+            << "   (expected 1/2, optimal for P1)\n"
+            << "eta uniform / eta adaptive    : " << gain
+            << "   at " << reference.dofs << " against "
             << adaptive[best].dofs << " DOFs\n"
-            << "Netzgradierung h_max / h_min : " << grading << std::endl;
+            << "Mesh grading h_max / h_min    : " << grading << std::endl;
 
   bool ok = true;
 

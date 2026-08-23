@@ -83,7 +83,7 @@ int main()
         }
     }
 
-  std::cout << "\n" << std::setw(10) << "Zellen"
+  std::cout << "\n" << std::setw(10) << "Cells"
             << std::setw(18) << "L2-error" << std::setw(12) << "L2-eoc"
             << std::setw(18) << "H1-error" << std::setw(12) << "H1-eoc"
             << std::endl;

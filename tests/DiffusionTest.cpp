@@ -167,10 +167,10 @@ struct Row
 void PrintTable(const std::string& caption, const std::vector<Row>& rows)
 {
   std::cout << "\n" << caption << "\n" << std::string(60, '=') << "\n";
-  std::cout << std::setw(8)  << "Zellen"
+  std::cout << std::setw(8)  << "Cells"
             << std::setw(14) << "eta"
             << std::setw(14) << "|||u-u_h|||"
-            << std::setw(14) << "eta/Fehler"
+            << std::setw(14) << "eta/error"
             << std::setw(10) << "eoc" << std::endl;
 
   std::cout << std::setprecision(4) << std::fixed;
@@ -240,9 +240,9 @@ int main()
     }
 
   std::cout << "Diffusionsproblem  -div(a grad u) = f,  a = 1 + " << contrast << "*x*y\n";
-  std::cout << "Koeffizient und rechte Seite sind Funktoren auf Coordinate.\n";
+  std::cout << "Coefficient and right hand side are functors on Coordinate.\n";
 
-  PrintTable("Uniforme Verfeinerung", rows);
+  PrintTable("Uniform refinement", rows);
 
   std::cout << "\nDiffusionTest was successful.\n";
   return 0;

@@ -135,12 +135,12 @@ void PrintTable(const std::string& caption, const std::vector<Row>& rows)
 {
   std::cout << "\n" << caption << "\n";
   std::cout << std::string(78, '=') << "\n";
-  std::cout << std::setw(8)  << "Zellen"
+  std::cout << std::setw(8)  << "Cells"
             << std::setw(12) << "eta"
             << std::setw(12) << "eta_Vol"
-            << std::setw(12) << "eta_Kante"
+            << std::setw(12) << "eta_edge"
             << std::setw(12) << "|u-u_h|_H1"
-            << std::setw(12) << "eta/Fehler"
+            << std::setw(12) << "eta/error"
             << std::setw(10) << "eoc" << std::endl;
 
   std::cout << std::setprecision(4) << std::fixed;
@@ -201,15 +201,15 @@ int main()
 
     FEFunction Sol = Solve(Space);
 
-    std::cout << "0) Quadratur\n" << std::string(78, '=') << "\n";
-    std::cout << "   Flaeche des Einheitsquadrats        : " << Sum(Area.Assemble(Zero))
-              << "   (exakt 1)\n";
-    std::cout << "   Laenge des Randes                   : " << Sum(Perimeter.Assemble(Zero))
-              << "   (exakt 4)\n";
-    std::cout << "   Integral von h_T                    : " << Sum(Size.Assemble(Zero))
-              << "   (exakt " << 1./(n-1) << ")\n";
-    std::cout << "   Sprung von u_h ueber inneren Kanten : " << Sum(Continuity.Assemble(Sol))
-              << "   (exakt 0)\n";
+    std::cout << "0) Quadrature\n" << std::string(78, '=') << "\n";
+    std::cout << "   Area of the unit square            : " << Sum(Area.Assemble(Zero))
+              << "   (exact 1)\n";
+    std::cout << "   Length of the boundary             : " << Sum(Perimeter.Assemble(Zero))
+              << "   (exact 4)\n";
+    std::cout << "   Integral of h_T                    : " << Sum(Size.Assemble(Zero))
+              << "   (exact " << 1./(n-1) << ")\n";
+    std::cout << "   Jump of u_h across interior edges  : " << Sum(Continuity.Assemble(Sol))
+              << "   (exact 0)\n";
   }
 
   // ------------------------------------------------------------------------------
@@ -298,8 +298,8 @@ int main()
       }
   }
 
-  PrintTable("1) Uniforme Verfeinerung", uniform);
-  PrintTable("2) Adaptive Verfeinerung, gesteuert von denselben Indikatoren", adaptive);
+  PrintTable("1) Uniform refinement", uniform);
+  PrintTable("2) Adaptive refinement, driven by the same indicators", adaptive);
 
   std::cout << "\nEstimatorTest was successful.\n";
   return 0;
