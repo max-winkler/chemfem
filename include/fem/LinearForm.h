@@ -47,7 +47,9 @@ namespace chemfem{
        * has to be invoked.
        */
       Vector& LoadVector();
-      
+
+      const FESpace& GetTestSpace() const;
+
     private:
       /**
        * Stores the terms added to the linear form in a vector.

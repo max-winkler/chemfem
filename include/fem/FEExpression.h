@@ -22,7 +22,11 @@ namespace chemfem{
     /// Returns true for the points of the boundary part it describes
     typedef std::function<bool(const chemfem::linalg::Coordinate&)> BoundaryIndicator;
 
-    enum ExpressionType {SECOND_ORDER, FIRST_ORDER, ZERO_ORDER, VOLUME_FORCE, NEUMANN_BC};
+    enum ExpressionType {SECOND_ORDER, FIRST_ORDER, ZERO_ORDER, VOLUME_FORCE, NEUMANN_BC,
+                         GENERAL};
+
+    /// Operators applied to the trial and test functions of a GENERAL term
+    enum FEOperator {VALUE, DX, DY};
 
     /**
      * This class is used to store a single term in a partial differential equation.
@@ -38,6 +42,7 @@ namespace chemfem{
       FEExpression(ExpressionType); 
       FEExpression(ExpressionType, ScalarFunction);
       FEExpression(ExpressionType, VectorFunction);
+      FEExpression(ScalarFunction, FEOperator, FEOperator);
 
       // \todo These functions are added to avoid these friend declarations. Use these functions in BilinearForm and LinearForm too.
       ExpressionType GetType() const;
@@ -49,6 +54,8 @@ namespace chemfem{
       ScalarFunction Coeff;
       /// Used instead of Coeff by the terms whose coefficient is vector valued
       VectorFunction VecCoeff;
+      /// Operators on the trial and the test function of a GENERAL term
+      FEOperator TrialOp, TestOp;
     };
     
   };

@@ -23,6 +23,19 @@ namespace chemfem{
 
     double Identity(const Coordinate&) {return 1.;}
 
+    namespace {
+
+      double Apply(FEOperator op, double value, const Vector2D& grad)
+      {
+        switch(op)
+          {
+          case DX: return grad.x;
+          case DY: return grad.y;
+          default: return value;
+          }
+      }
+    }
+
     BilinearForm::BilinearForm(const FESpace& TrialSpace, const FESpace& TestSpace)
       : TrialSpace(TrialSpace), TestSpace(TestSpace), Matrix(0,0),
 	DirichletRhs(TestSpace.NrDof()) {}
@@ -51,9 +64,30 @@ namespace chemfem{
       Terms.push_back(expression);
     }
 
+    void BilinearForm::AddTerm(ScalarFunction Coeff, FEOperator TrialOp, FEOperator TestOp)
+    {
+      FEExpression expression(Coeff, TrialOp, TestOp);
+      Terms.push_back(expression);
+    }
+
+    void BilinearForm::AddTerm(FEOperator TrialOp, FEOperator TestOp)
+    {
+      AddTerm(Identity, TrialOp, TestOp);
+    }
+
     SparseMatrix& BilinearForm::SystemMatrix()
     {
       return Matrix;
+    }
+
+    const FESpace& BilinearForm::GetTrialSpace() const
+    {
+      return TrialSpace;
+    }
+
+    const FESpace& BilinearForm::GetTestSpace() const
+    {
+      return TestSpace;
     }
 
     void BilinearForm::Assemble()
@@ -61,6 +95,13 @@ namespace chemfem{
       Matrix = SparseMatrix(TestSpace.NrFreeDof(), TrialSpace.NrFreeDof());
       SparseMatrixInserter Ins(Matrix);
 
+      Assemble(Ins, 0, 0);
+
+      Ins.Build();
+    }
+
+    void BilinearForm::Assemble(SparseMatrixInserter& Ins, size_t RowOffset, size_t ColOffset)
+    {
       const DofManager& TestDofs = TestSpace.Dofs;
       const DofManager& TrialDofs = TrialSpace.Dofs;
 
@@ -165,6 +206,18 @@ namespace chemfem{
                           }
                           break;
 
+                        case GENERAL:
+                          {
+                            const double CoeffVal = Term->Coeff(XYq);
+
+                            for(int k=0; k<NrTest; ++k)
+                              for(int l=0; l<NrTrial; ++l)
+                                LocMatrix[k][l] += (*Wq) * CoeffVal
+                                  * Apply(Term->TrialOp, ValueTrial[l], GradTrial[l])
+                                  * Apply(Term->TestOp, ValueTest[k], GradTest[k]) * det;
+                          }
+                          break;
+
                         default:
                           std::cerr << "Assembly of FE expressions of type " << Term->Type
                                     << " not implemented yet.\n";
@@ -194,8 +247,8 @@ namespace chemfem{
 
                 if(TrialDofs.IsFree(DofTrial))
                   // DOF is a free DOF
-                  Ins.Insert(TestDofs.ReducedIndex(DofTest), TrialDofs.ReducedIndex(DofTrial),
-                             LocMatrix[k][l]);
+                  Ins.Insert(RowOffset + TestDofs.ReducedIndex(DofTest),
+                             ColOffset + TrialDofs.ReducedIndex(DofTrial), LocMatrix[k][l]);
                 else
                   {
                     //DOF is a Dirichlet DOF
@@ -206,8 +259,6 @@ namespace chemfem{
               }
 
         } // loop over cells
-
-      Ins.Build();
 
       delete[] GradTest;
       delete[] GradTrial;

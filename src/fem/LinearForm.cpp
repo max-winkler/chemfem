@@ -37,6 +37,11 @@ namespace chemfem{
       return Vec;
     }
 
+    const FESpace& LinearForm::GetTestSpace() const
+    {
+      return TestSpace;
+    }
+
     void LinearForm::Assemble()
     {
       Vec = Vector(TestSpace.NrFreeDof());
