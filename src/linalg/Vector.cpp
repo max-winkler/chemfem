@@ -183,7 +183,7 @@ namespace chemfem{
       Vector::const_iterator it_a = a.begin();
       Vector::const_iterator it_b = b.begin();
 
-      for(; it_a != a.end(), it_b != b.end(); ++it_a, ++it_b)
+      for(; it_a != a.end() && it_b != b.end(); ++it_a, ++it_b)
 	val += (*it_a) * (*it_b);
 
       if(it_a != a.end() || it_b != b.end())
