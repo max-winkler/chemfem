@@ -26,7 +26,9 @@ namespace chemfem{
 
       Matrix2D Hessian(int, double, double) const;
 
-    };    
+      chemfem::linalg::Coordinate NodalPoint(int) const;
+
+    };
   };
 };
 

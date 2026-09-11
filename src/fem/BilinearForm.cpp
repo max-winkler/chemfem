@@ -22,7 +22,7 @@ namespace chemfem{
   namespace fem{
 
     double Identity(const Coordinate&) {return 1.;}
-    
+
     BilinearForm::BilinearForm(const FESpace& TrialSpace, const FESpace& TestSpace)
       : TrialSpace(TrialSpace), TestSpace(TestSpace), Matrix(0,0),
 	DirichletRhs(TestSpace.NrDof()) {}
@@ -55,11 +55,17 @@ namespace chemfem{
     {
       return Matrix;
     }
-        
+
     void BilinearForm::Assemble()
     {
       Matrix = SparseMatrix(TestSpace.NrFreeDof(), TrialSpace.NrFreeDof());
-      SparseMatrixInserter Ins(Matrix);     
+      SparseMatrixInserter Ins(Matrix);
+
+      const DofManager& TestDofs = TestSpace.Dofs;
+      const DofManager& TrialDofs = TrialSpace.Dofs;
+
+      const int NrTest = TestSpace.NrLocalDof();
+      const int NrTrial = TrialSpace.NrLocalDof();
 
       // TODO: Select correct quadrature formula once it is implemented
       QuadratureFormula QuadFormula(QUAD_FORMULA::GAUSS_7);
@@ -67,12 +73,12 @@ namespace chemfem{
       Vector Xi, Eta, Weights;
       QuadFormula.FormulaData(Weights, Xi, Eta);
 
-      Vector2D *GradTest = new Vector2D[TestSpace.DofPerCell];
-      Vector2D *GradTrial = new Vector2D[TrialSpace.DofPerCell];
+      Vector2D *GradTest = new Vector2D[NrTest];
+      Vector2D *GradTrial = new Vector2D[NrTrial];
 
-      double *ValueTest = new double[TestSpace.DofPerCell];
-      double *ValueTrial = new double[TrialSpace.DofPerCell];
-      
+      double *ValueTest = new double[NrTest];
+      double *ValueTrial = new double[NrTrial];
+
       // Iterate over all cells
       int CellInd;
       std::vector<Cell>::const_iterator cell;
@@ -87,11 +93,11 @@ namespace chemfem{
           const Matrix2D Jac = TestSpace.mesh.Jacobian(CellInd);
           const Matrix2D InvJac = Jac.Transpose().Invert();
 
-          DenseMatrix LocMatrix(TestSpace.DofPerCell, TrialSpace.DofPerCell);
+          DenseMatrix LocMatrix(NrTest, NrTrial);
 
           // Iterate over all quadrature points
           Vector::const_iterator Wq, Xiq, Etaq;
-	  
+
           for(Wq = Weights.begin(), Xiq = Xi.begin(), Etaq = Eta.begin();
               Wq != Weights.end(); ++Wq, ++Xiq, ++Etaq)
             {
@@ -99,14 +105,18 @@ namespace chemfem{
               const Coordinate XiEtaq{*Xiq, *Etaq};
               const Coordinate XYq = b + Jac*XiEtaq;
 
-              for(int k=0; k<TestSpace.DofPerCell; ++k)
+              for(int k=0; k<NrTest; ++k)
                 {
                   GradTest[k] = InvJac * TestSpace.RefElement().Gradient(k, *Xiq, *Etaq);
-                  GradTrial[k] = InvJac * TrialSpace.RefElement().Gradient(k, *Xiq, *Etaq);
                   ValueTest[k] = TestSpace.RefElement().Value(k, *Xiq, *Etaq);
-                  ValueTrial[k] = TrialSpace.RefElement().Value(k, *Xiq, *Etaq);
                 }
-	      
+
+              for(int l=0; l<NrTrial; ++l)
+                {
+                  GradTrial[l] = InvJac * TrialSpace.RefElement().Gradient(l, *Xiq, *Etaq);
+                  ValueTrial[l] = TrialSpace.RefElement().Value(l, *Xiq, *Etaq);
+                }
+
               // Iterate over all terms
               for(std::vector<FEExpression>::const_iterator Term = Terms.begin();
                   Term != Terms.end(); ++Term)
@@ -119,8 +129,8 @@ namespace chemfem{
                           {
                             const double CoeffVal = Term->Coeff(XYq);
 
-                            for(int k=0; k<TestSpace.DofPerCell; ++k)
-                              for(int l=0; l<TrialSpace.DofPerCell; ++l)
+                            for(int k=0; k<NrTest; ++k)
+                              for(int l=0; l<NrTrial; ++l)
                                 {
                                   LocMatrix[k][l] +=
                                     (*Wq) * CoeffVal
@@ -134,8 +144,8 @@ namespace chemfem{
                           {
                             const Vector2D ConvectionField = Term->VecCoeff(XYq);
 
-                            for(int k=0; k<TestSpace.DofPerCell; ++k)
-                              for(int l=0; l<TrialSpace.DofPerCell; ++l)
+                            for(int k=0; k<NrTest; ++k)
+                              for(int l=0; l<NrTrial; ++l)
                                 {
                                   LocMatrix[k][l] +=
                                     (*Wq) * dot(ConvectionField, GradTrial[l]) * ValueTest[k]
@@ -148,53 +158,53 @@ namespace chemfem{
                           {
                             const double CoeffVal = Term->Coeff(XYq);
 
-                            for(int k=0; k<TestSpace.DofPerCell; ++k)
-                              for(int l=0; l<TrialSpace.DofPerCell; ++l)
+                            for(int k=0; k<NrTest; ++k)
+                              for(int l=0; l<NrTrial; ++l)
                                 LocMatrix[k][l] += (*Wq) * CoeffVal * ValueTest[k]
                                   * ValueTrial[l] * det;
                           }
                           break;
-			  
+
                         default:
                           std::cerr << "Assembly of FE expressions of type " << Term->Type
                                     << " not implemented yet.\n";
                           return;
                         }
-		      
+
                     }
                   else
                     {
                       std::cerr << "Assembly routine for different meshes in trial and test space "
                                 << "not implemented yet\n";
                       return;
-                    }		  
+                    }
                 } // loop over Terms
             } // loop over quadrature points
 
           // Insert local Matrix into global one
-          for(int k=0; k<TestSpace.DofPerCell; ++k)
-            for(int l=0; l<TestSpace.DofPerCell; ++l)
+          for(int k=0; k<NrTest; ++k)
+            for(int l=0; l<NrTrial; ++l)
               {
-                size_t DofTrial = TrialSpace.GetGlobalIndex(CellInd, l);
-                size_t DofTest = TestSpace.GetGlobalIndex(CellInd, k);
+                size_t DofTrial = TrialDofs.GlobalIndex(CellInd, l);
+                size_t DofTest = TestDofs.GlobalIndex(CellInd, k);
 
-                // Skip for test functions not in the test 
-                if(!TestSpace.DofType[DofTest])
+                // Skip for test functions not in the test
+                if(!TestDofs.IsFree(DofTest))
                   continue;
-		
-                if(TrialSpace.DofType[DofTrial])
+
+                if(TrialDofs.IsFree(DofTrial))
                   // DOF is a free DOF
-                  Ins.Insert(TestSpace.DofIndex[DofTest], TrialSpace.DofIndex[DofTrial],
+                  Ins.Insert(TestDofs.ReducedIndex(DofTest), TrialDofs.ReducedIndex(DofTrial),
                              LocMatrix[k][l]);
                 else
                   {
                     //DOF is a Dirichlet DOF
                     // \todo Modify this when implementing inhomogeneous Dirichlet conditions
                     double Value = 0.;
-                    DirichletRhs[TestSpace.DofIndex[DofTest]] += LocMatrix[k][l] * Value;
+                    DirichletRhs[TestDofs.ReducedIndex(DofTest)] += LocMatrix[k][l] * Value;
                   }
               }
-	  
+
         } // loop over cells
 
       Ins.Build();

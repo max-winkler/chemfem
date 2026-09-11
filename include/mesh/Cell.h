@@ -12,6 +12,7 @@
 // Forward declarations for friend classes
 namespace chemfem::fem{
   class FESpace;
+  class DofManager;
   class BilinearForm;
   class LinearForm;
   class ErrorNorm;
@@ -36,6 +37,7 @@ namespace chemfem{
 
       // \todo There forward declarations are not nice. We should avoid this and offer getter-functions for the required things.
       friend class chemfem::fem::FESpace;
+      friend class chemfem::fem::DofManager;
       friend class chemfem::fem::BilinearForm;
       friend class chemfem::fem::LinearForm;
       friend class chemfem::fem::ErrorNorm;

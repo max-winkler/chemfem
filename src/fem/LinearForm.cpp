@@ -41,13 +41,16 @@ namespace chemfem{
     {
       Vec = Vector(TestSpace.NrFreeDof());
 
+      const DofManager& Dofs = TestSpace.Dofs;
+      const int NrTest = TestSpace.NrLocalDof();
+
       // TODO: Select correct quadrature formula once it is implemented
       QuadratureFormula QuadFormula(QUAD_FORMULA::GAUSS_7);
 
       Vector Xi, Eta, Weights;
       QuadFormula.FormulaData(Weights, Xi, Eta);
 
-      double *TestFuncValue = new double[TestSpace.DofPerCell];
+      double *TestFuncValue = new double[NrTest];
 
       // Iterate over all cells
       int CellInd;
@@ -62,7 +65,7 @@ namespace chemfem{
 
 	  const chemfem::linalg::Matrix2D Jac = TestSpace.mesh.Jacobian(CellInd);
 
-	  Vector LocVec(TestSpace.DofPerCell);
+	  Vector LocVec(NrTest);
 
 	  // Iterate over all quadrature points
 	  Vector::const_iterator Wq, Xiq, Etaq;
@@ -75,7 +78,7 @@ namespace chemfem{
 	      const chemfem::linalg::Coordinate XYq = b + Jac*XiEtaq;
 
 	      // Function value of test functions
-	      for(int k=0; k<TestSpace.DofPerCell; ++k)
+	      for(int k=0; k<NrTest; ++k)
 		TestFuncValue[k] = TestSpace.RefElement().Value(k, *Xiq, *Etaq);
 
 	      // Iterate over all terms
@@ -88,7 +91,7 @@ namespace chemfem{
 		      {
 			const double CoeffVal = Term->Coeff(XYq);
 
-			for(int k=0; k<TestSpace.DofPerCell; ++k)
+			for(int k=0; k<NrTest; ++k)
 			  LocVec[k] += (*Wq) * CoeffVal * TestFuncValue[k] * det;
 		      }
 		      break;
@@ -105,11 +108,11 @@ namespace chemfem{
 
 		} // loop over Terms
 	    } // loop over quadrature points
-	  for(int k=0; k<TestSpace.DofPerCell; ++k)
+	  for(int k=0; k<NrTest; ++k)
 	    {
 	      size_t GlobalIndex = TestSpace.GetGlobalIndex(CellInd, k);
-	      if(TestSpace.DofType[GlobalIndex])
-		Vec[TestSpace.DofIndex[GlobalIndex]] += LocVec[k];
+	      if(Dofs.IsFree(GlobalIndex))
+		Vec[Dofs.ReducedIndex(GlobalIndex)] += LocVec[k];
 	    }
 
 	} // loop over cells
@@ -126,7 +129,7 @@ namespace chemfem{
 
       for(size_t e=0; e<Edges.size(); ++e)
 	{
-	  if(Edges[e].Type() != EdgeType::BOUNDARY_EDGE || TestSpace.DirichletEdge[e])
+	  if(Edges[e].Type() != EdgeType::BOUNDARY_EDGE || Dofs.IsDirichletEdge(e))
 	    continue;
 
 	  const size_t CellIndex = Edges[e].GetNeighbor(-1);
@@ -137,7 +140,7 @@ namespace chemfem{
 	  const Node& P1 = TestSpace.mesh.Nodes[EdgeCell.LocNode[(k+1)%3]];
 	  const double length = P0.Dist(P1);
 
-	  Vector LocVec(TestSpace.DofPerCell);
+	  Vector LocVec(NrTest);
 
 	  for(size_t q=0; q<LineWeights.size(); ++q)
 	    {
@@ -156,17 +159,17 @@ namespace chemfem{
 
 		  const double CoeffVal = Term->Coeff(XYq);
 
-		  for(int i=0; i<TestSpace.DofPerCell; ++i)
+		  for(int i=0; i<NrTest; ++i)
 		    LocVec[i] += LineWeights[q] * CoeffVal
 		      * TestSpace.RefElement().Value(i, xi, eta) * length;
 		}
 	    }
 
-	  for(int i=0; i<TestSpace.DofPerCell; ++i)
+	  for(int i=0; i<NrTest; ++i)
 	    {
 	      size_t GlobalIndex = TestSpace.GetGlobalIndex(CellIndex, i);
-	      if(TestSpace.DofType[GlobalIndex])
-		Vec[TestSpace.DofIndex[GlobalIndex]] += LocVec[i];
+	      if(Dofs.IsFree(GlobalIndex))
+		Vec[Dofs.ReducedIndex(GlobalIndex)] += LocVec[i];
 	    }
 	}
     }

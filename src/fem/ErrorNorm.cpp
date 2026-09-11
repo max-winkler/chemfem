@@ -55,7 +55,7 @@ namespace chemfem{
 	  
 	  double loc_error = 0.;
 	  
-	  const size_t* LocalDof = Space.GetLocalDofMap(cell.Index());
+	  const size_t* LocalDof = Space.GetLocalDofMap(CellInd);
 	  	  
 	  Vector::const_iterator Xiq, Etaq, Wq;
 	  for(Xiq = Xi.begin(), Etaq = Eta.begin(), Wq = Weights.begin();

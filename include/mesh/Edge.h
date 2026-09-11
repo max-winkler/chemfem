@@ -3,6 +3,10 @@
 
 #include "mesh/Cell.h"
 
+namespace chemfem::fem{
+  class DofManager;
+}
+
 namespace chemfem{
   namespace mesh{
 
@@ -16,7 +20,8 @@ namespace chemfem{
     {
       friend class Mesh;
       friend class chemfem::fem::FESpace;
-    public:     
+      friend class chemfem::fem::DofManager;
+    public:
 
       /**
        * Default constructur

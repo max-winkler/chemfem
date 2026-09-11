@@ -1,6 +1,7 @@
 #ifndef _ELEMENT_H_
 #define _ELEMENT_H_
 
+#include "linalg/Coordinate.h"
 #include "linalg/Matrix2D.h"
 #include "linalg/Vector2D.h"
 
@@ -12,9 +13,9 @@ namespace chemfem{
 
     /// Finite element type.
     enum FEType {Lagrange};
-    
+
     /**
-     * This class represents a single finite element. This is a virtual class and 
+     * This class represents a single finite element. This is a virtual class and
      * one should use some child class.
      */
     class Element{
@@ -25,11 +26,20 @@ namespace chemfem{
        * Initialize by type and degree.
        */
       Element(FEType, int);
-      
+
       /**
        * Returns the number of local degrees of freedom.
        */
       int NrDof() const;
+
+      /// Number of DOFs on each vertex of the cell
+      int DofsPerVertex() const;
+
+      /// Number of DOFs on each edge of the cell, without the vertices
+      int DofsPerEdge() const;
+
+      /// Number of DOFs in the interior of the cell
+      int DofsInterior() const;
 
       /**
        * Returns the type of the finite element.
@@ -40,7 +50,7 @@ namespace chemfem{
        * Returns the degree of the finite element.
        */
       int Degree() const;
-      
+
       /**
        * Return the function value of the trial functions
        */
@@ -48,7 +58,7 @@ namespace chemfem{
 
       /**
        * Returns the gradient of the trial function.
-       */ 
+       */
       virtual Vector2D Gradient(int, double, double) const = 0;
 
       /**
@@ -56,11 +66,18 @@ namespace chemfem{
        * symmetric, so only one of the two off-diagonal entries carries information.
        */
       virtual Matrix2D Hessian(int, double, double) const = 0;
-      
+
+      /**
+       * Reference coordinates of the point whose function value the local DOF is. Used
+       * for the interpolation.
+       */
+      virtual chemfem::linalg::Coordinate NodalPoint(int) const = 0;
+
     protected:
       FEType type;
       int nr_dof;
       int degree;
+      int dofs_per_vertex, dofs_per_edge, dofs_interior;
     };
 
     /**

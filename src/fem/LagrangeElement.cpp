@@ -5,11 +5,12 @@
 
 #include "linalg/Vector2D.h"
 
+using chemfem::linalg::Coordinate;
 using chemfem::linalg::Vector2D;
 
 namespace chemfem{
   namespace fem{
-    
+
     LagrangeElement::LagrangeElement(int degree) : Element(FEType::Lagrange, degree)
     {
       switch(degree)
@@ -19,8 +20,52 @@ namespace chemfem{
 	case 3: nr_dof = 10; break;
 	case 4: nr_dof = 15; break;
 	default:
-	  std::cerr << "Lagrange elements of order " << degree << " are not implemented yet\n";  
+	  std::cerr << "Lagrange elements of order " << degree << " are not implemented yet\n";
 	}
+
+      dofs_per_vertex = 1;
+      dofs_per_edge = degree-1;
+      dofs_interior = (degree-1)*(degree-2)/2;
+    }
+
+    Coordinate LagrangeElement::NodalPoint(int i) const
+    {
+      const Coordinate Vertex[3] = {{0., 0.}, {1., 0.}, {0., 1.}};
+
+      if(i < 3)
+	return Vertex[i];
+
+      if(i < 3 + 3*dofs_per_edge)
+	{
+	  const int edge = (i-3) / dofs_per_edge;
+	  const int j = (i-3) % dofs_per_edge;
+
+	  double xi, eta;
+	  EdgeToRefCoords(edge, double(j+1)/degree, xi, eta);
+
+	  return Coordinate{xi, eta};
+	}
+
+      const int j = i - 3 - 3*dofs_per_edge;
+
+      switch(degree)
+	{
+	case 3:
+	  return Coordinate{1./3, 1./3};
+
+	case 4:
+	  {
+	    // Barycentric coordinate 1/2 for the vertex j, 1/4 for the other two
+	    double lambda[3] = {0.25, 0.25, 0.25};
+	    lambda[j] = 0.5;
+	    return Coordinate{lambda[1], lambda[2]};
+	  }
+	}
+
+      std::cerr << "Requested nodal point " << i << ", but the element has only "
+		<< nr_dof << " degrees of freedom.\n";
+
+      return Coordinate{0., 0.};
     }
     
     double LagrangeElement::Value(int i, double x, double y) const

@@ -4,174 +4,36 @@ namespace chemfem{
   namespace fem{
 
     using chemfem::mesh::Mesh;
-    using chemfem::mesh::Cell;
-    using chemfem::mesh::Edge;
-    using chemfem::mesh::EdgeType;
-    
-    FESpace::FESpace(Mesh& mesh, Element& element, BoundaryIndicator IsDirichlet)
-      : refElement(element), mesh(mesh), IsDirichlet(IsDirichlet)
-    {
-      DofPerCell = element.NrDof();
-      DofPerEdge = element.Degree() - 1;
-      IntDofPerCell = (element.Degree()-1) * (element.Degree()-2) / 2;
 
+    FESpace::FESpace(Mesh& mesh, Element& element, BoundaryIndicator IsDirichlet)
+      : refElement(element), mesh(mesh), Dofs(mesh, element, IsDirichlet)
+    {
       // Test if vertices are numbered correctly
       for(size_t i=0; i<mesh.Nodes.size(); ++i)
 	{
 	  if(mesh.Nodes[i].Index() != i)
 	    std::cerr << "Nodes are not numbered correctly\n";
 	}
-      
-      CreateDofMap();
-      CreateDirichletBcMap();
     }
 
-    void FESpace::CreateDofMap()
-    {
-      DofMap = new size_t[mesh.NrCells()*DofPerCell];
-      
-      if(refElement.Type() == Lagrange)
-	{
-	  // Dofs in the vertices
-	  size_t i; std::vector<Cell>::iterator it_cell;
-	  for(i=0, it_cell = mesh.Cells.begin();
-	      it_cell != mesh.Cells.end(); ++it_cell, ++i)
-	    {
-	      Cell& cell = *it_cell;
-	      
-	      for(int j=0; j<3; ++j)
-		DofMap[i*DofPerCell+j] = cell.LocNode[j];
-
-	      cell.SetIndex(i);
-	    }
-
-	  size_t NodeDofs = mesh.NrNodes();
-	  size_t EdgeDofCtr = 0;
-
-	  // Dofs at the edges	  
-	  std::vector<Edge>::iterator it_edge;
-	  size_t idx_edge;
-	  for(it_edge = mesh.Edges.begin(), idx_edge = 0; it_edge != mesh.Edges.end(); ++it_edge, ++idx_edge)
-	    {
-
-	      int NrNeighs = it_edge->Type() == EdgeType::BOUNDARY_EDGE ? 1:2;
-	      for(int loc_ind=0; loc_ind < NrNeighs; ++loc_ind)
-		{
-		  int cell_ind = it_edge->GetNeighborByLocalIndex(loc_ind);
-		  Cell& cur_cell = mesh.Cells[cell_ind];
-
-		  int edge_ind = 0;
-		  while(cur_cell.LocEdge[edge_ind] != idx_edge && edge_ind < 3)
-		    edge_ind++;		  
-		  
-		  if(edge_ind < 0 || edge_ind > 2)
-		    {
-		      std::cerr << "Edge not found but it should belong to the element. "
-				<< "Maybe the mesh format is corrupt.\n";
-		      return;
-		    }
-
-		  bool orientation = true;
-		  if(it_edge->Node0 == cur_cell.LocNode[edge_ind]
-		     && it_edge->Node1 == cur_cell.LocNode[(edge_ind+1)%3])
-		    orientation = true;
-		  else if(it_edge->Node1 == cur_cell.LocNode[edge_ind]
-			  && it_edge->Node0 == cur_cell.LocNode[(edge_ind+1)%3])
-		    orientation = false;
-		  else
-		    std::cerr << "An unexpected error occured. Maybe the mesh data structure "
-			      << "is broken.\n";
-		  
-		  for(int k=0; k<DofPerEdge; ++k)
-		    DofMap[cell_ind*DofPerCell + 3 + edge_ind*DofPerEdge + k]
-		      = NodeDofs + EdgeDofCtr + (orientation ? k : DofPerEdge - k - 1) ;
-		}
-	      EdgeDofCtr += DofPerEdge;
-	    }
-
-	  nr_dof = NodeDofs + EdgeDofCtr;
-
-	  if(refElement.Degree() >2)
-	    {
-	      // Numerate interior dofs
-	      std::vector<Cell>::const_iterator cell;
-	      for(cell = mesh.Cells.begin(); cell != mesh.Cells.end(); ++cell)
-		{
-		  size_t cell_ind = cell->Index();
-		  
-		  for(int k=0; k<IntDofPerCell; ++k)
-		    DofMap[cell_ind*DofPerCell + 3 + 3*DofPerEdge + k] = nr_dof++;
-		}
-	    }
-	}
-      else
-	std::cerr << "Error: Only Lagrange elements are implemented yet.\n";
-    }
-
-    void FESpace::CreateDirichletBcMap()
-    {
-      DirichletEdge.assign(mesh.Edges.size(), false);
-
-      for(size_t idx_edge=0; idx_edge<mesh.Edges.size(); ++idx_edge)
-	{
-	  const Edge& edge = mesh.Edges[idx_edge];
-
-	  if(edge.type == EdgeType::INTERFACE_EDGE)
-	    continue;
-
-	  const chemfem::mesh::Node& P0 = mesh.Nodes[edge.Node0];
-	  const chemfem::mesh::Node& P1 = mesh.Nodes[edge.Node1];
-	  const chemfem::linalg::Coordinate midpoint{0.5*(P0.getX() + P1.getX()),
-						     0.5*(P0.getY() + P1.getY())};
-
-	  if(IsDirichlet && !IsDirichlet(midpoint))
-	    continue;
-
-	  DirichletEdge[idx_edge] = true;
-
-	  const Cell& cell = mesh.Cells[edge.GetNeighbor(-1)];
-	  const int edge_ind = cell.EdgeIndex(idx_edge);
-
-	  DirichletNodes.insert(edge.Node0);
-	  DirichletNodes.insert(edge.Node1);
-
-	  for(int k=0; k<DofPerEdge; ++k)
-	    DirichletNodes.insert(DofMap[cell.Index()*DofPerCell + 3 + edge_ind*DofPerEdge + k]);
-	} // loop over boundary edges
-
-      DofType = new bool[nr_dof];
-      DofIndex = new size_t[nr_dof];
-
-      // Free and Dirichlet DOFs are numbered separately, both in ascending order
-      size_t free_dof_ctr = 0, dirichlet_dof_ctr = 0;
-
-      for(size_t k=0; k<nr_dof; ++k)
-	{
-	  DofType[k] = (DirichletNodes.find(k) == DirichletNodes.end());
-	  DofIndex[k] = DofType[k] ? free_dof_ctr++ : dirichlet_dof_ctr++;
-	}
-
-      nr_free_dof = free_dof_ctr;
-    }
-    
     size_t FESpace::GetGlobalIndex(size_t cell, size_t index) const
     {
-      return DofMap[DofPerCell*cell + index];
+      return Dofs.GlobalIndex(cell, index);
     }
 
     size_t FESpace::NrDof() const
     {
-      return nr_dof;
+      return Dofs.NrDof();
     }
 
     size_t FESpace::NrFreeDof() const
     {
-      return nr_free_dof;
+      return Dofs.NrFreeDof();
     }
 
     size_t FESpace::NrLocalDof() const
     {
-      return DofPerCell;
+      return Dofs.NrLocalDof();
     }
 
     const Element& FESpace::RefElement() const
@@ -181,12 +43,12 @@ namespace chemfem{
 
     Vector FESpace::IncorporateBC(const Vector& inner) const
     {
-      Vector full(nr_dof);
+      Vector full(Dofs.NrDof());
 
-      for(size_t k=0; k<nr_dof; ++k)
+      for(size_t k=0; k<Dofs.NrDof(); ++k)
 	{
-	  if(DofType[k])
-	    full[k] = inner[DofIndex[k]];
+	  if(Dofs.IsFree(k))
+	    full[k] = inner[Dofs.ReducedIndex(k)];
 
 	  // TODO: Implement also inhomogeneous Dirichlet boundary conditions.
 	}
@@ -201,7 +63,7 @@ namespace chemfem{
 
     const size_t* FESpace::GetLocalDofMap(size_t k) const
     {
-      return &(DofMap[DofPerCell*k]);
+      return Dofs.LocalDofMap(k);
     }
 
     std::ostream& operator<<(std::ostream& os, const FESpace& space)
@@ -217,11 +79,11 @@ namespace chemfem{
 	}
       os << " of degree " << space.refElement.Degree() << std::endl;
 
-      std::cout << "Number of DOFs     : " << space.nr_dof << std::endl;
-      std::cout << "Number of free DOFs: " << space.nr_free_dof << std::endl;
+      os << "Number of DOFs     : " << space.NrDof() << std::endl;
+      os << "Number of free DOFs: " << space.NrFreeDof() << std::endl;
 
       return os;
     }
-    
+
   }
 }
