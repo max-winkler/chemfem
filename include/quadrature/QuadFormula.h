@@ -11,7 +11,9 @@ namespace chemfem{
     enum QUAD_FORMULA {MIDPOINT, VERTEX, GAUSS_EDGE, GAUSS_7, LINE_GAUSS_5};
     
     /**
-     * This class stores all information on a certain quadratue formula.      
+     * This class stores all information on a certain quadratue formula. The formulas on
+     * the reference triangle have the weight sum 1/2, its area, and the line formulas
+     * live on [0,1] with the weight sum 1.
      */
     class QuadratureFormula
     {

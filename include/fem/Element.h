@@ -62,7 +62,21 @@ namespace chemfem{
       int nr_dof;
       int degree;
     };
-    
+
+    /**
+     * Reference coordinates of the point at parameter s in [0,1] on the local edge k,
+     * which runs from vertex k to vertex k+1 of the reference triangle
+     */
+    inline void EdgeToRefCoords(int edge, double s, double& xi, double& eta)
+    {
+      switch(edge)
+        {
+        case 0: xi = s;      eta = 0.;      break;
+        case 1: xi = 1.-s;   eta = s;       break;
+        default: xi = 0.;    eta = 1.-s;    break;
+        }
+    }
+
   };
 };
 

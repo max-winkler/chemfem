@@ -20,7 +20,7 @@ namespace chemfem{
 
 	  Xi[0] = 1./3;
 	  Eta[0] = 1./3;
-	  Weights[0] = 1.;
+	  Weights[0] = 0.5;
 	  
 	  break;
 	case VERTEX:
@@ -47,7 +47,7 @@ namespace chemfem{
 	  Eta = Vector(3);
 
 	  for(int i=0; i<Points; ++i)
-	    Weights[i] = 1./3;
+	    Weights[i] = 1./6;
 	  
 	  Xi[0] = .5; Eta[0] = 0.;
 	  Xi[1] = .5; Eta[1] = .5;
@@ -96,6 +96,10 @@ namespace chemfem{
 	  Weights[14] = 0.04516809856187617;
 	  Weights[15] = 0.01084645180365496;
 
+	  // Tabulated for the weight sum 1, the reference triangle has area 1/2
+	  for(int i=0; i<Points; ++i)
+	    Weights[i] *= 0.5;
+
 	  break;
 
     case LINE_GAUSS_5:
@@ -106,17 +110,17 @@ namespace chemfem{
       Xi = Vector(5);
       Eta = Vector(5);
 
-      Weights[0] = 0.5 * 0.236926885;
-      Weights[1] = 0.5 * 0.478628670;
-      Weights[2] = 0.5 * 0.568888889;
-      Weights[3] = 0.5 * 0.478628670;
-      Weights[4] = 0.5 * 0.236926885;
+      Weights[0] = 0.5 * 0.2369268850561891;
+      Weights[1] = 0.5 * 0.4786286704993665;
+      Weights[2] = 0.5 * 0.5688888888888889;
+      Weights[3] = 0.5 * 0.4786286704993665;
+      Weights[4] = 0.5 * 0.2369268850561891;
 
-      Xi[0] = 0.5 * (1 - 0.906179846);
-      Xi[1] = 0.5 * (1 - 0.538469310);
-      Xi[2] = 0.5 * (1 + 0.000000000);
-      Xi[3] = 0.5 * (1 + 0.538469310);
-      Xi[3] = 0.5 * (1 + 0.906179846);
+      Xi[0] = 0.5 * (1 - 0.9061798459386640);
+      Xi[1] = 0.5 * (1 - 0.5384693101056831);
+      Xi[2] = 0.5;
+      Xi[3] = 0.5 * (1 + 0.5384693101056831);
+      Xi[4] = 0.5 * (1 + 0.9061798459386640);
       
       break;
 	default:

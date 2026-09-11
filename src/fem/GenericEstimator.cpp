@@ -81,17 +81,6 @@ namespace chemfem{
 
     namespace {
 
-      /// Reference coordinates of the point at parameter s in [0,1] on local edge 0..2
-      void EdgeToRefCoords(int edge, double s, double& xi, double& eta)
-      {
-        switch(edge)
-          {
-          case 0: xi = s;      eta = 0.;      break;
-          case 1: xi = 1.-s;   eta = s;       break;
-          default: xi = 0.;    eta = 1.-s;    break;
-          }
-      }
-
       /// State of the discrete solution at a point of the reference element
       void EvalLocal(const FESpace& Space, const FEFunction& u, size_t cell,
                      double xi, double eta, const Matrix2D& InvJacT,
@@ -120,20 +109,6 @@ namespace chemfem{
         state.hessian = InvJacT * ref_hess * InvJacT.Transpose();
         state.laplacian = state.hessian.Trace();
       }
-
-      /// 5-point Gauss-Legendre rule on [0,1]. Not from QuadFormula, whose
-      /// LINE_GAUSS_5 leaves Xi[4] unset.
-      const int NrLinePoints = 5;
-      const double LineNodes[5] = {0.5*(1.-0.9061798459386640),
-                                   0.5*(1.-0.5384693101056831),
-                                   0.5,
-                                   0.5*(1.+0.5384693101056831),
-                                   0.5*(1.+0.9061798459386640)};
-      const double LineWeights[5] = {0.5*0.2369268850561891,
-                                     0.5*0.4786286704993665,
-                                     0.5*0.5688888888888889,
-                                     0.5*0.4786286704993665,
-                                     0.5*0.2369268850561891};
     }
 
     Vector GenericEstimator::Assemble(const FEFunction& u) const
@@ -147,11 +122,13 @@ namespace chemfem{
       if(VolumeTerms.empty() && EdgeTerms.empty())
         return Indicators;
 
-      // Quadrature on the reference triangle. Its weights are normalized such that
-      // their sum is 2, hence the factor 0.5 when scaling with the determinant.
       QuadratureFormula TriangleQuad(QUAD_FORMULA::GAUSS_7);
       Vector Weights, Xi, Eta;
       TriangleQuad.FormulaData(Weights, Xi, Eta);
+
+      QuadratureFormula LineQuad(QUAD_FORMULA::LINE_GAUSS_5);
+      Vector LineWeights, LineNodes, Unused;
+      LineQuad.FormulaData(LineWeights, LineNodes, Unused);
 
       const std::vector<Cell>& Cells = mesh.GetCellList();
       const std::vector<Edge>& Edges = mesh.GetEdgeList();
@@ -187,7 +164,7 @@ namespace chemfem{
               EvalLocal(Space, u, c, Xi[q], Eta[q], InvJacT, State);
 
               for(size_t t=0; t<VolumeTerms.size(); ++t)
-                value += 0.5 * Weights[q] * VolumeTerms[t](pos, Geometry, State)
+                value += Weights[q] * VolumeTerms[t](pos, Geometry, State)
                        * std::fabs(det);
             }
 
@@ -217,7 +194,7 @@ namespace chemfem{
                   EdgeGeom.local_index = k;
                   EdgeGeom.boundary = boundary;
 
-                  for(int q=0; q<NrLinePoints; ++q)
+                  for(size_t q=0; q<LineWeights.size(); ++q)
                     {
                       const double s = LineNodes[q];
 
