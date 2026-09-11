@@ -65,7 +65,7 @@ int main()
       F.Assemble();
 
       FEFunction Sol(Space);
-      Sol.CreateFunction(A.SystemMatrix().Solve(F.LoadVector()));
+      Sol.CreateFunction(A.SystemMatrix().Solve(F.LoadVector(), LIN_SOLVER::UMFPACK));
 
       ErrorNorm Error;
       Error.SetExactValue(exact);

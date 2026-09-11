@@ -80,7 +80,7 @@ FEFunction Solve(FESpace& Space)
   F.AddVolumeForce(f);
   F.Assemble();
 
-  Vector X(A.SystemMatrix().Solve(F.LoadVector()));
+  Vector X(A.SystemMatrix().Solve(F.LoadVector(), LIN_SOLVER::UMFPACK));
 
   FEFunction Sol(Space);
   Sol.CreateFunction(X);
