@@ -8,6 +8,7 @@
 #include "fem/FEFunction.h"
 
 #include "linalg/Coordinate.h"
+#include "linalg/Matrix2D.h"
 #include "linalg/Vector2D.h"
 
 namespace chemfem{
@@ -20,11 +21,9 @@ namespace chemfem{
       double value;
       /// Gradient of the discrete solution, in physical coordinates
       chemfem::linalg::Vector2D gradient;
-      /**
-       * Laplacian of the discrete solution. Exact (and zero) for P1. For higher
-       * order elements this is reported as zero and a warning is issued, because
-       * Element only exposes Value() and Gradient().
-       */
+      /// Hessian of the discrete solution, in physical coordinates
+      chemfem::linalg::Matrix2D hessian;
+      /// Laplacian of the discrete solution, the trace of the Hessian
       double laplacian;
     };
 

@@ -40,7 +40,8 @@ namespace chemfem{
                                                         const CellGeometry& cell,
                                                         const SolutionState& u) const
     {
-      // For P1 the Laplacian of u_h vanishes on every cell
+      // The Laplacian vanishes identically for P1 and is a genuine contribution
+      // from P2 on
       const double residual = f(pos) + u.laplacian;
 
       return cell.h * cell.h * residual * residual;
@@ -98,6 +99,7 @@ namespace chemfem{
       {
         state.value = 0.;
         Vector2D ref_grad;
+        Matrix2D ref_hess;
 
         for(size_t k=0; k<Space.NrLocalDof(); ++k)
           {
@@ -105,10 +107,18 @@ namespace chemfem{
 
             state.value += coeff * Space.RefElement().Value(k, xi, eta);
             ref_grad += coeff * Space.RefElement().Gradient(k, xi, eta);
+            ref_hess += coeff * Space.RefElement().Hessian(k, xi, eta);
           }
 
         state.gradient = InvJacT * ref_grad;
-        state.laplacian = 0.;
+
+        // The cells are straight sided, so the reference map x = B*xi + x0 is affine
+        // and its Jacobian B is constant. The second derivatives of the map therefore
+        // drop out of the chain rule and what remains is the congruence
+        //   D^2_x u = B^-T D^2_xi u B^-1,
+        // with the very same InvJacT that already transforms the gradient.
+        state.hessian = InvJacT * ref_hess * InvJacT.Transpose();
+        state.laplacian = state.hessian.Trace();
       }
 
       /// 5-point Gauss-Legendre rule on [0,1]. Not from QuadFormula, whose
@@ -136,11 +146,6 @@ namespace chemfem{
 
       if(VolumeTerms.empty() && EdgeTerms.empty())
         return Indicators;
-
-      if(!VolumeTerms.empty() && Space.RefElement().Degree() > 1)
-        std::cerr << "WARNING: SolutionState::laplacian is only available for P1 elements "
-                  << "and is reported as zero. Second derivatives of the shape functions "
-                  << "are missing in the Element interface.\n";
 
       // Quadrature on the reference triangle. Its weights are normalized such that
       // their sum is 2, hence the factor 0.5 when scaling with the determinant.

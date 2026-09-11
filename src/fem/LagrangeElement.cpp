@@ -180,6 +180,122 @@ namespace chemfem{
       //                                                           ( -1  0  1 )
       return Vector2D(grad_L[1] - grad_L[0], grad_L[2] - grad_L[0]);
     }
+
+    Matrix2D LagrangeElement::Hessian(int i, double x, double y) const
+    {
+      double lambda[3] = {1.-x-y, x, y};
+
+      if(x > 1 || y > 1 || x < 0 || y < 0 || x+y > 1)
+	std::cerr << "Invalid quadrature point.\n";
+
+      // Second derivatives with respect to the three barycentric coordinates
+      double hess_L[3][3] = {{0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}};
+
+      switch(degree)
+	{
+	case 1:
+	  // Affine in the barycentric coordinates, so the second derivatives vanish
+	  break;
+
+	case 2:
+	  if(i<3)
+	    hess_L[i][i] = 4.;
+	  else if(i<6)
+	    {
+	      int a = i-3;
+	      int b = (i-2)%3;
+	      hess_L[a][b] = hess_L[b][a] = 4.;
+	    }
+	  break;
+
+	case 3:
+	  if(i<3)
+	    hess_L[i][i] = 27.*lambda[i] - 9.;
+	  else if(i<9)
+	    {
+	      int edge_ind = (i-3) / 2;
+	      int vert_ind = (i-3) % 2;
+
+	      // The quadratic factor sits on the vertex p of the edge, the remaining
+	      // vertex o of that edge enters linearly
+	      int p = (edge_ind + vert_ind) % 3;
+	      int o = (edge_ind + 1 - vert_ind) % 3;
+
+	      hess_L[p][p] = 27.*lambda[o];
+	      hess_L[p][o] = hess_L[o][p] = 13.5*(2.*lambda[p] - 1./3);
+	    }
+	  else if(i==9)
+	    {
+	      hess_L[0][1] = hess_L[1][0] = 27.*lambda[2];
+	      hess_L[0][2] = hess_L[2][0] = 27.*lambda[1];
+	      hess_L[1][2] = hess_L[2][1] = 27.*lambda[0];
+	    }
+	  break;
+
+	case 4:
+	  if(i<3)
+	    hess_L[i][i] = 128.*lambda[i]*lambda[i] - 96.*lambda[i] + 44./3;
+	  else if(i<12)
+	    {
+	      int edge_ind = (i-3) / 3;
+	      int vert_ind = (i-3) % 3;
+	      int next_ind = (edge_ind+1) % 3;
+
+	      if(vert_ind == 0)
+		{
+		  hess_L[edge_ind][edge_ind] = 128./3*lambda[next_ind]
+		    * (6.*lambda[edge_ind] - 1.5);
+		  hess_L[edge_ind][next_ind] = hess_L[next_ind][edge_ind] = 128./3
+		    * (3*lambda[edge_ind]*lambda[edge_ind] - 1.5*lambda[edge_ind] + 1./8);
+		}
+	      else if(vert_ind == 1)
+		{
+		  hess_L[edge_ind][edge_ind] = 128.*lambda[next_ind]*(lambda[next_ind]-0.25);
+		  hess_L[next_ind][next_ind] = 128.*lambda[edge_ind]*(lambda[edge_ind]-0.25);
+		  hess_L[edge_ind][next_ind] = hess_L[next_ind][edge_ind]
+		    = 64.*(2*lambda[edge_ind]-0.25)*(2*lambda[next_ind]-0.25);
+		}
+	      else if(vert_ind == 2)
+		{
+		  hess_L[next_ind][next_ind] = 128./3*lambda[edge_ind]
+		    * (6.*lambda[next_ind] - 1.5);
+		  hess_L[edge_ind][next_ind] = hess_L[next_ind][edge_ind] = 128./3
+		    * (3*lambda[next_ind]*lambda[next_ind] - 1.5*lambda[next_ind] + 1./8);
+		}
+	    }
+	  else if(i<15)
+	    {
+	      int int_ind = i-12;
+	      int next_ind = (int_ind+1) % 3;
+	      int last_ind = (int_ind+2) % 3;
+
+	      hess_L[int_ind][int_ind] = 256.*lambda[next_ind]*lambda[last_ind];
+	      hess_L[int_ind][next_ind] = hess_L[next_ind][int_ind]
+		= 128.*lambda[last_ind]*(2*lambda[int_ind] - 0.25);
+	      hess_L[int_ind][last_ind] = hess_L[last_ind][int_ind]
+		= 128.*lambda[next_ind]*(2*lambda[int_ind] - 0.25);
+	      hess_L[next_ind][last_ind] = hess_L[last_ind][next_ind]
+		= 128.*lambda[int_ind]*(lambda[int_ind] - 0.25);
+	    }
+	  break;
+	}
+
+      // Chain rule with  d(lambda_0,lambda_1,lambda_2)/d(x,y) = ( -1  1  0 )
+      //                                                         ( -1  0  1 )
+      // The barycentric coordinates are affine in (x,y), so their own second
+      // derivatives drop out and only the congruence with that matrix remains.
+      const double grad_lambda[3][2] = {{-1., -1.}, {1., 0.}, {0., 1.}};
+
+      double H[2][2] = {{0., 0.}, {0., 0.}};
+
+      for(int a=0; a<3; ++a)
+	for(int b=0; b<3; ++b)
+	  for(int k=0; k<2; ++k)
+	    for(int l=0; l<2; ++l)
+	      H[k][l] += hess_L[a][b] * grad_lambda[a][k] * grad_lambda[b][l];
+
+      return Matrix2D(H[0][0], H[0][1], H[1][0], H[1][1]);
+    }
     
   }
 }

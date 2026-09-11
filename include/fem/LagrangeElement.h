@@ -24,6 +24,8 @@ namespace chemfem{
 
       Vector2D Gradient(int, double, double) const;
 
+      Matrix2D Hessian(int, double, double) const;
+
     };    
   };
 };
