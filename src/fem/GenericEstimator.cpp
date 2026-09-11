@@ -25,33 +25,33 @@ using chemfem::quadrature::QUAD_FORMULA;
 namespace chemfem{
   namespace fem{
 
-    double Jump(const SolutionState& u, const SolutionState& u_out)
+    double Jump(const PointValues& u, const PointValues& u_out)
     {
       return u.value - u_out.value;
     }
 
-    double NormalJump(const SolutionState& u, const SolutionState& u_out,
+    double NormalJump(const PointValues& u, const PointValues& u_out,
                       const EdgeGeometry& edge)
     {
       return dot(u.gradient - u_out.gradient, edge.normal);
     }
 
-    double GenericEstimator::VolumeResidual::operator()(const Coordinate& pos,
+    double GenericEstimator::VolumeResidual::operator()(const QuadPoint& p,
                                                         const CellGeometry& cell,
-                                                        const SolutionState& u) const
+                                                        const PointValues& u) const
     {
       // The Laplacian vanishes identically for P1 and is a genuine contribution
       // from P2 on
-      const double residual = f(pos) + u.laplacian;
+      const double residual = f(p.x) + u.laplacian;
 
       return cell.h * cell.h * residual * residual;
     }
 
-    double GenericEstimator::EdgeJump::operator()(const Coordinate&,
+    double GenericEstimator::EdgeJump::operator()(const QuadPoint&,
                                                   const CellGeometry&,
                                                   const EdgeGeometry& edge,
-                                                  const SolutionState& u,
-                                                  const SolutionState& u_out) const
+                                                  const PointValues& u,
+                                                  const PointValues& u_out) const
     {
       const double jump = NormalJump(u, u_out, edge);
 
@@ -77,38 +77,6 @@ namespace chemfem{
     {
       EdgeTerms.push_back(term);
       EdgeTermSelection.push_back(selection);
-    }
-
-    namespace {
-
-      /// State of the discrete solution at a point of the reference element
-      void EvalLocal(const FESpace& Space, const FEFunction& u, size_t cell,
-                     double xi, double eta, const Matrix2D& InvJacT,
-                     SolutionState& state)
-      {
-        state.value = 0.;
-        Vector2D ref_grad;
-        Matrix2D ref_hess;
-
-        for(size_t k=0; k<Space.NrLocalDof(); ++k)
-          {
-            double coeff = u[Space.GetGlobalIndex(cell, k)];
-
-            state.value += coeff * Space.RefElement().Value(k, xi, eta);
-            ref_grad += coeff * Space.RefElement().Gradient(k, xi, eta);
-            ref_hess += coeff * Space.RefElement().Hessian(k, xi, eta);
-          }
-
-        state.gradient = InvJacT * ref_grad;
-
-        // The cells are straight sided, so the reference map x = B*xi + x0 is affine
-        // and its Jacobian B is constant. The second derivatives of the map therefore
-        // drop out of the chain rule and what remains is the congruence
-        //   D^2_x u = B^-T D^2_xi u B^-1,
-        // with the very same InvJacT that already transforms the gradient.
-        state.hessian = InvJacT * ref_hess * InvJacT.Transpose();
-        state.laplacian = state.hessian.Trace();
-      }
     }
 
     Vector GenericEstimator::Assemble(const FEFunction& u) const
@@ -142,7 +110,6 @@ namespace chemfem{
           const double h_T = Info.Diam();
 
           const Matrix2D Jac = mesh.Jacobian(c);
-          const Matrix2D InvJacT = Jac.Transpose().Invert();
 
           const Node& x0 = mesh.Nodes[cell.LocNode[0]];
           const Coordinate v0{x0.getX(), x0.getY()};
@@ -158,13 +125,12 @@ namespace chemfem{
           for(size_t q=0; q<Weights.size(); ++q)
             {
               const Coordinate RefPoint{Xi[q], Eta[q]};
-              const Coordinate pos = v0 + Jac*RefPoint;
+              const QuadPoint Point{v0 + Jac*RefPoint, c, Xi[q], Eta[q]};
 
-              SolutionState State;
-              EvalLocal(Space, u, c, Xi[q], Eta[q], InvJacT, State);
+              const PointValues State = u.Evaluate(Point);
 
               for(size_t t=0; t<VolumeTerms.size(); ++t)
-                value += Weights[q] * VolumeTerms[t](pos, Geometry, State)
+                value += Weights[q] * VolumeTerms[t](Point, Geometry, State)
                        * std::fabs(det);
             }
 
@@ -185,9 +151,6 @@ namespace chemfem{
                       neigh_edge = Cells[neigh_cell].EdgeIndex(cell.LocEdge[k]);
                     }
 
-                  const Matrix2D NeighJac = mesh.Jacobian(neigh_cell);
-                  const Matrix2D NeighInvJacT = NeighJac.Transpose().Invert();
-
                   EdgeGeometry EdgeGeom;
                   EdgeGeom.h = Info.EdgeLength(k);
                   EdgeGeom.normal = Info.Normal(k);
@@ -202,22 +165,20 @@ namespace chemfem{
                       EdgeToRefCoords(k, s, xi, eta);
 
                       const Coordinate RefPoint{xi, eta};
-                      const Coordinate pos = v0 + Jac*RefPoint;
+                      const QuadPoint Point{v0 + Jac*RefPoint, c, xi, eta};
 
-                      SolutionState State, NeighState;
-                      EvalLocal(Space, u, c, xi, eta, InvJacT, State);
+                      const PointValues State = u.Evaluate(Point);
+                      PointValues NeighState = State;
 
-                      if(boundary)
-                        NeighState = State;
-                      else
+                      if(!boundary)
                         {
                           // The neighbor traverses the shared edge in the opposite
                           // direction, so the same physical point sits at 1-s there.
                           double neigh_xi, neigh_eta;
                           EdgeToRefCoords(neigh_edge, 1.-s, neigh_xi, neigh_eta);
 
-                          EvalLocal(Space, u, neigh_cell, neigh_xi, neigh_eta,
-                                    NeighInvJacT, NeighState);
+                          NeighState = u.Evaluate(QuadPoint{Point.x, neigh_cell,
+                                                            neigh_xi, neigh_eta});
                         }
 
                       for(size_t t=0; t<EdgeTerms.size(); ++t)
@@ -228,7 +189,7 @@ namespace chemfem{
                           if(!boundary && selection == BOUNDARY_EDGES) continue;
 
                           value += LineWeights[q]
-                                 * EdgeTerms[t](pos, Geometry, EdgeGeom, State, NeighState)
+                                 * EdgeTerms[t](Point, Geometry, EdgeGeom, State, NeighState)
                                  * EdgeGeom.h;
                         }
                     }

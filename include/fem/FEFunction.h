@@ -5,6 +5,7 @@
 
 #include "linalg/Vector.h"
 #include "fem/FESpace.h"
+#include "fem/PointValues.h"
 
 namespace chemfem{
   namespace fem{
@@ -49,11 +50,23 @@ namespace chemfem{
        */
       void SetCoefficients(const Vector&);
 
+      /**
+       * Value, gradient and Hessian in a quadrature point, e.g. of the solution of the
+       * previous time step inside the integrand of a form
+       */
+      PointValues Evaluate(const QuadPoint&) const;
+
       void WriteVtk(const std::string&) const;
       
     private:
       const FESpace* Space;
       Vector Data;
+
+      /// The last point Evaluate() was called for and its result. An integrand is called
+      /// once per basis function in the same point, so this saves the repeated work.
+      mutable QuadPoint CachedPoint;
+      mutable PointValues CachedValues;
+      mutable bool CacheValid = false;
       
     };
   };

@@ -47,7 +47,7 @@ OBJ = 	src/linalg/Vector.o \
 	src/fem/FEExpression.o \
 	src/fem/LinearForm.o \
 	src/fem/BilinearForm.o \
-	src/fem/WeakForm.o \
+	src/fem/PointValues.o \
 	src/fem/BlockSystem.o \
 	src/fem/VtkOutput.o \
 	src/fem/ErrorNorm.o \

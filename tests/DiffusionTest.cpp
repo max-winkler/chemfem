@@ -100,16 +100,16 @@ struct WeightedVolumeResidual
 
   explicit WeightedVolumeResidual(const Diffusion& a) : a(a), f(a) {}
 
-  double operator()(const Coordinate& pos, const CellGeometry& cell,
-                    const SolutionState& u) const
+  double operator()(const QuadPoint& p, const CellGeometry& cell,
+                    const PointValues& u) const
   {
-    Vector2D ga = a.Gradient(pos);
+    Vector2D ga = a.Gradient(p.x);
 
     double div_flux = ga[0]*u.gradient[0] + ga[1]*u.gradient[1]
-                    + a(pos)*u.laplacian;
-    double residual = f(pos) + div_flux;
+                    + a(p.x)*u.laplacian;
+    double residual = f(p.x) + div_flux;
 
-    return cell.h * cell.h / a(pos) * residual * residual;
+    return cell.h * cell.h / a(p.x) * residual * residual;
   }
 };
 
@@ -119,13 +119,13 @@ struct WeightedEdgeJump
 
   explicit WeightedEdgeJump(const Diffusion& a) : a(a) {}
 
-  double operator()(const Coordinate& pos, const CellGeometry& cell,
+  double operator()(const QuadPoint& p, const CellGeometry& cell,
                     const EdgeGeometry& edge,
-                    const SolutionState& u, const SolutionState& u_out) const
+                    const PointValues& u, const PointValues& u_out) const
   {
-    double jump = a(pos) * NormalJump(u, u_out, edge);
+    double jump = a(p.x) * NormalJump(u, u_out, edge);
 
-    return 0.5 * edge.h / a(pos) * jump * jump;
+    return 0.5 * edge.h / a(p.x) * jump * jump;
   }
 };
 
@@ -136,15 +136,15 @@ struct EnergyError
 
   explicit EnergyError(const Diffusion& a) : a(a) {}
 
-  double operator()(const Coordinate& pos, const CellGeometry& cell,
-                    const SolutionState& u) const
+  double operator()(const QuadPoint& p, const CellGeometry& cell,
+                    const PointValues& u) const
   {
-    Vector2D gu = grad_u_exact(pos);
+    Vector2D gu = grad_u_exact(p.x);
 
     double dx = u.gradient[0] - gu[0];
     double dy = u.gradient[1] - gu[1];
 
-    return a(pos) * (dx*dx + dy*dy);
+    return a(p.x) * (dx*dx + dy*dy);
   }
 };
 

@@ -1,12 +1,13 @@
 #ifndef _LINEAR_FORM_
 #define _LINEAR_FORM_
 
+#include <functional>
 #include <vector>
 
 #include "linalg/Vector.h"
 #include "fem/FESpace.h"
 #include "fem/FEExpression.h"
-#include "fem/WeakForm.h"
+#include "fem/PointValues.h"
 
 using chemfem::linalg::Vector;
 
@@ -16,10 +17,23 @@ namespace chemfem{
     /**
      * This class represents a linear form which stores and assembles the vector for the right-hand
      * side or Neumann boundary conditions.
+     *
+     * Terms beyond the predefined ones are given as functors, which get the values of
+     * the test function v in a quadrature point, see also BilinearForm.
      */
     class LinearForm
     {
     public:
+
+      /// Integrand of a volume term for the test function v
+      typedef std::function<double(const QuadPoint& p, const CellGeometry& cell,
+                                   const PointValues& v)> VolumeIntegrand;
+
+      /// Integrand of a boundary term, evaluated on a boundary edge of the cell
+      typedef std::function<double(const QuadPoint& p, const CellGeometry& cell,
+                                   const EdgeGeometry& edge,
+                                   const PointValues& v)> BoundaryIntegrand;
+
       /**
        * Constructor which associates the linear form with a function space.
        */
@@ -37,17 +51,14 @@ namespace chemfem{
        */
       void AddNeumannBC(ScalarFunction);
 
-      /**
-       * Adds a volume integral in the notation of WeakForm.h, e.g.
-       *   F.AddVolumeTerm(f * v + 1./tau * Uold * v)
-       */
-      void AddVolumeTerm(const LinearExpression&);
+      /// Adds the integral of the functor over all cells
+      void AddVolumeTerm(VolumeIntegrand);
 
       /**
-       * Adds an integral over the part of the boundary where the indicator is true, over
-       * the whole boundary if it is omitted, e.g. F.AddBoundaryTerm(g * v, NeumannPart)
+       * Adds the integral of the functor over the part of the boundary where the
+       * indicator is true, over the whole boundary if it is omitted
        */
-      void AddBoundaryTerm(const LinearExpression&, BoundaryIndicator = nullptr);
+      void AddBoundaryTerm(BoundaryIntegrand, BoundaryIndicator = nullptr);
 
       /**
        * Assembles the load vector. Before calling this routine all terms that are required should be
@@ -66,7 +77,7 @@ namespace chemfem{
     private:
       struct BoundaryTerm
       {
-        TestTerm term;
+        BoundaryIntegrand integrand;
         BoundaryIndicator part;
       };
 
@@ -75,7 +86,7 @@ namespace chemfem{
        */
       std::vector<FEExpression> Terms;
 
-      std::vector<TestTerm> VolumeTerms;
+      std::vector<VolumeIntegrand> VolumeTerms;
       std::vector<BoundaryTerm> BoundaryTerms;
 
       /**

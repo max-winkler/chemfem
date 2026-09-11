@@ -64,6 +64,54 @@ struct Stirring
   }
 };
 
+/// (u, v)/tau + nu (grad u, grad v), the part of a time step acting on the new velocity
+struct ViscousStep
+{
+  double nu, tau;
+
+  double operator()(const QuadPoint&, const CellGeometry&,
+                    const PointValues& u, const PointValues& v) const
+  {
+    return u.value*v.value/tau + nu*dot(u.gradient, v.gradient);
+  }
+};
+
+/// -(p, dv/dx_i), the trial function is the pressure
+struct PressureTerm
+{
+  int direction;
+
+  double operator()(const QuadPoint&, const CellGeometry&,
+                    const PointValues& p, const PointValues& v) const
+  {
+    return -p.value * v.gradient[direction];
+  }
+};
+
+/// -(du/dx_i, q), the test function belongs to the pressure
+struct DivergenceTerm
+{
+  int direction;
+
+  double operator()(const QuadPoint&, const CellGeometry&,
+                    const PointValues& u, const PointValues& q) const
+  {
+    return -u.gradient[direction] * q.value;
+  }
+};
+
+/// (u_old, v)/tau, with the velocity of the previous step as an FE function
+struct OldVelocity
+{
+  const FEFunction& Uold;
+  double tau;
+
+  double operator()(const QuadPoint& p, const CellGeometry&, const PointValues& v) const
+  {
+    return Uold.Evaluate(p).value/tau * v.value;
+  }
+};
+
 bool Nowhere(const Coordinate&)
 {
   return false;
@@ -82,20 +130,18 @@ public:
       A(V, V), BxT(Q, V), ByT(Q, V), Bx(V, Q), By(V, Q), Fx(V), Fy(V),
       S({&V, &V, &Q}), tau(tau), t(t)
   {
-    TrialFunction u, p;
-    TestFunction v, q;
-
-    A.AddVolumeTerm(nu * (Dx(u)*Dx(v) + Dy(u)*Dy(v)) + 1./tau * u*v);
+    A.AddVolumeTerm(ViscousStep{nu, tau});
 
     // -(p, div v) and -(div u, q)
-    BxT.AddVolumeTerm(-1. * p * Dx(v));
-    ByT.AddVolumeTerm(-1. * p * Dy(v));
-    Bx.AddVolumeTerm(-1. * Dx(u) * q);
-    By.AddVolumeTerm(-1. * Dy(u) * q);
+    BxT.AddVolumeTerm(PressureTerm{0});
+    ByT.AddVolumeTerm(PressureTerm{1});
+    Bx.AddVolumeTerm(DivergenceTerm{0});
+    By.AddVolumeTerm(DivergenceTerm{1});
 
-    // The old velocity enters as an FE function
-    Fx.AddVolumeTerm(fx * v + 1./tau * Ux * v);
-    Fy.AddVolumeTerm(fy * v + 1./tau * Uy * v);
+    Fx.AddVolumeForce(fx);
+    Fx.AddVolumeTerm(OldVelocity{Ux, tau});
+    Fy.AddVolumeForce(fy);
+    Fy.AddVolumeTerm(OldVelocity{Uy, tau});
 
     S.AddBlock(0, 0, A);
     S.AddBlock(1, 1, A);

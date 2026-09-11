@@ -60,10 +60,10 @@ Vector2D exact_grad(const Coordinate& p)
 /// |u - u_h|_{H1(T)}^2, the exact error the estimator is measured against
 struct ExactErrorH1
 {
-  double operator()(const Coordinate& pos, const CellGeometry& cell,
-                    const SolutionState& u) const
+  double operator()(const QuadPoint& p, const CellGeometry& cell,
+                    const PointValues& u) const
   {
-    Vector2D grad = exact_grad(pos);
+    Vector2D grad = exact_grad(p.x);
 
     double dx = u.gradient[0] - grad[0];
     double dy = u.gradient[1] - grad[1];
@@ -75,24 +75,24 @@ struct ExactErrorH1
 // --------------------------------------------------------------------- self tests
 struct One
 {
-  double operator()(const Coordinate&, const CellGeometry&,
-                    const SolutionState&) const { return 1.; }
-  double operator()(const Coordinate&, const CellGeometry&,
+  double operator()(const QuadPoint&, const CellGeometry&,
+                    const PointValues&) const { return 1.; }
+  double operator()(const QuadPoint&, const CellGeometry&,
                     const EdgeGeometry&,
-                    const SolutionState&, const SolutionState&) const { return 1.; }
+                    const PointValues&, const PointValues&) const { return 1.; }
 };
 
 struct MeshSize
 {
-  double operator()(const Coordinate& pos, const CellGeometry& cell,
-                    const SolutionState& u) const { return cell.h; }
+  double operator()(const QuadPoint& p, const CellGeometry& cell,
+                    const PointValues& u) const { return cell.h; }
 };
 
 struct ValueJump
 {
-  double operator()(const Coordinate& pos, const CellGeometry& cell,
+  double operator()(const QuadPoint& p, const CellGeometry& cell,
                     const EdgeGeometry& edge,
-                    const SolutionState& u, const SolutionState& u_out) const { return std::fabs(Jump(u, u_out)); }
+                    const PointValues& u, const PointValues& u_out) const { return std::fabs(Jump(u, u_out)); }
 };
 
 // ---------------------------------------------------------------------------------

@@ -54,21 +54,26 @@ bool Robin(const Coordinate& p)
   return !Dirichlet(p);
 }
 
-// The quadrature points lie inside the edges, so g is never evaluated in a corner
-double g(const Coordinate& p)
+/// (alpha u, v) on the Robin boundary
+struct RobinTerm
 {
-  const Vector2D grad = exact_grad(p);
+  double operator()(const QuadPoint& p, const CellGeometry&, const EdgeGeometry&,
+                    const PointValues& u, const PointValues& v) const
+  {
+    return alpha(p.x) * u.value * v.value;
+  }
+};
 
-  double normal_derivative;
-  if(p.x > 1.-1.e-12)
-    normal_derivative = grad.x;
-  else if(p.y < 1.e-12)
-    normal_derivative = -grad.y;
-  else
-    normal_derivative = grad.y;
-
-  return normal_derivative + alpha(p)*exact(p);
-}
+/// (g, v) on the Robin boundary, with g = grad(u).n + alpha u and n the normal of the edge
+struct RobinData
+{
+  double operator()(const QuadPoint& p, const CellGeometry&, const EdgeGeometry& edge,
+                    const PointValues& v) const
+  {
+    const double g = dot(exact_grad(p.x), edge.normal) + alpha(p.x)*exact(p.x);
+    return g * v.value;
+  }
+};
 
 bool Run(int degree, int levels)
 {
@@ -85,17 +90,14 @@ bool Run(int degree, int levels)
       LagrangeElement element(degree);
       FESpace Space(mesh, element, Dirichlet);
 
-      TrialFunction u;
-      TestFunction v;
-
       BilinearForm A(Space, Space);
-      A.AddVolumeTerm(Dx(u)*Dx(v) + Dy(u)*Dy(v));
-      A.AddBoundaryTerm(alpha * u * v, Robin);
+      A.AddLaplaceTerm();
+      A.AddBoundaryTerm(RobinTerm(), Robin);
       A.Assemble();
 
       LinearForm F(Space);
-      F.AddVolumeTerm(f * v);
-      F.AddBoundaryTerm(g * v, Robin);
+      F.AddVolumeForce(f);
+      F.AddBoundaryTerm(RobinData(), Robin);
       F.Assemble();
 
       FEFunction Sol(Space);

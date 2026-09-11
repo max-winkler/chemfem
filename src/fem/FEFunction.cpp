@@ -24,11 +24,43 @@ namespace chemfem{
     void FEFunction::CreateFunction(const Vector& FreeDof)
     {
       Data = Space->IncorporateBC(FreeDof);
+      CacheValid = false;
     }
 
     void FEFunction::SetCoefficients(const Vector& Data)
     {
       this->Data = Data;
+      CacheValid = false;
+    }
+
+    PointValues FEFunction::Evaluate(const QuadPoint& p) const
+    {
+      if(CacheValid && p.cell == CachedPoint.cell
+	 && p.xi == CachedPoint.xi && p.eta == CachedPoint.eta)
+	return CachedValues;
+
+      const Element& E = Space->RefElement();
+
+      PointValues ref;
+      ref.value = 0.;
+
+      for(size_t k=0; k<Space->NrLocalDof(); ++k)
+	{
+	  const double coeff = Data[Space->GetGlobalIndex(p.cell, k)];
+
+	  ref.value += coeff * E.Value(k, p.xi, p.eta);
+	  ref.gradient += coeff * E.Gradient(k, p.xi, p.eta);
+	  ref.hessian += coeff * E.Hessian(k, p.xi, p.eta);
+	}
+
+      const chemfem::linalg::Matrix2D InvJacT
+	= Space->GetMesh().Jacobian(p.cell).Transpose().Invert();
+
+      CachedValues = MapFromReference(ref, InvJacT);
+      CachedPoint = p;
+      CacheValid = true;
+
+      return CachedValues;
     }
 
     FEFunction FESpace::Interpolate(ScalarFunction u)

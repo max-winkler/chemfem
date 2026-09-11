@@ -1,12 +1,14 @@
 #ifndef _BILINEAR_FORM_H_
 #define _BILINEAR_FORM_H_
 
+#include <functional>
+
 #include "linalg/DenseMatrix.h"
 #include "linalg/SparseMatrix.h"
 #include "linalg/SparseMatrixInserter.h"
 #include "fem/FESpace.h"
 #include "fem/FEExpression.h"
-#include "fem/WeakForm.h"
+#include "fem/PointValues.h"
 
 using chemfem::linalg::SparseMatrix;
 
@@ -16,10 +18,36 @@ namespace chemfem{
     /**
      * This class represents a finite element bilinear form. In  linear algebra context
      * this corresponds to a matrix (e.g. stiffness or mass matrix).
+     *
+     * Terms beyond the predefined ones are given as functors, the same way as for the
+     * GenericEstimator. The functor gets the values of the trial function u and the
+     * test function v in a quadrature point:
+     *
+     * \code
+     *   struct Mass
+     *   {
+     *     double operator()(const QuadPoint&, const CellGeometry&,
+     *                       const PointValues& u, const PointValues& v) const
+     *     {
+     *       return u.value * v.value;
+     *     }
+     *   };
+     *
+     *   A.AddVolumeTerm(Mass());
+     * \endcode
      */
     class BilinearForm
     {
     public:
+
+      /// Integrand of a volume term for the trial function u and the test function v
+      typedef std::function<double(const QuadPoint& p, const CellGeometry& cell,
+                                   const PointValues& u, const PointValues& v)> VolumeIntegrand;
+
+      /// Integrand of a boundary term, evaluated on a boundary edge of the cell
+      typedef std::function<double(const QuadPoint& p, const CellGeometry& cell,
+                                   const EdgeGeometry& edge,
+                                   const PointValues& u, const PointValues& v)> BoundaryIntegrand;
 
       /**
        * Constructor which initializes an empty bilinear form for a given
@@ -50,18 +78,14 @@ namespace chemfem{
        */
       void AddReactionTerm(ScalarFunction);
 
-      /**
-       * Adds a volume integral in the notation of WeakForm.h, e.g.
-       *   A.AddVolumeTerm(Dx(u)*Dx(v) + Dy(u)*Dy(v))
-       */
-      void AddVolumeTerm(const BilinearExpression&);
+      /// Adds the integral of the functor over all cells
+      void AddVolumeTerm(VolumeIntegrand);
 
       /**
-       * Adds an integral over the part of the boundary where the indicator is true, over
-       * the whole boundary if it is omitted, e.g. the Robin term
-       *   A.AddBoundaryTerm(alpha * u*v, RobinPart)
+       * Adds the integral of the functor over the part of the boundary where the
+       * indicator is true, over the whole boundary if it is omitted
        */
-      void AddBoundaryTerm(const BilinearExpression&, BoundaryIndicator = nullptr);
+      void AddBoundaryTerm(BoundaryIntegrand, BoundaryIndicator = nullptr);
 
       /**
        * Assembles the finite element matrix.
@@ -89,9 +113,9 @@ namespace chemfem{
       void InsertLocalMatrix(chemfem::linalg::SparseMatrixInserter&, size_t RowOffset,
                              size_t ColOffset, size_t Cell, const chemfem::linalg::DenseMatrix&);
 
-      struct BoundaryProduct
+      struct BoundaryTerm
       {
-        BilinearProduct product;
+        BoundaryIntegrand integrand;
         BoundaryIndicator part;
       };
 
@@ -103,8 +127,8 @@ namespace chemfem{
 
       std::vector<FEExpression> Terms;
 
-      std::vector<BilinearProduct> VolumeProducts;
-      std::vector<BoundaryProduct> BoundaryProducts;
+      std::vector<VolumeIntegrand> VolumeTerms;
+      std::vector<BoundaryTerm> BoundaryTerms;
     };
 
   };

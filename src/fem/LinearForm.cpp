@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "fem/LinearForm.h"
 
 #include "quadrature/QuadFormula.h"
@@ -11,6 +13,7 @@ using chemfem::linalg::Coordinate;
 using chemfem::mesh::Mesh;
 using chemfem::mesh::Node;
 using chemfem::mesh::Cell;
+using chemfem::mesh::CellInfo;
 using chemfem::mesh::Edge;
 using chemfem::mesh::EdgeType;
 
@@ -19,6 +22,20 @@ using chemfem::quadrature::QUAD_FORMULA;
 
 namespace chemfem{
   namespace fem{
+
+    namespace {
+
+      CellGeometry GeometryOf(const Mesh& mesh, size_t c)
+      {
+	CellInfo Info = mesh.GetCellInfo(c);
+
+	CellGeometry g;
+	g.h = Info.Diam();
+	g.area = std::fabs(Info.Volume());
+	g.index = c;
+	return g;
+      }
+    }
 
     LinearForm::LinearForm(const FESpace& TestSpace) : TestSpace(TestSpace) {}
 
@@ -34,18 +51,14 @@ namespace chemfem{
       Terms.push_back(Expression);
     }
 
-    void LinearForm::AddVolumeTerm(const LinearExpression& e)
+    void LinearForm::AddVolumeTerm(VolumeIntegrand term)
     {
-      for(size_t t=0; t<e.terms.size(); ++t)
-	if(e.terms[t].coeff.LivesOn(TestSpace.GetMesh()))
-	  VolumeTerms.push_back(e.terms[t]);
+      VolumeTerms.push_back(term);
     }
 
-    void LinearForm::AddBoundaryTerm(const LinearExpression& e, BoundaryIndicator part)
+    void LinearForm::AddBoundaryTerm(BoundaryIntegrand term, BoundaryIndicator part)
     {
-      for(size_t t=0; t<e.terms.size(); ++t)
-	if(e.terms[t].coeff.LivesOn(TestSpace.GetMesh()))
-	  BoundaryTerms.push_back(BoundaryTerm{e.terms[t], part});
+      BoundaryTerms.push_back(BoundaryTerm{term, part});
     }
 
     Vector& LinearForm::LoadVector()
@@ -62,6 +75,7 @@ namespace chemfem{
     {
       Vec = Vector(TestSpace.NrFreeDof());
 
+      const Mesh& mesh = TestSpace.mesh;
       const DofManager& Dofs = TestSpace.Dofs;
       const int NrTest = TestSpace.NrLocalDof();
 
@@ -72,29 +86,41 @@ namespace chemfem{
       QuadFormula.FormulaData(Weights, Xi, Eta);
 
       double *TestFuncValue = new double[NrTest];
-      std::vector<Vector2D> TestFuncGrad(NrTest);
+
+      // The basis functions on the reference element in the quadrature points, the same
+      // for every cell
+      std::vector<PointValues> RefTest;
+      if(!VolumeTerms.empty())
+	RefTest = TabulateReference(TestSpace.RefElement(), Xi, Eta);
+
+      std::vector<PointValues> TestValues(NrTest);
 
       // Iterate over all cells
       int CellInd;
       std::vector<Cell>::const_iterator cell;
-      for(cell = TestSpace.mesh.Cells.begin(), CellInd=0;
-	  cell != TestSpace.mesh.Cells.end(); ++cell, ++CellInd)
+      for(cell = mesh.Cells.begin(), CellInd=0;
+	  cell != mesh.Cells.end(); ++cell, ++CellInd)
 	{
-	  double det = TestSpace.mesh.Determinant(CellInd);
+	  double det = mesh.Determinant(CellInd);
 
-	  Node& x0 = TestSpace.mesh.Nodes[cell->LocNode[0]];
+	  const Node& x0 = mesh.Nodes[cell->LocNode[0]];
 	  const chemfem::linalg::Coordinate b{x0.getX(), x0.getY()};
 
-	  const chemfem::linalg::Matrix2D Jac = TestSpace.mesh.Jacobian(CellInd);
+	  const chemfem::linalg::Matrix2D Jac = mesh.Jacobian(CellInd);
 	  const Matrix2D InvJac = Jac.Transpose().Invert();
 
 	  Vector LocVec(NrTest);
 
+	  CellGeometry Geometry;
+	  if(!VolumeTerms.empty())
+	    Geometry = GeometryOf(mesh, CellInd);
+
 	  // Iterate over all quadrature points
 	  Vector::const_iterator Wq, Xiq, Etaq;
+	  size_t q;
 
-	  for(Wq = Weights.begin(), Xiq = Xi.begin(), Etaq = Eta.begin();
-	      Wq != Weights.end(); ++Wq, ++Xiq, ++Etaq)
+	  for(Wq = Weights.begin(), Xiq = Xi.begin(), Etaq = Eta.begin(), q = 0;
+	      Wq != Weights.end(); ++Wq, ++Xiq, ++Etaq, ++q)
 	    {
 	      // Determine Quadrature points in world element
 	      const chemfem::linalg::Coordinate XiEtaq{*Xiq, *Etaq};
@@ -133,18 +159,14 @@ namespace chemfem{
 
 	      if(!VolumeTerms.empty())
 		{
+		  const QuadPoint Point{XYq, size_t(CellInd), *Xiq, *Etaq};
+
 		  for(int k=0; k<NrTest; ++k)
-		    TestFuncGrad[k] = InvJac * TestSpace.RefElement().Gradient(k, *Xiq, *Etaq);
+		    TestValues[k] = MapFromReference(RefTest[q*NrTest + k], InvJac);
 
 		  for(size_t t=0; t<VolumeTerms.size(); ++t)
-		    {
-		      const TestTerm& T = VolumeTerms[t];
-		      const double CoeffVal = T.coeff.Value(XYq, CellInd, *Xiq, *Etaq);
-
-		      for(int k=0; k<NrTest; ++k)
-			LocVec[k] += (*Wq) * CoeffVal
-			  * ApplyOperator(T.op, TestFuncValue[k], TestFuncGrad[k]) * det;
-		    }
+		    for(int k=0; k<NrTest; ++k)
+		      LocVec[k] += (*Wq) * VolumeTerms[t](Point, Geometry, TestValues[k]) * det;
 		}
 	    } // loop over quadrature points
 	  for(int k=0; k<NrTest; ++k)
@@ -164,7 +186,7 @@ namespace chemfem{
       Vector LineWeights, LineNodes, Unused;
       LineFormula.FormulaData(LineWeights, LineNodes, Unused);
 
-      const std::vector<Edge>& Edges = TestSpace.mesh.Edges;
+      const std::vector<Edge>& Edges = mesh.Edges;
 
       for(size_t e=0; e<Edges.size(); ++e)
 	{
@@ -172,11 +194,11 @@ namespace chemfem{
 	    continue;
 
 	  const size_t CellIndex = Edges[e].GetNeighbor(-1);
-	  const Cell& EdgeCell = TestSpace.mesh.Cells[CellIndex];
+	  const Cell& EdgeCell = mesh.Cells[CellIndex];
 	  const int k = EdgeCell.EdgeIndex(e);
 
-	  const Node& P0 = TestSpace.mesh.Nodes[EdgeCell.LocNode[k]];
-	  const Node& P1 = TestSpace.mesh.Nodes[EdgeCell.LocNode[(k+1)%3]];
+	  const Node& P0 = mesh.Nodes[EdgeCell.LocNode[k]];
+	  const Node& P1 = mesh.Nodes[EdgeCell.LocNode[(k+1)%3]];
 	  const double length = P0.Dist(P1);
 
 	  Vector LocVec(NrTest);
@@ -212,18 +234,18 @@ namespace chemfem{
 	    }
 	}
 
-      // Boundary integrals of AddBoundaryTerm, on the parts of the boundary they are given for
+      // Boundary terms of AddBoundaryTerm, on the parts of the boundary they are given for
       for(size_t e=0; e<Edges.size() && !BoundaryTerms.empty(); ++e)
 	{
 	  if(Edges[e].Type() != EdgeType::BOUNDARY_EDGE)
 	    continue;
 
 	  const size_t CellIndex = Edges[e].GetNeighbor(-1);
-	  const Cell& EdgeCell = TestSpace.mesh.Cells[CellIndex];
+	  const Cell& EdgeCell = mesh.Cells[CellIndex];
 	  const int LocEdge = EdgeCell.EdgeIndex(e);
 
-	  const Node& P0 = TestSpace.mesh.Nodes[EdgeCell.LocNode[LocEdge]];
-	  const Node& P1 = TestSpace.mesh.Nodes[EdgeCell.LocNode[(LocEdge+1)%3]];
+	  const Node& P0 = mesh.Nodes[EdgeCell.LocNode[LocEdge]];
+	  const Node& P1 = mesh.Nodes[EdgeCell.LocNode[(LocEdge+1)%3]];
 	  const Coordinate Midpoint{0.5*(P0.getX() + P1.getX()), 0.5*(P0.getY() + P1.getY())};
 
 	  std::vector<size_t> Active;
@@ -234,32 +256,39 @@ namespace chemfem{
 	  if(Active.empty())
 	    continue;
 
-	  const double length = P0.Dist(P1);
-	  const Matrix2D InvJac = TestSpace.mesh.Jacobian(CellIndex).Transpose().Invert();
+	  CellInfo Info = mesh.GetCellInfo(CellIndex);
+	  const CellGeometry Geometry = GeometryOf(mesh, CellIndex);
+
+	  EdgeGeometry EdgeGeom;
+	  EdgeGeom.h = Info.EdgeLength(LocEdge);
+	  EdgeGeom.normal = Info.Normal(LocEdge);
+	  EdgeGeom.local_index = LocEdge;
+	  EdgeGeom.boundary = true;
+
+	  const Matrix2D InvJac = mesh.Jacobian(CellIndex).Transpose().Invert();
 
 	  Vector LocVec(NrTest);
 
 	  for(size_t q=0; q<LineWeights.size(); ++q)
 	    {
 	      const double s = LineNodes[q];
-	      const Coordinate XYq{(1.-s)*P0.getX() + s*P1.getX(),
-				   (1.-s)*P0.getY() + s*P1.getY()};
 
 	      double xi, eta;
 	      EdgeToRefCoords(LocEdge, s, xi, eta);
 
-	      for(size_t a=0; a<Active.size(); ++a)
-		{
-		  const TestTerm& T = BoundaryTerms[Active[a]].term;
-		  const double CoeffVal = T.coeff.Value(XYq, CellIndex, xi, eta);
+	      const QuadPoint Point{Coordinate{(1.-s)*P0.getX() + s*P1.getX(),
+					       (1.-s)*P0.getY() + s*P1.getY()},
+				    CellIndex, xi, eta};
 
-		  for(int i=0; i<NrTest; ++i)
-		    {
-		      const Vector2D grad = InvJac * TestSpace.RefElement().Gradient(i, xi, eta);
-		      LocVec[i] += LineWeights[q] * CoeffVal
-			* ApplyOperator(T.op, TestSpace.RefElement().Value(i, xi, eta), grad) * length;
-		    }
-		}
+	      for(int i=0; i<NrTest; ++i)
+		TestValues[i] = MapFromReference(
+		  ReferenceValues(TestSpace.RefElement(), i, xi, eta), InvJac);
+
+	      for(size_t a=0; a<Active.size(); ++a)
+		for(int i=0; i<NrTest; ++i)
+		  LocVec[i] += LineWeights[q]
+		    * BoundaryTerms[Active[a]].integrand(Point, Geometry, EdgeGeom, TestValues[i])
+		    * EdgeGeom.h;
 	    }
 
 	  for(int i=0; i<NrTest; ++i)

@@ -6,64 +6,24 @@
 
 #include "fem/FEExpression.h"
 #include "fem/FEFunction.h"
-
-#include "linalg/Coordinate.h"
-#include "linalg/Matrix2D.h"
-#include "linalg/Vector2D.h"
+#include "fem/PointValues.h"
 
 namespace chemfem{
   namespace fem{
 
-    /// State of the discrete solution at a point
-    struct SolutionState
-    {
-      /// Value of the discrete solution
-      double value;
-      /// Gradient of the discrete solution, in physical coordinates
-      chemfem::linalg::Vector2D gradient;
-      /// Hessian of the discrete solution, in physical coordinates
-      chemfem::linalg::Matrix2D hessian;
-      /// Laplacian of the discrete solution, the trace of the Hessian
-      double laplacian;
-    };
-
-    /// Geometry of the cell an indicator is accumulated on
-    struct CellGeometry
-    {
-      /// Diameter of the cell, h_T
-      double h;
-      /// Area of the cell
-      double area;
-      /// Index of the cell in the mesh
-      size_t index;
-    };
-
-    /// Geometry of one edge of that cell
-    struct EdgeGeometry
-    {
-      /// Length of the edge, h_E
-      double h;
-      /// Unit normal, pointing out of the cell the indicator is accumulated on
-      chemfem::linalg::Vector2D normal;
-      /// Local index of the edge within that cell, 0..2
-      int local_index;
-      /// True if the edge has no neighbor
-      bool boundary;
-    };
-
     /// Jump of the function value across an edge
-    double Jump(const SolutionState& u, const SolutionState& u_out);
+    double Jump(const PointValues& u, const PointValues& u_out);
 
     /// Jump of the normal derivative across an edge, [du/dn]
-    double NormalJump(const SolutionState& u, const SolutionState& u_out,
+    double NormalJump(const PointValues& u, const PointValues& u_out,
                       const EdgeGeometry& edge);
 
     /**
      * Integrand of a volume term, evaluated at a quadrature point inside a cell.
      */
-    typedef std::function<double(const chemfem::linalg::Coordinate& pos,
+    typedef std::function<double(const QuadPoint& p,
                                  const CellGeometry& cell,
-                                 const SolutionState& u)> VolumeIntegrand;
+                                 const PointValues& u)> VolumeIntegrand;
 
     /**
      * Integrand of an edge term, evaluated at a quadrature point on one edge of a
@@ -71,11 +31,11 @@ namespace chemfem{
      * interior edge is visited once from either side. On a boundary edge u_out
      * repeats u.
      */
-    typedef std::function<double(const chemfem::linalg::Coordinate& pos,
+    typedef std::function<double(const QuadPoint& p,
                                  const CellGeometry& cell,
                                  const EdgeGeometry& edge,
-                                 const SolutionState& u,
-                                 const SolutionState& u_out)> EdgeIntegrand;
+                                 const PointValues& u,
+                                 const PointValues& u_out)> EdgeIntegrand;
 
     /// Which edges an edge term is evaluated on
     enum EdgeSelection {INTERIOR_EDGES, BOUNDARY_EDGES, ALL_EDGES};
@@ -97,12 +57,12 @@ namespace chemfem{
      * \code
      *   struct WeightedJump
      *   {
-     *     double operator()(const Coordinate& pos, const CellGeometry&,
+     *     double operator()(const QuadPoint& p, const CellGeometry&,
      *                       const EdgeGeometry& edge,
-     *                       const SolutionState& u, const SolutionState& u_out) const
+     *                       const PointValues& u, const PointValues& u_out) const
      *     {
-     *       double j = a(pos) * NormalJump(u, u_out, edge);
-     *       return 0.5 * edge.h / a(pos) * j*j;
+     *       double j = a(p.x) * NormalJump(u, u_out, edge);
+     *       return 0.5 * edge.h / a(p.x) * j*j;
      *     }
      *   };
      *
@@ -125,9 +85,8 @@ namespace chemfem{
 
         explicit VolumeResidual(ScalarFunction f) : f(f) {}
 
-        double operator()(const chemfem::linalg::Coordinate& pos,
-                          const CellGeometry& cell,
-                          const SolutionState& u) const;
+        double operator()(const QuadPoint& p, const CellGeometry& cell,
+                          const PointValues& u) const;
       };
 
       /**
@@ -137,11 +96,9 @@ namespace chemfem{
        */
       struct EdgeJump
       {
-        double operator()(const chemfem::linalg::Coordinate& pos,
-                          const CellGeometry& cell,
+        double operator()(const QuadPoint& p, const CellGeometry& cell,
                           const EdgeGeometry& edge,
-                          const SolutionState& u,
-                          const SolutionState& u_out) const;
+                          const PointValues& u, const PointValues& u_out) const;
       };
 
       /**

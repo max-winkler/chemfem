@@ -47,6 +47,30 @@ double fy(const Coordinate& p)
   return -laplace - M_PI*cos(M_PI*p.x)*sin(M_PI*p.y);
 }
 
+/// -(p, dv/dx_i), the trial function is the pressure
+struct PressureTerm
+{
+  int direction;
+
+  double operator()(const QuadPoint&, const CellGeometry&,
+                    const PointValues& p, const PointValues& v) const
+  {
+    return -p.value * v.gradient[direction];
+  }
+};
+
+/// -(du/dx_i, q), the test function belongs to the pressure
+struct DivergenceTerm
+{
+  int direction;
+
+  double operator()(const QuadPoint&, const CellGeometry&,
+                    const PointValues& u, const PointValues& q) const
+  {
+    return -u.gradient[direction] * q.value;
+  }
+};
+
 bool Nowhere(const Coordinate&)
 {
   return false;
@@ -77,22 +101,19 @@ int main()
       FESpace V(mesh, P2);
       FESpace Q(mesh, P1, Nowhere);
 
-      TrialFunction u, p;
-      TestFunction v, q;
-
       BilinearForm A(V, V);
-      A.AddVolumeTerm(Dx(u)*Dx(v) + Dy(u)*Dy(v));
+      A.AddLaplaceTerm();
 
-      // -(p, div v) and -(div u, q)
+      // -(p, div v) and -(div u, q), split into the two directions
       BilinearForm BxT(Q, V), ByT(Q, V), Bx(V, Q), By(V, Q);
-      BxT.AddVolumeTerm(-1. * p * Dx(v));
-      ByT.AddVolumeTerm(-1. * p * Dy(v));
-      Bx.AddVolumeTerm(-1. * Dx(u) * q);
-      By.AddVolumeTerm(-1. * Dy(u) * q);
+      BxT.AddVolumeTerm(PressureTerm{0});
+      ByT.AddVolumeTerm(PressureTerm{1});
+      Bx.AddVolumeTerm(DivergenceTerm{0});
+      By.AddVolumeTerm(DivergenceTerm{1});
 
       LinearForm Fx(V), Fy(V);
-      Fx.AddVolumeTerm(fx * v);
-      Fy.AddVolumeTerm(fy * v);
+      Fx.AddVolumeForce(fx);
+      Fy.AddVolumeForce(fy);
 
       BlockSystem S({&V, &V, &Q});
       S.AddBlock(0, 0, A);
