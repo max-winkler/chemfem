@@ -59,7 +59,8 @@ namespace chemfem{
       SparseMatrix& SystemMatrix();
       
     private:
-      const FESpace& TrialSpace, TestSpace;
+      const FESpace& TrialSpace;
+      const FESpace& TestSpace;
 
       SparseMatrix Matrix;
       Vector DirichletRhs;
