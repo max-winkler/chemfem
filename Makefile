@@ -47,6 +47,7 @@ OBJ = 	src/linalg/Vector.o \
 	src/fem/FEExpression.o \
 	src/fem/LinearForm.o \
 	src/fem/BilinearForm.o \
+	src/fem/WeakForm.o \
 	src/fem/BlockSystem.o \
 	src/fem/VtkOutput.o \
 	src/fem/ErrorNorm.o \
@@ -65,7 +66,8 @@ TESTS = tests/SparseMatrixTest.o \
 	tests/SolverTest.o \
 	tests/NeumannTest.o \
 	tests/CrouzeixRaviartTest.o \
-	tests/StokesTest.o
+	tests/StokesTest.o \
+	tests/RobinTest.o
 
 TESTS_BIN = $(TESTS:.o=)
 

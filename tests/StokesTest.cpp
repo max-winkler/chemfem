@@ -47,11 +47,6 @@ double fy(const Coordinate& p)
   return -laplace - M_PI*cos(M_PI*p.x)*sin(M_PI*p.y);
 }
 
-double MinusOne(const Coordinate&)
-{
-  return -1.;
-}
-
 bool Nowhere(const Coordinate&)
 {
   return false;
@@ -82,19 +77,22 @@ int main()
       FESpace V(mesh, P2);
       FESpace Q(mesh, P1, Nowhere);
 
+      TrialFunction u, p;
+      TestFunction v, q;
+
       BilinearForm A(V, V);
-      A.AddLaplaceTerm();
+      A.AddVolumeTerm(Dx(u)*Dx(v) + Dy(u)*Dy(v));
 
       // -(p, div v) and -(div u, q)
       BilinearForm BxT(Q, V), ByT(Q, V), Bx(V, Q), By(V, Q);
-      BxT.AddTerm(MinusOne, VALUE, DX);
-      ByT.AddTerm(MinusOne, VALUE, DY);
-      Bx.AddTerm(MinusOne, DX, VALUE);
-      By.AddTerm(MinusOne, DY, VALUE);
+      BxT.AddVolumeTerm(-1. * p * Dx(v));
+      ByT.AddVolumeTerm(-1. * p * Dy(v));
+      Bx.AddVolumeTerm(-1. * Dx(u) * q);
+      By.AddVolumeTerm(-1. * Dy(u) * q);
 
       LinearForm Fx(V), Fy(V);
-      Fx.AddVolumeForce(fx);
-      Fy.AddVolumeForce(fy);
+      Fx.AddVolumeTerm(fx * v);
+      Fy.AddVolumeTerm(fy * v);
 
       BlockSystem S({&V, &V, &Q});
       S.AddBlock(0, 0, A);

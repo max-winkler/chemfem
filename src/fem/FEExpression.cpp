@@ -4,16 +4,13 @@ namespace chemfem{
   namespace fem{
 
     FEExpression::FEExpression(ExpressionType Type, ScalarFunction Coeff)
-      : Type(Type), Coeff(Coeff), TrialOp(VALUE), TestOp(VALUE) {}
+      : Type(Type), Coeff(Coeff) {}
 
     FEExpression::FEExpression(ExpressionType Type, VectorFunction VecCoeff)
-      : Type(Type), VecCoeff(VecCoeff), TrialOp(VALUE), TestOp(VALUE) {}
+      : Type(Type), VecCoeff(VecCoeff) {}
 
     FEExpression::FEExpression(ExpressionType Type)
-      : Type(Type), Coeff(nullptr), TrialOp(VALUE), TestOp(VALUE) {}
-
-    FEExpression::FEExpression(ScalarFunction Coeff, FEOperator TrialOp, FEOperator TestOp)
-      : Type(GENERAL), Coeff(Coeff), TrialOp(TrialOp), TestOp(TestOp) {}
+      : Type(Type), Coeff(nullptr) {}
 
     ExpressionType FEExpression::GetType() const
     {

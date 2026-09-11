@@ -14,6 +14,7 @@ using chemfem::linalg::SparseMatrixInserter;
 using chemfem::mesh::Mesh;
 using chemfem::mesh::Node;
 using chemfem::mesh::Cell;
+using chemfem::mesh::EdgeType;
 
 using chemfem::quadrature::QuadratureFormula;
 using chemfem::quadrature::QUAD_FORMULA;
@@ -22,19 +23,6 @@ namespace chemfem{
   namespace fem{
 
     double Identity(const Coordinate&) {return 1.;}
-
-    namespace {
-
-      double Apply(FEOperator op, double value, const Vector2D& grad)
-      {
-        switch(op)
-          {
-          case DX: return grad.x;
-          case DY: return grad.y;
-          default: return value;
-          }
-      }
-    }
 
     BilinearForm::BilinearForm(const FESpace& TrialSpace, const FESpace& TestSpace)
       : TrialSpace(TrialSpace), TestSpace(TestSpace), Matrix(0,0),
@@ -64,15 +52,18 @@ namespace chemfem{
       Terms.push_back(expression);
     }
 
-    void BilinearForm::AddTerm(ScalarFunction Coeff, FEOperator TrialOp, FEOperator TestOp)
+    void BilinearForm::AddVolumeTerm(const BilinearExpression& e)
     {
-      FEExpression expression(Coeff, TrialOp, TestOp);
-      Terms.push_back(expression);
+      for(size_t p=0; p<e.products.size(); ++p)
+        if(e.products[p].coeff.LivesOn(TestSpace.GetMesh()))
+          VolumeProducts.push_back(e.products[p]);
     }
 
-    void BilinearForm::AddTerm(FEOperator TrialOp, FEOperator TestOp)
+    void BilinearForm::AddBoundaryTerm(const BilinearExpression& e, BoundaryIndicator part)
     {
-      AddTerm(Identity, TrialOp, TestOp);
+      for(size_t p=0; p<e.products.size(); ++p)
+        if(e.products[p].coeff.LivesOn(TestSpace.GetMesh()))
+          BoundaryProducts.push_back(BoundaryProduct{e.products[p], part});
     }
 
     SparseMatrix& BilinearForm::SystemMatrix()
@@ -102,8 +93,12 @@ namespace chemfem{
 
     void BilinearForm::Assemble(SparseMatrixInserter& Ins, size_t RowOffset, size_t ColOffset)
     {
-      const DofManager& TestDofs = TestSpace.Dofs;
-      const DofManager& TrialDofs = TrialSpace.Dofs;
+      if(&TestSpace.mesh != &TrialSpace.mesh)
+        {
+          std::cerr << "Assembly routine for different meshes in trial and test space "
+                    << "not implemented yet\n";
+          return;
+        }
 
       const int NrTest = TestSpace.NrLocalDof();
       const int NrTrial = TrialSpace.NrLocalDof();
@@ -162,108 +157,184 @@ namespace chemfem{
               for(std::vector<FEExpression>::const_iterator Term = Terms.begin();
                   Term != Terms.end(); ++Term)
                 {
-                  if(&TestSpace.mesh == &TrialSpace.mesh)
+                  switch(Term->Type)
                     {
-                      switch(Term->Type)
-                        {
-                        case SECOND_ORDER:
-                          {
-                            const double CoeffVal = Term->Coeff(XYq);
+                    case SECOND_ORDER:
+                      {
+                        const double CoeffVal = Term->Coeff(XYq);
 
-                            for(int k=0; k<NrTest; ++k)
-                              for(int l=0; l<NrTrial; ++l)
-                                {
-                                  LocMatrix[k][l] +=
-                                    (*Wq) * CoeffVal
-                                    * dot(GradTest[k], GradTrial[l])
-                                    * det;
-                                }
-                          }
-                          break;
+                        for(int k=0; k<NrTest; ++k)
+                          for(int l=0; l<NrTrial; ++l)
+                            {
+                              LocMatrix[k][l] +=
+                                (*Wq) * CoeffVal
+                                * dot(GradTest[k], GradTrial[l])
+                                * det;
+                            }
+                      }
+                      break;
 
-                        case FIRST_ORDER:
-                          {
-                            const Vector2D ConvectionField = Term->VecCoeff(XYq);
+                    case FIRST_ORDER:
+                      {
+                        const Vector2D ConvectionField = Term->VecCoeff(XYq);
 
-                            for(int k=0; k<NrTest; ++k)
-                              for(int l=0; l<NrTrial; ++l)
-                                {
-                                  LocMatrix[k][l] +=
-                                    (*Wq) * dot(ConvectionField, GradTrial[l]) * ValueTest[k]
-                                    * det;
-                                }
-                          }
-                          break;
+                        for(int k=0; k<NrTest; ++k)
+                          for(int l=0; l<NrTrial; ++l)
+                            {
+                              LocMatrix[k][l] +=
+                                (*Wq) * dot(ConvectionField, GradTrial[l]) * ValueTest[k]
+                                * det;
+                            }
+                      }
+                      break;
 
-                        case ZERO_ORDER:
-                          {
-                            const double CoeffVal = Term->Coeff(XYq);
+                    case ZERO_ORDER:
+                      {
+                        const double CoeffVal = Term->Coeff(XYq);
 
-                            for(int k=0; k<NrTest; ++k)
-                              for(int l=0; l<NrTrial; ++l)
-                                LocMatrix[k][l] += (*Wq) * CoeffVal * ValueTest[k]
-                                  * ValueTrial[l] * det;
-                          }
-                          break;
+                        for(int k=0; k<NrTest; ++k)
+                          for(int l=0; l<NrTrial; ++l)
+                            LocMatrix[k][l] += (*Wq) * CoeffVal * ValueTest[k]
+                              * ValueTrial[l] * det;
+                      }
+                      break;
 
-                        case GENERAL:
-                          {
-                            const double CoeffVal = Term->Coeff(XYq);
-
-                            for(int k=0; k<NrTest; ++k)
-                              for(int l=0; l<NrTrial; ++l)
-                                LocMatrix[k][l] += (*Wq) * CoeffVal
-                                  * Apply(Term->TrialOp, ValueTrial[l], GradTrial[l])
-                                  * Apply(Term->TestOp, ValueTest[k], GradTest[k]) * det;
-                          }
-                          break;
-
-                        default:
-                          std::cerr << "Assembly of FE expressions of type " << Term->Type
-                                    << " not implemented yet.\n";
-                          return;
-                        }
-
-                    }
-                  else
-                    {
-                      std::cerr << "Assembly routine for different meshes in trial and test space "
-                                << "not implemented yet\n";
+                    default:
+                      std::cerr << "Assembly of FE expressions of type " << Term->Type
+                                << " not implemented yet.\n";
                       return;
                     }
                 } // loop over Terms
+
+              for(size_t p=0; p<VolumeProducts.size(); ++p)
+                {
+                  const BilinearProduct& P = VolumeProducts[p];
+                  const double CoeffVal = P.coeff.Value(XYq, CellInd, *Xiq, *Etaq);
+
+                  for(int k=0; k<NrTest; ++k)
+                    for(int l=0; l<NrTrial; ++l)
+                      LocMatrix[k][l] += (*Wq) * CoeffVal
+                        * ApplyOperator(P.trial, ValueTrial[l], GradTrial[l])
+                        * ApplyOperator(P.test, ValueTest[k], GradTest[k]) * det;
+                }
             } // loop over quadrature points
 
-          // Insert local Matrix into global one
-          for(int k=0; k<NrTest; ++k)
-            for(int l=0; l<NrTrial; ++l)
-              {
-                size_t DofTrial = TrialDofs.GlobalIndex(CellInd, l);
-                size_t DofTest = TestDofs.GlobalIndex(CellInd, k);
-
-                // Skip for test functions not in the test
-                if(!TestDofs.IsFree(DofTest))
-                  continue;
-
-                if(TrialDofs.IsFree(DofTrial))
-                  // DOF is a free DOF
-                  Ins.Insert(RowOffset + TestDofs.ReducedIndex(DofTest),
-                             ColOffset + TrialDofs.ReducedIndex(DofTrial), LocMatrix[k][l]);
-                else
-                  {
-                    //DOF is a Dirichlet DOF
-                    // \todo Modify this when implementing inhomogeneous Dirichlet conditions
-                    double Value = 0.;
-                    DirichletRhs[TestDofs.ReducedIndex(DofTest)] += LocMatrix[k][l] * Value;
-                  }
-              }
+          InsertLocalMatrix(Ins, RowOffset, ColOffset, CellInd, LocMatrix);
 
         } // loop over cells
+
+      if(!BoundaryProducts.empty())
+        {
+          QuadratureFormula LineFormula(QUAD_FORMULA::LINE_GAUSS_5);
+
+          Vector LineWeights, LineNodes, Unused;
+          LineFormula.FormulaData(LineWeights, LineNodes, Unused);
+
+          const Mesh& mesh = TestSpace.mesh;
+
+          for(size_t e=0; e<mesh.Edges.size(); ++e)
+            {
+              if(mesh.Edges[e].Type() != EdgeType::BOUNDARY_EDGE)
+                continue;
+
+              const size_t CellIndex = mesh.Edges[e].GetNeighbor(-1);
+              const Cell& EdgeCell = mesh.Cells[CellIndex];
+              const int LocEdge = EdgeCell.EdgeIndex(e);
+
+              const Node& P0 = mesh.Nodes[EdgeCell.LocNode[LocEdge]];
+              const Node& P1 = mesh.Nodes[EdgeCell.LocNode[(LocEdge+1)%3]];
+              const Coordinate Midpoint{0.5*(P0.getX() + P1.getX()),
+                                        0.5*(P0.getY() + P1.getY())};
+
+              std::vector<size_t> Active;
+              for(size_t p=0; p<BoundaryProducts.size(); ++p)
+                if(!BoundaryProducts[p].part || BoundaryProducts[p].part(Midpoint))
+                  Active.push_back(p);
+
+              if(Active.empty())
+                continue;
+
+              const double length = P0.Dist(P1);
+              const Matrix2D InvJac = mesh.Jacobian(CellIndex).Transpose().Invert();
+
+              DenseMatrix LocMatrix(NrTest, NrTrial);
+
+              for(size_t q=0; q<LineWeights.size(); ++q)
+                {
+                  const double s = LineNodes[q];
+                  const Coordinate XYq{(1.-s)*P0.getX() + s*P1.getX(),
+                                       (1.-s)*P0.getY() + s*P1.getY()};
+
+                  double xi, eta;
+                  EdgeToRefCoords(LocEdge, s, xi, eta);
+
+                  for(int k=0; k<NrTest; ++k)
+                    {
+                      GradTest[k] = InvJac * TestSpace.RefElement().Gradient(k, xi, eta);
+                      ValueTest[k] = TestSpace.RefElement().Value(k, xi, eta);
+                    }
+
+                  for(int l=0; l<NrTrial; ++l)
+                    {
+                      GradTrial[l] = InvJac * TrialSpace.RefElement().Gradient(l, xi, eta);
+                      ValueTrial[l] = TrialSpace.RefElement().Value(l, xi, eta);
+                    }
+
+                  for(size_t a=0; a<Active.size(); ++a)
+                    {
+                      const BilinearProduct& P = BoundaryProducts[Active[a]].product;
+                      const double CoeffVal = P.coeff.Value(XYq, CellIndex, xi, eta);
+
+                      for(int k=0; k<NrTest; ++k)
+                        for(int l=0; l<NrTrial; ++l)
+                          LocMatrix[k][l] += LineWeights[q] * CoeffVal
+                            * ApplyOperator(P.trial, ValueTrial[l], GradTrial[l])
+                            * ApplyOperator(P.test, ValueTest[k], GradTest[k]) * length;
+                    }
+                }
+
+              InsertLocalMatrix(Ins, RowOffset, ColOffset, CellIndex, LocMatrix);
+            }
+        }
 
       delete[] GradTest;
       delete[] GradTrial;
       delete[] ValueTest;
       delete[] ValueTrial;
+    }
+
+    void BilinearForm::InsertLocalMatrix(SparseMatrixInserter& Ins, size_t RowOffset,
+                                         size_t ColOffset, size_t CellInd,
+                                         const DenseMatrix& LocMatrix)
+    {
+      const DofManager& TestDofs = TestSpace.Dofs;
+      const DofManager& TrialDofs = TrialSpace.Dofs;
+
+      const int NrTest = TestSpace.NrLocalDof();
+      const int NrTrial = TrialSpace.NrLocalDof();
+
+      for(int k=0; k<NrTest; ++k)
+        for(int l=0; l<NrTrial; ++l)
+          {
+            size_t DofTrial = TrialDofs.GlobalIndex(CellInd, l);
+            size_t DofTest = TestDofs.GlobalIndex(CellInd, k);
+
+            // Skip for test functions not in the test
+            if(!TestDofs.IsFree(DofTest))
+              continue;
+
+            if(TrialDofs.IsFree(DofTrial))
+              // DOF is a free DOF
+              Ins.Insert(RowOffset + TestDofs.ReducedIndex(DofTest),
+                         ColOffset + TrialDofs.ReducedIndex(DofTrial), LocMatrix[k][l]);
+            else
+              {
+                //DOF is a Dirichlet DOF
+                // \todo Modify this when implementing inhomogeneous Dirichlet conditions
+                double Value = 0.;
+                DirichletRhs[TestDofs.ReducedIndex(DofTest)] += LocMatrix[k][l] * Value;
+              }
+          }
     }
   }
 }

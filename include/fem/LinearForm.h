@@ -6,6 +6,7 @@
 #include "linalg/Vector.h"
 #include "fem/FESpace.h"
 #include "fem/FEExpression.h"
+#include "fem/WeakForm.h"
 
 using chemfem::linalg::Vector;
 
@@ -13,7 +14,7 @@ namespace chemfem{
   namespace fem{
 
     /**
-     * This class represents a linear form which stores and assembles the vector for the right-hand 
+     * This class represents a linear form which stores and assembles the vector for the right-hand
      * side or Neumann boundary conditions.
      */
     class LinearForm
@@ -23,21 +24,33 @@ namespace chemfem{
        * Constructor which associates the linear form with a function space.
        */
       LinearForm(const FESpace&);
-      
+
       /**
-       * Adds a volume force. This is a function handle to the function defining the right-hand 
+       * Adds a volume force. This is a function handle to the function defining the right-hand
        * side of the partial differential equation.
        */
       void AddVolumeForce(ScalarFunction);
 
       /**
-       * Adds a Neumann boundary condition. Requires a function handle to the function definiting the 
+       * Adds a Neumann boundary condition. Requires a function handle to the function definiting the
        * boundary condition.
        */
       void AddNeumannBC(ScalarFunction);
 
       /**
-       * Assembles the load vector. Before calling this routine all terms that are required should be 
+       * Adds a volume integral in the notation of WeakForm.h, e.g.
+       *   F.AddVolumeTerm(f * v + 1./tau * Uold * v)
+       */
+      void AddVolumeTerm(const LinearExpression&);
+
+      /**
+       * Adds an integral over the part of the boundary where the indicator is true, over
+       * the whole boundary if it is omitted, e.g. F.AddBoundaryTerm(g * v, NeumannPart)
+       */
+      void AddBoundaryTerm(const LinearExpression&, BoundaryIndicator = nullptr);
+
+      /**
+       * Assembles the load vector. Before calling this routine all terms that are required should be
        * added to the linear form.
        */
       void Assemble();
@@ -51,10 +64,19 @@ namespace chemfem{
       const FESpace& GetTestSpace() const;
 
     private:
+      struct BoundaryTerm
+      {
+        TestTerm term;
+        BoundaryIndicator part;
+      };
+
       /**
        * Stores the terms added to the linear form in a vector.
        */
       std::vector<FEExpression> Terms;
+
+      std::vector<TestTerm> VolumeTerms;
+      std::vector<BoundaryTerm> BoundaryTerms;
 
       /**
        * Stores a reference to the test space.
@@ -66,7 +88,7 @@ namespace chemfem{
        */
       Vector Vec;
     };
-    
+
   };
 };
 

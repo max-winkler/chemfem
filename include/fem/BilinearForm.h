@@ -1,10 +1,12 @@
 #ifndef _BILINEAR_FORM_H_
 #define _BILINEAR_FORM_H_
 
+#include "linalg/DenseMatrix.h"
 #include "linalg/SparseMatrix.h"
 #include "linalg/SparseMatrixInserter.h"
 #include "fem/FESpace.h"
 #include "fem/FEExpression.h"
+#include "fem/WeakForm.h"
 
 using chemfem::linalg::SparseMatrix;
 
@@ -49,14 +51,17 @@ namespace chemfem{
       void AddReactionTerm(ScalarFunction);
 
       /**
-       * Adds the term (c A u, B v), where the operators A and B, each one of VALUE, DX
-       * and DY, act on the trial and the test function. The Laplace term, for example,
-       * is (DX u, DX v) + (DY u, DY v).
+       * Adds a volume integral in the notation of WeakForm.h, e.g.
+       *   A.AddVolumeTerm(Dx(u)*Dx(v) + Dy(u)*Dy(v))
        */
-      void AddTerm(ScalarFunction, FEOperator, FEOperator);
+      void AddVolumeTerm(const BilinearExpression&);
 
-      /// Adds the term (A u, B v) with the coefficient 1
-      void AddTerm(FEOperator, FEOperator);
+      /**
+       * Adds an integral over the part of the boundary where the indicator is true, over
+       * the whole boundary if it is omitted, e.g. the Robin term
+       *   A.AddBoundaryTerm(alpha * u*v, RobinPart)
+       */
+      void AddBoundaryTerm(const BilinearExpression&, BoundaryIndicator = nullptr);
 
       /**
        * Assembles the finite element matrix.
@@ -80,6 +85,16 @@ namespace chemfem{
       const FESpace& GetTestSpace() const;
 
     private:
+      /// Adds the local matrix of a cell to the global one, only the free DOFs are kept
+      void InsertLocalMatrix(chemfem::linalg::SparseMatrixInserter&, size_t RowOffset,
+                             size_t ColOffset, size_t Cell, const chemfem::linalg::DenseMatrix&);
+
+      struct BoundaryProduct
+      {
+        BilinearProduct product;
+        BoundaryIndicator part;
+      };
+
       const FESpace& TrialSpace;
       const FESpace& TestSpace;
 
@@ -87,6 +102,9 @@ namespace chemfem{
       Vector DirichletRhs;
 
       std::vector<FEExpression> Terms;
+
+      std::vector<BilinearProduct> VolumeProducts;
+      std::vector<BoundaryProduct> BoundaryProducts;
     };
 
   };
