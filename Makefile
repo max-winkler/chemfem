@@ -1,6 +1,12 @@
-# UMFPACK ships as part of SuiteSparse, whose headers live in their own directory
-UMFPACK_INCLUDE = -I/usr/include/suitesparse
-UMFPACK_LIB     = -lumfpack
+# Paths that differ from machine to machine. Make.inc is not part of the repository:
+# copy Make.inc.example to Make.inc and adjust it where the defaults below do not fit.
+# The leading dash keeps make quiet when the file is absent.
+-include Make.inc
+
+# Defaults for a distribution install of SuiteSparse. Assignments made in Make.inc
+# take precedence, also when they set a variable to the empty string.
+UMFPACK_INCLUDE ?= -I/usr/include/suitesparse
+UMFPACK_LIB     ?= -lumfpack
 
 CPP_INCLUDE = -Iinclude ${UMFPACK_INCLUDE}
 

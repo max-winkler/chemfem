@@ -1,0 +1,29 @@
+# Machine specific build settings for chemfem.
+#
+# Copy this file to Make.inc and fill in the paths for this machine:
+#
+#   cp Make.inc.example Make.inc
+#
+# Make.inc is ignored by git, so every machine keeps its own copy and the Makefile
+# itself never has to be touched. Every variable left commented out falls back to the
+# default in the Makefile, which matches a distribution install on Debian or Ubuntu.
+
+# --------------------------------------------------------------------------- UMFPACK
+#
+# umfpack.h belongs to SuiteSparse and its location differs between systems:
+#
+#   Debian, Ubuntu, Fedora    /usr/include/suitesparse
+#   Homebrew on macOS         /opt/homebrew/include/suitesparse
+#   MacPorts                  /opt/local/include/suitesparse
+#   built from source         /usr/local/include
+#   conda environment         $(CONDA_PREFIX)/include
+#
+# Some installations put umfpack.h straight into /usr/include. Uncomment the variable
+# and leave it empty in that case, an empty assignment here still beats the default.
+
+# UMFPACK_INCLUDE = -I/usr/include/suitesparse
+
+# The library usually needs no path of its own. If it is not in the search path of the
+# linker, add it here, for example -L/opt/homebrew/lib -lumfpack
+
+# UMFPACK_LIB = -lumfpack
