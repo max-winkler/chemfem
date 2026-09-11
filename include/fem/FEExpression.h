@@ -18,7 +18,10 @@ namespace chemfem{
      */
     typedef std::function<double(const chemfem::linalg::Coordinate&)> ScalarFunction;
     typedef std::function<chemfem::linalg::Vector2D(const chemfem::linalg::Coordinate&)> VectorFunction;
-    
+
+    /// Returns true for the points of the boundary part it describes
+    typedef std::function<bool(const chemfem::linalg::Coordinate&)> BoundaryIndicator;
+
     enum ExpressionType {SECOND_ORDER, FIRST_ORDER, ZERO_ORDER, VOLUME_FORCE, NEUMANN_BC};
 
     /**

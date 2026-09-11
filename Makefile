@@ -58,7 +58,8 @@ TESTS = tests/SparseMatrixTest.o \
 	tests/ConvectionTest.o \
 	tests/EstimatorTest.o \
 	tests/DiffusionTest.o \
-	tests/SolverTest.o
+	tests/SolverTest.o \
+	tests/NeumannTest.o
 
 TESTS_BIN = $(TESTS:.o=)
 

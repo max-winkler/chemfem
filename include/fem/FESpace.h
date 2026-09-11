@@ -22,10 +22,12 @@ namespace chemfem{
       
     public:
       /**
-       * Initialize the finite element space by a reference to the mesh, the finite element 
-       * type.
+       * Initialize the finite element space by a reference to the mesh and the finite
+       * element. Homogeneous Dirichlet conditions are imposed on the boundary edges whose
+       * midpoint IsDirichlet accepts, on the whole boundary if it is omitted. All other
+       * boundary edges are Neumann edges.
        */
-      FESpace(chemfem::mesh::Mesh&, Element&);
+      FESpace(chemfem::mesh::Mesh&, Element&, BoundaryIndicator IsDirichlet = nullptr);
 
       /**
        * Returns the number of degrees of freedom.
@@ -105,6 +107,11 @@ namespace chemfem{
        * Saves a list of the global indices where Dirichlet boundary conditions are imposed.
        */
       std::set<size_t> DirichletNodes;
+
+      BoundaryIndicator IsDirichlet;
+
+      /// For each edge of the mesh, true if it is a Dirichlet boundary edge
+      std::vector<bool> DirichletEdge;
       
       /**
        * Creates the map between global and local degrees of freedom.

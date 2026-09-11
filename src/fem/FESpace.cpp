@@ -8,8 +8,8 @@ namespace chemfem{
     using chemfem::mesh::Edge;
     using chemfem::mesh::EdgeType;
     
-    FESpace::FESpace(Mesh& mesh, Element& element)
-      : refElement(element), mesh(mesh)
+    FESpace::FESpace(Mesh& mesh, Element& element, BoundaryIndicator IsDirichlet)
+      : refElement(element), mesh(mesh), IsDirichlet(IsDirichlet)
     {
       DofPerCell = element.NrDof();
       DofPerEdge = element.Degree() - 1;
@@ -110,58 +110,47 @@ namespace chemfem{
 
     void FESpace::CreateDirichletBcMap()
     {
-      std::vector<Edge>::const_iterator it_edge;
-      size_t idx_edge;
-      for(it_edge = mesh.Edges.begin(), idx_edge=0; it_edge != mesh.Edges.end(); ++it_edge, ++idx_edge)
+      DirichletEdge.assign(mesh.Edges.size(), false);
+
+      for(size_t idx_edge=0; idx_edge<mesh.Edges.size(); ++idx_edge)
 	{
-	  if(it_edge->type == EdgeType::INTERFACE_EDGE)
+	  const Edge& edge = mesh.Edges[idx_edge];
+
+	  if(edge.type == EdgeType::INTERFACE_EDGE)
 	    continue;
-	  
-	  const Edge& edge = *it_edge;
-	  Cell& cell = mesh.Cells[edge.GetNeighbor(-1)];
-	  // TODO
-	  int edge_ind = 0;
-	  while(cell.LocEdge[edge_ind] != idx_edge && edge_ind < 3)
-	    edge_ind++;
-		  
+
+	  const chemfem::mesh::Node& P0 = mesh.Nodes[edge.Node0];
+	  const chemfem::mesh::Node& P1 = mesh.Nodes[edge.Node1];
+	  const chemfem::linalg::Coordinate midpoint{0.5*(P0.getX() + P1.getX()),
+						     0.5*(P0.getY() + P1.getY())};
+
+	  if(IsDirichlet && !IsDirichlet(midpoint))
+	    continue;
+
+	  DirichletEdge[idx_edge] = true;
+
+	  const Cell& cell = mesh.Cells[edge.GetNeighbor(-1)];
+	  const int edge_ind = cell.EdgeIndex(idx_edge);
+
 	  DirichletNodes.insert(edge.Node0);
 	  DirichletNodes.insert(edge.Node1);
-	  
+
 	  for(int k=0; k<DofPerEdge; ++k)
 	    DirichletNodes.insert(DofMap[cell.Index()*DofPerCell + 3 + edge_ind*DofPerEdge + k]);
 	} // loop over boundary edges
 
       DofType = new bool[nr_dof];
       DofIndex = new size_t[nr_dof];
-      
-      // Initialize DOF type and DOF index arrays
-      std::set<size_t>::iterator it_dof;
-      size_t dirichlet_dof_ctr, free_dof_ctr = 0, last_dirichlet_dof = 0;
-      
-      for(it_dof = DirichletNodes.begin(), dirichlet_dof_ctr=0; it_dof != DirichletNodes.end();
-	  ++it_dof, ++dirichlet_dof_ctr)
-	{
-	  const size_t index = *(it_dof);
 
-	  // Numerate free nodes between last and current Dirichlet Dof
-	  for(size_t k = last_dirichlet_dof+1; k<index; ++k)
-	    {
-	      DofType[k] = true;	      
-	      DofIndex[k] = free_dof_ctr++;
-	    }
-	  
-	  // Numerate Dirichlet Dof
-	  DofType[index] = false;
-	  DofIndex[index] = dirichlet_dof_ctr;
-	  
-	  last_dirichlet_dof = index;	  
-	}
-      for(size_t k = last_dirichlet_dof+1; k<nr_dof; ++k)
+      // Free and Dirichlet DOFs are numbered separately, both in ascending order
+      size_t free_dof_ctr = 0, dirichlet_dof_ctr = 0;
+
+      for(size_t k=0; k<nr_dof; ++k)
 	{
-	  DofType[k] = true;
-	  DofIndex[k] = free_dof_ctr++;
+	  DofType[k] = (DirichletNodes.find(k) == DirichletNodes.end());
+	  DofIndex[k] = DofType[k] ? free_dof_ctr++ : dirichlet_dof_ctr++;
 	}
-      
+
       nr_free_dof = free_dof_ctr;
     }
     
