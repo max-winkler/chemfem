@@ -8,6 +8,8 @@
 namespace chemfem{
   namespace linalg{
 
+    enum LIN_SOLVER {CG, GMRES, UMFPACK};
+
     /**
      * Data structure for sparse matrices stored in compressed row format.
      */
@@ -38,9 +40,12 @@ namespace chemfem{
       Vector operator*(const Vector&) const;
       
       /**
-       * Solves the linear equation system
+       * Solves the linear equation system. The solver is picked from the enumeration
+       * LIN_SOLVER. CG needs the matrix to be symmetric and positive definite, GMRES
+       * and UMFPACK do not. UMFPACK is direct, so it returns the exact solution up to
+       * round off, at the price of storing the factors.
        */
-      Vector Solve(const Vector&);
+      Vector Solve(const Vector&, LIN_SOLVER = CG);
       
     private:
       size_t *Col = NULL, *Row = NULL;
@@ -51,6 +56,17 @@ namespace chemfem{
        * Solve equation system with a CG method.
        */
       void Solve_CG(const Vector&, Vector&);
+
+      /**
+       * Solve equation system with a restarted GMRES method. Unlike CG this does not
+       * rely on symmetry, so it also works for the convection term.
+       */
+      void Solve_GMRES(const Vector&, Vector&);
+
+      /**
+       * Solve equation system with the direct solver UMFPACK.
+       */
+      void Solve_UMFPACK(const Vector&, Vector&);
     };
     
     /**

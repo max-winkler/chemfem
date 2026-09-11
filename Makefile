@@ -1,4 +1,8 @@
-CPP_INCLUDE = -Iinclude
+# UMFPACK ships as part of SuiteSparse, whose headers live in their own directory
+UMFPACK_INCLUDE = -I/usr/include/suitesparse
+UMFPACK_LIB     = -lumfpack
+
+CPP_INCLUDE = -Iinclude ${UMFPACK_INCLUDE}
 
 CPP_DEBUG_FLAGS   = -g -O0 -Wall -Wextra -fno-omit-frame-pointer
 
@@ -14,6 +18,7 @@ OBJ = 	src/linalg/Vector.o \
 	src/linalg/SparseMatrixInserter.o \
 	src/linalg/DenseMatrix.o \
 	src/linalg/IterativeSolver.o \
+	src/linalg/DirectSolver.o \
 	src/mesh/Node.o \
 	src/mesh/Cell.o \
 	src/mesh/Edge.o \
@@ -46,7 +51,8 @@ TESTS = tests/SparseMatrixTest.o \
 	tests/AdaptivityTest.o \
 	tests/ConvectionTest.o \
 	tests/EstimatorTest.o \
-	tests/DiffusionTest.o
+	tests/DiffusionTest.o \
+	tests/SolverTest.o
 
 TESTS_BIN = $(TESTS:.o=)
 
@@ -54,7 +60,7 @@ TESTS_BIN = $(TESTS:.o=)
 	g++ -c $< ${CPP_INCLUDE} ${CPP_FLAGS} -o $@
 
 tests: $(OBJ) $(TESTS)
-	$(foreach TEST,$(TESTS_BIN),g++ $(OBJ) $(TEST).o -o $(TEST);)
+	$(foreach TEST,$(TESTS_BIN),g++ $(OBJ) $(TEST).o -o $(TEST) ${UMFPACK_LIB} &&) true
 
 # Object files do not record the flags they were built with, so switching the
 # build type has to start from scratch
