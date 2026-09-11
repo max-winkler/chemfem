@@ -74,7 +74,8 @@ namespace chemfem{
 	case Lagrange:
 	  os << "Lagrange";
 	  break;
-	default:
+	case CrouzeixRaviart:
+	  os << "Crouzeix-Raviart";
 	  break;
 	}
       os << " of degree " << space.refElement.Degree() << std::endl;

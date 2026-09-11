@@ -43,6 +43,7 @@ OBJ = 	src/linalg/Vector.o \
 	src/fem/FEFunction.o \
 	src/fem/Element.o \
 	src/fem/LagrangeElement.o \
+	src/fem/CrouzeixRaviartElement.o \
 	src/fem/FEExpression.o \
 	src/fem/LinearForm.o \
 	src/fem/BilinearForm.o \
@@ -60,7 +61,8 @@ TESTS = tests/SparseMatrixTest.o \
 	tests/EstimatorTest.o \
 	tests/DiffusionTest.o \
 	tests/SolverTest.o \
-	tests/NeumannTest.o
+	tests/NeumannTest.o \
+	tests/CrouzeixRaviartTest.o
 
 TESTS_BIN = $(TESTS:.o=)
 
