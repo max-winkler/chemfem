@@ -18,36 +18,21 @@ using namespace chemfem::linalg;
 using namespace chemfem::mesh;
 
 // ---------------------------------------------------------------------------------
-// -Laplace(u) = f  on the L shaped domain, u = 0 on the boundary.
+// -Laplace(u) = f  on the L shaped domain, u = 0 on the boundary, with two narrow
+// Gaussian peaks in the arms of the L and the r^(2/3) corner at the origin.
 //
-// The right hand side is a pair of narrow Gaussian peaks, one positive and one
-// negative, placed in the two arms of the L. Together with the reentrant corner at
-// the origin, where the solution behaves like r^(2/3), the problem has three
-// features at three different places and nothing worth resolving in between.
-//
-// The adaptive loop therefore produces a strongly graded mesh: dense at the peaks,
-// dense at the corner, untouched at its initial size elsewhere. That is also what
-// makes it a sharp regression test for the Newest-Vertex-Bisection closure in
-// Mesh::Refine, since strongly graded meshes are what used to produce hanging nodes
-// and corrupted edge-neighbor relations. Mesh::Check() runs after every step.
-//
-// The polynomial degree is a constant below and the test is set up for 1 to 4. From
-// P2 on it also covers the Laplacian in the volume residual, which only vanishes
-// identically for P1: a wrong or missing Delta u_h costs the estimator its
-// efficiency, and the adaptive rate falls visibly short of the optimum.
+// The strongly graded meshes this produces are a regression test for the closure in
+// Mesh::Refine, which used to leave hanging nodes. From P2 on the test also covers
+// the Laplacian in the volume residual.
 // ---------------------------------------------------------------------------------
 
-/// Polynomial degree of the Lagrange element. Supported here: 1, 2, 3, 4.
+/// Polynomial degree of the Lagrange element
 const int Degree = 3;
 
 static_assert(Degree >= 1 && Degree <= 4,
               "LagrangeElement implements the degrees 1 to 4");
 
-/**
- * Optimal rate of the adaptive loop, eta ~ N^(-Degree/2). Adaptive refinement
- * recovers it even though the reentrant corner caps the uniform rate at 1/3,
- * independently of the degree.
- */
+/// Optimal rate of the adaptive loop, eta ~ N^(-Degree/2)
 const double OptimalRate = 0.5*Degree;
 
 static double Peak(const Coordinate& p, double x0, double y0, double width)
@@ -88,11 +73,8 @@ FEFunction Solve(FESpace& Space)
   return Sol;
 }
 
-/**
- * Doerfler marking: mark the smallest set of cells carrying the fraction theta of
- * the total indicator. Unlike the maximum strategy this refines enough cells per
- * step to reach the optimal rate.
- */
+/// Doerfler marking: the smallest set of cells carrying the fraction theta of the
+/// total indicator
 std::vector<bool> MarkCells(const Vector& Indicators, double theta)
 {
   std::vector<std::pair<double, size_t> > sorted;
@@ -141,10 +123,7 @@ struct Row
   double eta;
 };
 
-/**
- * Rate s in eta ~ N^(-s) between two consecutive rows, N the number of degrees of
- * freedom. On a uniform mesh N ~ h^(-2), so s translates into the order h^(2s).
- */
+/// Rate s in eta ~ N^(-s) between two rows, N the number of degrees of freedom
 double Rate(const Row& a, const Row& b)
 {
   return log(a.eta/b.eta) / log(double(b.dofs)/double(a.dofs));
@@ -212,9 +191,8 @@ int main()
   {
     LShapeMesh mesh(4);
 
-    // Refine until the adaptive mesh has overtaken the uniform reference. The two
-    // tables are then compared at nearly the same number of degrees of freedom,
-    // which is what makes the comparison fair for every degree.
+    // Refine until the adaptive mesh has overtaken the uniform reference, so that
+    // both tables can be compared at nearly the same number of degrees of freedom
     const size_t target_dofs = uniform.back().dofs;
     const int max_iter = 60;
 
@@ -263,7 +241,7 @@ int main()
        < std::labs(long(adaptive[best].dofs) - long(reference.dofs)))
       best = i;
 
-  // Averaged over the last few rows, which is far less noisy than a single step
+  // Averaged over the last few rows, a single step is too noisy
   const size_t span = adaptive.size() > 5 ? 5 : adaptive.size()-1;
   const double rate = Rate(adaptive[adaptive.size()-1-span], adaptive.back());
   const double gain = reference.eta / adaptive[best].eta;
@@ -285,9 +263,7 @@ int main()
       ok = false;
     }
 
-  // A missing Laplacian in the volume residual does not break the loop, it only
-  // degrades the rate, so the tolerance has to stay tight enough to catch that.
-  // It scales with the degree because so does the rate itself.
+  // A missing Laplacian only degrades the rate, so the tolerance stays tight
   if(std::fabs(rate - OptimalRate) > 0.1*Degree)
     {
       std::cerr << "ERROR: the adaptive rate is not the expected "
@@ -301,9 +277,8 @@ int main()
       ok = false;
     }
 
-  // Uniform refinement of the L shape keeps h_max/h_min at exactly 1, so anything
-  // well above that proves the refinement concentrated. How far above depends on how
-  // many steps the loop needed, which is why the bound is generous
+  // Uniform refinement keeps h_max/h_min at exactly 1, so anything well above that
+  // proves the refinement concentrated
   if(grading < 8.)
     {
       std::cerr << "ERROR: the mesh is not graded, the refinement spread out.\n";

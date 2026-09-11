@@ -16,12 +16,9 @@ using namespace chemfem::mesh;
 // ---------------------------------------------------------------------------------
 // The three solvers behind SparseMatrix::Solve have to agree on the same system.
 //
-// Two systems are used. The Poisson matrix is symmetric and positive definite, so
-// all three apply. Adding the convection term b.grad(u) makes it non symmetric,
-// which is where CG loses its justification and where a wrong transpose in the
-// UMFPACK binding would show: that binding hands the compressed row arrays to
-// UMFPACK unchanged and compensates with a transposed solve, and on a symmetric
-// matrix alone that mistake would stay invisible.
+// The Poisson matrix is symmetric and positive definite, so all three apply. The
+// convection term makes it non symmetric, which is where CG loses its justification
+// and where a wrong transpose in the UMFPACK binding would show.
 // ---------------------------------------------------------------------------------
 
 Vector2D wind(const Coordinate& p)
@@ -39,13 +36,13 @@ double Norm2(const Vector& v)
   return sqrt(dot(v, v));
 }
 
-/// Relative residual ||A x - b|| / ||b||
+/// ||A x - b|| / ||b||
 double Residual(SparseMatrix& A, const Vector& x, const Vector& b)
 {
   return Norm2(A*x - b) / Norm2(b);
 }
 
-/// Relative difference of two solution vectors
+/// ||x - y|| / ||x||
 double Deviation(const Vector& x, const Vector& y)
 {
   return Norm2(x - y) / Norm2(x);
@@ -86,8 +83,7 @@ bool CheckSystem(const std::string& caption, bool convection, bool with_cg)
 
   bool ok = true;
 
-  // The direct solver is only limited by round off, the iterative ones by their
-  // stopping criterion, which is an absolute residual of 1e-8
+  // The direct solver is only limited by round off
   if(Residual(Matrix, x_umf, Rhs) > 1.e-10)
     {
       std::cerr << "ERROR: UMFPACK left a residual.\n";
