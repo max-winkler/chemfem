@@ -6,6 +6,7 @@
 #include "fem/BlockSystem.h"
 #include "fem/LagrangeElement.h"
 #include "fem/ErrorNorm.h"
+#include "fem/VtkOutput.h"
 #include "mesh/UnitSquareMesh.h"
 
 using namespace chemfem::fem;
@@ -139,6 +140,14 @@ int main()
             std::cout << "";
         }
       std::cout << std::endl;
+
+      if(level+1 == levels)
+        {
+          VtkOutput out(mesh);
+          out.AddVector("u", Ux, Uy);
+          out.AddScalar("p", P);
+          out.Write("stokes.vtk");
+        }
 
       if(level+1 < levels)
         {

@@ -48,6 +48,7 @@ OBJ = 	src/linalg/Vector.o \
 	src/fem/LinearForm.o \
 	src/fem/BilinearForm.o \
 	src/fem/BlockSystem.o \
+	src/fem/VtkOutput.o \
 	src/fem/ErrorNorm.o \
 	src/fem/GenericEstimator.o	
 

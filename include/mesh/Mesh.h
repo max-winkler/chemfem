@@ -21,6 +21,7 @@ using chemfem::linalg::Vector;
 namespace chemfem::fem{
   class FESpace;
   class DofManager;
+  class VtkOutput;
   class BilinearForm;
   class LinearForm;
   class ErrorNorm;
@@ -40,6 +41,7 @@ namespace chemfem{
       // Friend declarations
       friend class chemfem::fem::FESpace;
       friend class chemfem::fem::DofManager;
+      friend class chemfem::fem::VtkOutput;
       friend class chemfem::fem::BilinearForm;
       friend class chemfem::fem::LinearForm;
       friend class chemfem::fem::ErrorNorm;
