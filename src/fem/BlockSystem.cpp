@@ -60,25 +60,20 @@ namespace chemfem{
 
     void BlockSystem::Assemble()
     {
+      AssembleMatrix();
+      AssembleRhs();
+    }
+
+    void BlockSystem::AssembleMatrix()
+    {
       const size_t n = Offset.back() + Constraints.size();
 
       Matrix = SparseMatrix(n, n);
-      RhsVector = Vector(n);
 
       SparseMatrixInserter Ins(Matrix);
 
       for(size_t b=0; b<Blocks.size(); ++b)
         Blocks[b].form->Assemble(Ins, Offset[Blocks[b].row], Offset[Blocks[b].col]);
-
-      for(size_t b=0; b<RhsBlocks.size(); ++b)
-        {
-          LinearForm& form = *RhsBlocks[b].form;
-          form.Assemble();
-
-          const Vector& F = form.LoadVector();
-          for(size_t k=0; k<F.size(); ++k)
-            RhsVector[Offset[RhsBlocks[b].row] + k] += F[k];
-        }
 
       // The multiplier couples with the integrals of the basis functions of its unknown
       for(size_t c=0; c<Constraints.size(); ++c)
@@ -99,6 +94,21 @@ namespace chemfem{
         }
 
       Ins.Build();
+    }
+
+    void BlockSystem::AssembleRhs()
+    {
+      RhsVector = Vector(Offset.back() + Constraints.size());
+
+      for(size_t b=0; b<RhsBlocks.size(); ++b)
+        {
+          LinearForm& form = *RhsBlocks[b].form;
+          form.Assemble();
+
+          const Vector& F = form.LoadVector();
+          for(size_t k=0; k<F.size(); ++k)
+            RhsVector[Offset[RhsBlocks[b].row] + k] += F[k];
+        }
     }
 
     SparseMatrix& BlockSystem::SystemMatrix()

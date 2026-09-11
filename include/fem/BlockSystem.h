@@ -38,8 +38,17 @@ namespace chemfem{
        */
       void AddMeanValueConstraint(size_t i);
 
-      /// Assembles the blocks, the right hand side and the constraints
+      /// Assembles the matrix and the right hand side
       void Assemble();
+
+      /// Assembles only the matrix, with its blocks and constraints
+      void AssembleMatrix();
+
+      /**
+       * Assembles only the right hand side. In a time stepping scheme with a constant step
+       * size the matrix stays the same, and only this has to be redone in each step.
+       */
+      void AssembleRhs();
 
       SparseMatrix& SystemMatrix();
 

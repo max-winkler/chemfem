@@ -67,6 +67,7 @@ TESTS = tests/SparseMatrixTest.o \
 	tests/NeumannTest.o \
 	tests/CrouzeixRaviartTest.o \
 	tests/StokesTest.o \
+	tests/InstationaryStokesTest.o \
 	tests/RobinTest.o
 
 TESTS_BIN = $(TESTS:.o=)

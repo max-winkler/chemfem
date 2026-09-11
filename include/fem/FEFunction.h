@@ -20,6 +20,8 @@ namespace chemfem{
        */
       FEFunction(const FEFunction&);
 
+      FEFunction& operator=(const FEFunction&) = default;
+
       /**
        * Creates the zero-function in the given finite element space.
        */
