@@ -17,7 +17,8 @@ namespace chemfem{
     {
       friend class IdentityMatrix;
       friend class SparseMatrixInserter;
-      
+      friend class DirectSolver;
+
     public:
       /**
        * Creates an empty matrix of dimension m-n
