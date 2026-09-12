@@ -40,6 +40,149 @@ namespace chemfem{
       return *this;
     }
 
+    namespace {
+
+      /// Marks a node tag of the file that belongs to no node of the mesh
+      const size_t NoNode = size_t(-1);
+
+      /// Removes the trailing carriage return of files written on Windows
+      void Trim(std::string& line)
+      {
+        while(!line.empty() && (line.back() == '\r' || line.back() == ' '))
+          line.erase(line.size()-1);
+      }
+
+      /**
+       * Reads the coordinates of the section $Nodes into X and Y, and for every node tag of
+       * the file its position in these vectors into IndexOfTag.
+       */
+      void ReadGmshNodes(std::istream& file, double version, std::vector<double>& X,
+                         std::vector<double>& Y, std::vector<size_t>& IndexOfTag)
+      {
+        std::string line;
+
+        if(version < 4.)
+          {
+            getline(file, line);
+            size_t nr_nodes = 0;
+            std::stringstream(line) >> nr_nodes;
+
+            for(size_t i=0; i<nr_nodes && getline(file, line); ++i)
+              {
+                size_t tag; double x, y, z;
+                std::stringstream(line) >> tag >> x >> y >> z;
+
+                if(IndexOfTag.size() <= tag)
+                  IndexOfTag.resize(tag+1, NoNode);
+
+                IndexOfTag[tag] = X.size();
+                X.push_back(x);
+                Y.push_back(y);
+              }
+
+            return;
+          }
+
+        // From version 4 on the nodes come in blocks, one per geometric entity, and each
+        // block lists the tags first and the coordinates afterwards
+        getline(file, line);
+        size_t nr_blocks = 0, nr_nodes = 0, min_tag = 0, max_tag = 0;
+        std::stringstream(line) >> nr_blocks >> nr_nodes >> min_tag >> max_tag;
+
+        IndexOfTag.assign(max_tag+1, NoNode);
+
+        for(size_t b=0; b<nr_blocks && getline(file, line); ++b)
+          {
+            size_t dim, entity, parametric, count;
+            std::stringstream(line) >> dim >> entity >> parametric >> count;
+
+            std::vector<size_t> tags(count);
+            for(size_t i=0; i<count && getline(file, line); ++i)
+              std::stringstream(line) >> tags[i];
+
+            for(size_t i=0; i<count && getline(file, line); ++i)
+              {
+                double x, y, z;
+                std::stringstream(line) >> x >> y >> z;
+
+                IndexOfTag[tags[i]] = X.size();
+                X.push_back(x);
+                Y.push_back(y);
+              }
+          }
+      }
+
+      /// Reads the triangles of the section $Elements, three node indices each
+      void ReadGmshTriangles(std::istream& file, double version,
+                             const std::vector<size_t>& IndexOfTag,
+                             std::vector<size_t>& Triangles)
+      {
+        const size_t TriangleType = 2;
+        std::string line;
+
+        if(version < 4.)
+          {
+            getline(file, line);
+            size_t nr_elements = 0;
+            std::stringstream(line) >> nr_elements;
+
+            for(size_t e=0; e<nr_elements && getline(file, line); ++e)
+              {
+                std::stringstream stream(line);
+
+                size_t tag, type, nr_tags;
+                stream >> tag >> type >> nr_tags;
+
+                for(size_t t=0; t<nr_tags; ++t)
+                  {
+                    size_t ignored;
+                    stream >> ignored;
+                  }
+
+                if(type != TriangleType)
+                  continue;
+
+                for(int k=0; k<3; ++k)
+                  {
+                    size_t node;
+                    stream >> node;
+                    Triangles.push_back(IndexOfTag[node]);
+                  }
+              }
+
+            return;
+          }
+
+        getline(file, line);
+        size_t nr_blocks = 0, nr_elements = 0, min_tag = 0, max_tag = 0;
+        std::stringstream(line) >> nr_blocks >> nr_elements >> min_tag >> max_tag;
+
+        for(size_t b=0; b<nr_blocks && getline(file, line); ++b)
+          {
+            size_t dim, entity, type, count;
+            std::stringstream(line) >> dim >> entity >> type >> count;
+
+            for(size_t e=0; e<count && getline(file, line); ++e)
+              {
+                if(type != TriangleType)
+                  continue;
+
+                std::stringstream stream(line);
+
+                size_t tag;
+                stream >> tag;
+
+                for(int k=0; k<3; ++k)
+                  {
+                    size_t node;
+                    stream >> node;
+                    Triangles.push_back(IndexOfTag[node]);
+                  }
+              }
+          }
+      }
+    }
+
     Mesh::Mesh(const std::string& filename)
     {
       std::ifstream file;
@@ -50,47 +193,80 @@ namespace chemfem{
           std::cerr << "Unable to open mesh file " << filename << std::endl;
           return;
         }
-            
-      enum row_type {NONE, VERTEX, CELL};
-      row_type type = NONE;
+
+      double version = 2.2;
+
+      std::vector<double> X, Y;
+      std::vector<size_t> IndexOfTag, Triangles;
+
       std::string line;
 
-      size_t node_idx = 0;
-      
       while(getline(file, line))
         {
-          // Trim line
-          line.erase(0,line.find_first_not_of(" "));
-          line.erase(line.find_last_not_of(" ")+1);
+          Trim(line);
 
-          if(line.compare("Vertices:") == 0)
-            type = VERTEX;
-          else if(line.compare("Cells:") == 0)
-            type = CELL;
-          else
+          if(line.compare(0, 11, "$MeshFormat") == 0)
             {
-              std::stringstream stream(line);
-              std::vector<double> data;
-              double data_tmp;
-	    
-              while(stream >> data_tmp)
-                data.push_back(data_tmp);
+              getline(file, line);
 
-              switch(type)
+              int binary = 0;
+              std::stringstream(line) >> version >> binary;
+
+              if(binary)
                 {
-                case NONE:
-                  std::cerr << "Error: Mesh file is broken.\n";
-                  std::cerr << "Detected data line before data type was specified.\n";
-                  break;
-                case VERTEX:
-                  Nodes.push_back(Node(node_idx++, data[0], data[1]));
-                  break;
-                case CELL:
-                  Cells.push_back(Cell(data[0], data[1], data[2]));
-                  break;
-                }	    
+                  std::cerr << "Error: The gmsh file " << filename << " is binary. Write it "
+                            << "as ASCII, e.g. with gmsh -2 -format msh4 or Mesh.Binary=0.\n";
+                  return;
+                }
             }
+          else if(line.compare(0, 6, "$Nodes") == 0)
+            ReadGmshNodes(file, version, X, Y, IndexOfTag);
+          else if(line.compare(0, 9, "$Elements") == 0)
+            ReadGmshTriangles(file, version, IndexOfTag, Triangles);
         }
+
+      if(Triangles.empty())
+        {
+          std::cerr << "Error: The gmsh file " << filename << " contains no triangles.\n";
+          return;
+        }
+
+      // A gmsh file also holds the nodes of the points and lines of the geometry, and those
+      // of them that belong to no triangle would end up as degrees of freedom without an
+      // equation
+      std::vector<bool> used(X.size(), false);
+      for(size_t k=0; k<Triangles.size(); ++k)
+        used[Triangles[k]] = true;
+
+      std::vector<size_t> NewIndex(X.size(), NoNode);
+
+      for(size_t i=0; i<X.size(); ++i)
+        if(used[i])
+          {
+            NewIndex[i] = Nodes.size();
+            Nodes.push_back(Node(Nodes.size(), X[i], Y[i]));
+          }
+
+      for(size_t t=0; t+2<Triangles.size(); t+=3)
+        {
+          size_t a = NewIndex[Triangles[t]];
+          size_t b = NewIndex[Triangles[t+1]];
+          size_t c = NewIndex[Triangles[t+2]];
+
+          // The assembly needs positively oriented cells
+          const double det = (Nodes[b].getX()-Nodes[a].getX())*(Nodes[c].getY()-Nodes[a].getY())
+                           - (Nodes[c].getX()-Nodes[a].getX())*(Nodes[b].getY()-Nodes[a].getY());
+
+          if(det < 0.)
+            {
+              const size_t swap = b;
+              b = c;
+              c = swap;
+            }
+
+          Cells.push_back(Cell(a, b, c));
+        }
+
       CreateEdgeList();
     }
     

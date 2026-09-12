@@ -5,26 +5,51 @@
 
 using namespace chemfem::mesh;
 
+// Reads a mesh in the gmsh format and refines it locally. The file is written in the
+// format of gmsh 2.2, the meshes of a current gmsh use version 4.1.
+
 int main()
 {
-  Mesh mesh("tests/mesh.dat");
+  Mesh mesh("tests/mesh.msh");
 
-  mesh.WriteVtk("mesh_old.vtk", Vector(mesh.NrNodes()));
-  
-  std::vector<bool> marker(mesh.NrCells(), false);
+  std::cout << mesh.NrNodes() << " nodes, " << mesh.NrCells() << " cells, "
+            << mesh.NrEdges() << " edges" << std::endl;
 
-  marker[0] = true;
-  marker[2] = true;
+  bool ok = true;
 
-  mesh.Refine(marker);
+  if(mesh.NrNodes() != 5 || mesh.NrCells() != 3)
+    {
+      std::cerr << "ERROR: the mesh file was not read correctly.\n";
+      ok = false;
+    }
 
-  std::cout << mesh;
-  
-  marker[0] = true;
-  marker[4] = true;
+  if(!mesh.Check())
+    {
+      std::cerr << "ERROR: the mesh read from the file is broken.\n";
+      ok = false;
+    }
 
-  mesh.Refine(marker);
-  
-  mesh.WriteVtk("mesh.vtk", Vector(mesh.NrNodes()));
+  for(int level=0; level<3 && ok; ++level)
+    {
+      std::vector<bool> marker(mesh.NrCells(), false);
+      marker[0] = true;
+      marker[mesh.NrCells()/2] = true;
+
+      mesh.Refine(marker);
+
+      std::cout << "refinement " << level+1 << ": " << mesh.NrCells() << " cells"
+                << std::endl;
+
+      if(!mesh.Check())
+        {
+          std::cerr << "ERROR: the mesh is broken after refinement " << level+1 << ".\n";
+          ok = false;
+        }
+    }
+
+  if(!ok)
+    return 1;
+
+  std::cout << "\nMeshTest was successful.\n";
   return 0;
 }
