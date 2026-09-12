@@ -1,5 +1,3 @@
-#include <cmath>
-
 #include "fem/BilinearForm.h"
 #include "linalg/SparseMatrixInserter.h"
 #include "linalg/DenseMatrix.h"
@@ -26,20 +24,6 @@ namespace chemfem{
   namespace fem{
 
     double Identity(const Coordinate&) {return 1.;}
-
-    namespace {
-
-      CellGeometry GeometryOf(const Mesh& mesh, size_t c)
-      {
-        CellInfo Info = mesh.GetCellInfo(c);
-
-        CellGeometry g;
-        g.h = Info.Diam();
-        g.area = std::fabs(Info.Volume());
-        g.index = c;
-        return g;
-      }
-    }
 
     BilinearForm::BilinearForm(const FESpace& TrialSpace, const FESpace& TestSpace)
       : TrialSpace(TrialSpace), TestSpace(TestSpace), Matrix(0,0),
@@ -69,14 +53,24 @@ namespace chemfem{
       Terms.push_back(expression);
     }
 
-    void BilinearForm::AddVolumeTerm(VolumeIntegrand term)
+    void BilinearForm::AddVolumeTerm(Integrand term)
     {
       VolumeTerms.push_back(term);
     }
 
+    void BilinearForm::AddVolumeTerm(PointIntegrand term)
+    {
+      PointVolumeTerms.push_back(term);
+    }
+
+    void BilinearForm::AddBoundaryTerm(Integrand term, BoundaryIndicator part)
+    {
+      BoundaryTerms.push_back(BoundaryTerm{term, nullptr, part});
+    }
+
     void BilinearForm::AddBoundaryTerm(BoundaryIntegrand term, BoundaryIndicator part)
     {
-      BoundaryTerms.push_back(BoundaryTerm{term, part});
+      BoundaryTerms.push_back(BoundaryTerm{nullptr, term, part});
     }
 
     SparseMatrix& BilinearForm::SystemMatrix()
@@ -104,7 +98,14 @@ namespace chemfem{
       Ins.Build();
     }
 
-    void BilinearForm::Assemble(SparseMatrixInserter& Ins, size_t RowOffset, size_t ColOffset)
+    void BilinearForm::Assemble(SparseMatrixInserter& Ins, size_t RowOffset, size_t ColOffset,
+                                bool Transposed)
+    {
+      Assemble(Ins, std::vector<Placement>(1, Placement{RowOffset, ColOffset, Transposed}));
+    }
+
+    void BilinearForm::Assemble(SparseMatrixInserter& Ins,
+                                const std::vector<Placement>& Places)
     {
       if(&TestSpace.mesh != &TrialSpace.mesh)
         {
@@ -130,10 +131,12 @@ namespace chemfem{
       double *ValueTest = new double[NrTest];
       double *ValueTrial = new double[NrTrial];
 
+      const bool HasIntegrands = !VolumeTerms.empty() || !PointVolumeTerms.empty();
+
       // The basis functions on the reference element in the quadrature points, the same
       // for every cell
       std::vector<PointValues> RefTest, RefTrial;
-      if(!VolumeTerms.empty())
+      if(HasIntegrands)
         {
           RefTest = TabulateReference(TestSpace.RefElement(), Xi, Eta);
           RefTrial = TabulateReference(TrialSpace.RefElement(), Xi, Eta);
@@ -156,10 +159,6 @@ namespace chemfem{
           const Matrix2D InvJac = Jac.Transpose().Invert();
 
           DenseMatrix LocMatrix(NrTest, NrTrial);
-
-          CellGeometry Geometry;
-          if(!VolumeTerms.empty())
-            Geometry = GeometryOf(mesh, CellInd);
 
           // Iterate over all quadrature points
           Vector::const_iterator Wq, Xiq, Etaq;
@@ -237,10 +236,8 @@ namespace chemfem{
                     }
                 } // loop over Terms
 
-              if(!VolumeTerms.empty())
+              if(HasIntegrands)
                 {
-                  const QuadPoint Point{XYq, size_t(CellInd), *Xiq, *Etaq};
-
                   for(int k=0; k<NrTest; ++k)
                     TestValues[k] = MapFromReference(RefTest[q*NrTest + k], InvJac);
 
@@ -251,11 +248,22 @@ namespace chemfem{
                     for(int k=0; k<NrTest; ++k)
                       for(int l=0; l<NrTrial; ++l)
                         LocMatrix[k][l] += (*Wq)
-                          * VolumeTerms[t](Point, Geometry, TrialValues[l], TestValues[k]) * det;
+                          * VolumeTerms[t](TrialValues[l], TestValues[k]) * det;
+
+                  if(!PointVolumeTerms.empty())
+                    {
+                      const QuadPoint Point{XYq, size_t(CellInd), *Xiq, *Etaq};
+
+                      for(size_t t=0; t<PointVolumeTerms.size(); ++t)
+                        for(int k=0; k<NrTest; ++k)
+                          for(int l=0; l<NrTrial; ++l)
+                            LocMatrix[k][l] += (*Wq)
+                              * PointVolumeTerms[t](Point, TrialValues[l], TestValues[k]) * det;
+                    }
                 }
             } // loop over quadrature points
 
-          InsertLocalMatrix(Ins, RowOffset, ColOffset, CellInd, LocMatrix);
+          InsertLocalMatrix(Ins, Places, CellInd, LocMatrix);
 
         } // loop over cells
 
@@ -289,7 +297,6 @@ namespace chemfem{
                 continue;
 
               CellInfo Info = mesh.GetCellInfo(CellIndex);
-              const CellGeometry Geometry = GeometryOf(mesh, CellIndex);
 
               EdgeGeometry EdgeGeom;
               EdgeGeom.h = Info.EdgeLength(LocEdge);
@@ -321,15 +328,22 @@ namespace chemfem{
                       ReferenceValues(TrialSpace.RefElement(), l, xi, eta), InvJac);
 
                   for(size_t a=0; a<Active.size(); ++a)
-                    for(int k=0; k<NrTest; ++k)
-                      for(int l=0; l<NrTrial; ++l)
-                        LocMatrix[k][l] += LineWeights[q]
-                          * BoundaryTerms[Active[a]].integrand(Point, Geometry, EdgeGeom,
-                                                               TrialValues[l], TestValues[k])
-                          * EdgeGeom.h;
+                    {
+                      const BoundaryTerm& T = BoundaryTerms[Active[a]];
+
+                      for(int k=0; k<NrTest; ++k)
+                        for(int l=0; l<NrTrial; ++l)
+                          {
+                            const double value = T.integrand
+                              ? T.integrand(TrialValues[l], TestValues[k])
+                              : T.point_integrand(Point, EdgeGeom, TrialValues[l], TestValues[k]);
+
+                            LocMatrix[k][l] += LineWeights[q] * value * EdgeGeom.h;
+                          }
+                    }
                 }
 
-              InsertLocalMatrix(Ins, RowOffset, ColOffset, CellIndex, LocMatrix);
+              InsertLocalMatrix(Ins, Places, CellIndex, LocMatrix);
             }
         }
 
@@ -339,8 +353,8 @@ namespace chemfem{
       delete[] ValueTrial;
     }
 
-    void BilinearForm::InsertLocalMatrix(SparseMatrixInserter& Ins, size_t RowOffset,
-                                         size_t ColOffset, size_t CellInd,
+    void BilinearForm::InsertLocalMatrix(SparseMatrixInserter& Ins,
+                                         const std::vector<Placement>& Places, size_t CellInd,
                                          const DenseMatrix& LocMatrix)
     {
       const DofManager& TestDofs = TestSpace.Dofs;
@@ -360,9 +374,19 @@ namespace chemfem{
               continue;
 
             if(TrialDofs.IsFree(DofTrial))
-              // DOF is a free DOF
-              Ins.Insert(RowOffset + TestDofs.ReducedIndex(DofTest),
-                         ColOffset + TrialDofs.ReducedIndex(DofTrial), LocMatrix[k][l]);
+              {
+                // DOF is a free DOF
+                const size_t Row = TestDofs.ReducedIndex(DofTest);
+                const size_t Col = TrialDofs.ReducedIndex(DofTrial);
+
+                for(size_t p=0; p<Places.size(); ++p)
+                  {
+                    if(Places[p].transposed)
+                      Ins.Insert(Places[p].row + Col, Places[p].col + Row, LocMatrix[k][l]);
+                    else
+                      Ins.Insert(Places[p].row + Row, Places[p].col + Col, LocMatrix[k][l]);
+                  }
+              }
             else
               {
                 //DOF is a Dirichlet DOF

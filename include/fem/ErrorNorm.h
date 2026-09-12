@@ -19,6 +19,14 @@ namespace chemfem{
     {
     public:
 
+      ErrorNorm() = default;
+
+      /// The exact solution, for the L2 norm
+      explicit ErrorNorm(ScalarFunction);
+
+      /// The exact solution and its gradient, needed by the H1 norms
+      ErrorNorm(ScalarFunction, VectorFunction);
+
       /**
        * Provide an exact solution of the problem.
        */
@@ -39,12 +47,15 @@ namespace chemfem{
        * should be evaluated.
        */
       double Compute(Norm) const;
-      
+
+      /// Error of the given FE function in the given norm
+      double Compute(const FEFunction&, Norm) const;
+
     private:
-      
+
       ScalarFunction Value;
       VectorFunction Gradient;
-      const FEFunction* FESolution;
+      const FEFunction* FESolution = nullptr;
     };
 
   };

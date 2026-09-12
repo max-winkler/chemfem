@@ -56,17 +56,36 @@ namespace chemfem{
        */
       PointValues Evaluate(const QuadPoint&) const;
 
+      /**
+       * Function value in a quadrature point. Considerably cheaper than Evaluate, which also
+       * computes the gradient and the Hessian.
+       */
+      double Value(const QuadPoint&) const;
+
+      /// Integral of the function over the domain, divided by the area of the domain
+      double Mean() const;
+
+      /**
+       * Subtracts the mean value, so that the integral of the function vanishes. Used for a
+       * pressure that is only determined up to a constant. Requires an element that
+       * represents a constant by equal coefficients, as Lagrange and Crouzeix-Raviart do.
+       */
+      void SubtractMean();
+
       void WriteVtk(const std::string&) const;
       
     private:
       const FESpace* Space;
       Vector Data;
 
-      /// The last point Evaluate() was called for and its result. An integrand is called
-      /// once per basis function in the same point, so this saves the repeated work.
+      /// What the cache below holds: nothing, the function value only, or all of PointValues
+      enum CacheContent {NOTHING, VALUE_ONLY, EVERYTHING};
+
+      /// The last point that was evaluated and its result. An integrand is called once per
+      /// basis function in the same point, so this saves the repeated work.
       mutable QuadPoint CachedPoint;
       mutable PointValues CachedValues;
-      mutable bool CacheValid = false;
+      mutable CacheContent CacheValid = NOTHING;
       
     };
   };

@@ -16,7 +16,8 @@ namespace chemfem{
     // of A x = b again. The flag is therefore not optional: with UMFPACK_A the result would
     // silently be wrong for every non symmetric matrix.
 
-    DirectSolver::DirectSolver(const SparseMatrix& A) : n(A.m), Numeric(NULL)
+    DirectSolver::DirectSolver(const SparseMatrix& A, bool IterativeRefinement)
+      : n(A.m), Refinement(IterativeRefinement), Numeric(NULL)
     {
       if(A.m != A.n)
 	{
@@ -93,6 +94,9 @@ namespace chemfem{
 
       double Control[UMFPACK_CONTROL], Info[UMFPACK_INFO];
       umfpack_di_defaults(Control);
+
+      if(!Refinement)
+	Control[UMFPACK_IRSTEP] = 0;
 
       int status = umfpack_di_solve(UMFPACK_At, Ap.data(), Ai.data(), Ax.data(), &x[0], &b[0],
 				    Numeric, Control, Info);

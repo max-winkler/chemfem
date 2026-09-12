@@ -1,5 +1,3 @@
-#include <cmath>
-
 #include "fem/LinearForm.h"
 
 #include "quadrature/QuadFormula.h"
@@ -23,20 +21,6 @@ using chemfem::quadrature::QUAD_FORMULA;
 namespace chemfem{
   namespace fem{
 
-    namespace {
-
-      CellGeometry GeometryOf(const Mesh& mesh, size_t c)
-      {
-	CellInfo Info = mesh.GetCellInfo(c);
-
-	CellGeometry g;
-	g.h = Info.Diam();
-	g.area = std::fabs(Info.Volume());
-	g.index = c;
-	return g;
-      }
-    }
-
     LinearForm::LinearForm(const FESpace& TestSpace) : TestSpace(TestSpace) {}
 
     void LinearForm::AddVolumeForce(ScalarFunction F)
@@ -51,14 +35,24 @@ namespace chemfem{
       Terms.push_back(Expression);
     }
 
-    void LinearForm::AddVolumeTerm(VolumeIntegrand term)
+    void LinearForm::AddVolumeTerm(Integrand term)
     {
       VolumeTerms.push_back(term);
     }
 
+    void LinearForm::AddVolumeTerm(PointIntegrand term)
+    {
+      PointVolumeTerms.push_back(term);
+    }
+
+    void LinearForm::AddBoundaryTerm(Integrand term, BoundaryIndicator part)
+    {
+      BoundaryTerms.push_back(BoundaryTerm{term, nullptr, part});
+    }
+
     void LinearForm::AddBoundaryTerm(BoundaryIntegrand term, BoundaryIndicator part)
     {
-      BoundaryTerms.push_back(BoundaryTerm{term, part});
+      BoundaryTerms.push_back(BoundaryTerm{nullptr, term, part});
     }
 
     Vector& LinearForm::LoadVector()
@@ -87,10 +81,12 @@ namespace chemfem{
 
       double *TestFuncValue = new double[NrTest];
 
+      const bool HasIntegrands = !VolumeTerms.empty() || !PointVolumeTerms.empty();
+
       // The basis functions on the reference element in the quadrature points, the same
       // for every cell
       std::vector<PointValues> RefTest;
-      if(!VolumeTerms.empty())
+      if(HasIntegrands)
 	RefTest = TabulateReference(TestSpace.RefElement(), Xi, Eta);
 
       std::vector<PointValues> TestValues(NrTest);
@@ -110,10 +106,6 @@ namespace chemfem{
 	  const Matrix2D InvJac = Jac.Transpose().Invert();
 
 	  Vector LocVec(NrTest);
-
-	  CellGeometry Geometry;
-	  if(!VolumeTerms.empty())
-	    Geometry = GeometryOf(mesh, CellInd);
 
 	  // Iterate over all quadrature points
 	  Vector::const_iterator Wq, Xiq, Etaq;
@@ -157,16 +149,23 @@ namespace chemfem{
 
 		} // loop over Terms
 
-	      if(!VolumeTerms.empty())
+	      if(HasIntegrands)
 		{
-		  const QuadPoint Point{XYq, size_t(CellInd), *Xiq, *Etaq};
-
 		  for(int k=0; k<NrTest; ++k)
 		    TestValues[k] = MapFromReference(RefTest[q*NrTest + k], InvJac);
 
 		  for(size_t t=0; t<VolumeTerms.size(); ++t)
 		    for(int k=0; k<NrTest; ++k)
-		      LocVec[k] += (*Wq) * VolumeTerms[t](Point, Geometry, TestValues[k]) * det;
+		      LocVec[k] += (*Wq) * VolumeTerms[t](TestValues[k]) * det;
+
+		  if(!PointVolumeTerms.empty())
+		    {
+		      const QuadPoint Point{XYq, size_t(CellInd), *Xiq, *Etaq};
+
+		      for(size_t t=0; t<PointVolumeTerms.size(); ++t)
+			for(int k=0; k<NrTest; ++k)
+			  LocVec[k] += (*Wq) * PointVolumeTerms[t](Point, TestValues[k]) * det;
+		    }
 		}
 	    } // loop over quadrature points
 	  for(int k=0; k<NrTest; ++k)
@@ -257,7 +256,6 @@ namespace chemfem{
 	    continue;
 
 	  CellInfo Info = mesh.GetCellInfo(CellIndex);
-	  const CellGeometry Geometry = GeometryOf(mesh, CellIndex);
 
 	  EdgeGeometry EdgeGeom;
 	  EdgeGeom.h = Info.EdgeLength(LocEdge);
@@ -285,10 +283,18 @@ namespace chemfem{
 		  ReferenceValues(TestSpace.RefElement(), i, xi, eta), InvJac);
 
 	      for(size_t a=0; a<Active.size(); ++a)
-		for(int i=0; i<NrTest; ++i)
-		  LocVec[i] += LineWeights[q]
-		    * BoundaryTerms[Active[a]].integrand(Point, Geometry, EdgeGeom, TestValues[i])
-		    * EdgeGeom.h;
+		{
+		  const BoundaryTerm& T = BoundaryTerms[Active[a]];
+
+		  for(int i=0; i<NrTest; ++i)
+		    {
+		      const double value = T.integrand
+			? T.integrand(TestValues[i])
+			: T.point_integrand(Point, EdgeGeom, TestValues[i]);
+
+		      LocVec[i] += LineWeights[q] * value * EdgeGeom.h;
+		    }
+		}
 	    }
 
 	  for(int i=0; i<NrTest; ++i)

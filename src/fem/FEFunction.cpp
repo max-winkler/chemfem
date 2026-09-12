@@ -1,4 +1,8 @@
+#include <cmath>
+
 #include "fem/FEFunction.h"
+
+#include "quadrature/QuadFormula.h"
 
 namespace chemfem{
   namespace fem{
@@ -24,19 +28,44 @@ namespace chemfem{
     void FEFunction::CreateFunction(const Vector& FreeDof)
     {
       Data = Space->IncorporateBC(FreeDof);
-      CacheValid = false;
+      CacheValid = NOTHING;
     }
 
     void FEFunction::SetCoefficients(const Vector& Data)
     {
       this->Data = Data;
-      CacheValid = false;
+      CacheValid = NOTHING;
+    }
+
+    namespace {
+
+      bool SamePoint(const QuadPoint& a, const QuadPoint& b)
+      {
+	return a.cell == b.cell && a.xi == b.xi && a.eta == b.eta;
+      }
+    }
+
+    double FEFunction::Value(const QuadPoint& p) const
+    {
+      if(CacheValid != NOTHING && SamePoint(p, CachedPoint))
+	return CachedValues.value;
+
+      const Element& E = Space->RefElement();
+
+      double value = 0.;
+      for(size_t k=0; k<Space->NrLocalDof(); ++k)
+	value += Data[Space->GetGlobalIndex(p.cell, k)] * E.Value(k, p.xi, p.eta);
+
+      CachedValues.value = value;
+      CachedPoint = p;
+      CacheValid = VALUE_ONLY;
+
+      return value;
     }
 
     PointValues FEFunction::Evaluate(const QuadPoint& p) const
     {
-      if(CacheValid && p.cell == CachedPoint.cell
-	 && p.xi == CachedPoint.xi && p.eta == CachedPoint.eta)
+      if(CacheValid == EVERYTHING && SamePoint(p, CachedPoint))
 	return CachedValues;
 
       const Element& E = Space->RefElement();
@@ -58,9 +87,49 @@ namespace chemfem{
 
       CachedValues = MapFromReference(ref, InvJacT);
       CachedPoint = p;
-      CacheValid = true;
+      CacheValid = EVERYTHING;
 
       return CachedValues;
+    }
+
+    double FEFunction::Mean() const
+    {
+      const chemfem::mesh::Mesh& mesh = Space->GetMesh();
+
+      chemfem::quadrature::QuadratureFormula Quad(chemfem::quadrature::QUAD_FORMULA::GAUSS_7);
+
+      Vector Weights, Xi, Eta;
+      Quad.FormulaData(Weights, Xi, Eta);
+
+      double integral = 0., area = 0.;
+
+      for(size_t c=0; c<mesh.NrCells(); ++c)
+	{
+	  const double det = std::fabs(mesh.Determinant(c));
+
+	  for(size_t q=0; q<Weights.size(); ++q)
+	    {
+	      double value = 0.;
+	      for(size_t k=0; k<Space->NrLocalDof(); ++k)
+		value += Data[Space->GetGlobalIndex(c, k)]
+		  * Space->RefElement().Value(k, Xi[q], Eta[q]);
+
+	      integral += Weights[q] * value * det;
+	      area += Weights[q] * det;
+	    }
+	}
+
+      return integral/area;
+    }
+
+    void FEFunction::SubtractMean()
+    {
+      const double mean = Mean();
+
+      for(size_t k=0; k<Data.size(); ++k)
+	Data[k] -= mean;
+
+      CacheValid = NOTHING;
     }
 
     FEFunction FESpace::Interpolate(ScalarFunction u)

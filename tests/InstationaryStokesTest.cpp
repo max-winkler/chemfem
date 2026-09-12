@@ -69,36 +69,15 @@ struct ViscousStep
 {
   double nu, tau;
 
-  double operator()(const QuadPoint&, const CellGeometry&,
-                    const PointValues& u, const PointValues& v) const
+  double operator()(const PointValues& u, const PointValues& v) const
   {
     return u.value*v.value/tau + nu*dot(u.gradient, v.gradient);
   }
 };
 
-/// -(p, dv/dx_i), the trial function is the pressure
-struct PressureTerm
-{
-  int direction;
-
-  double operator()(const QuadPoint&, const CellGeometry&,
-                    const PointValues& p, const PointValues& v) const
-  {
-    return -p.value * v.gradient[direction];
-  }
-};
-
-/// -(du/dx_i, q), the test function belongs to the pressure
-struct DivergenceTerm
-{
-  int direction;
-
-  double operator()(const QuadPoint&, const CellGeometry&,
-                    const PointValues& u, const PointValues& q) const
-  {
-    return -u.gradient[direction] * q.value;
-  }
-};
+// -(du/dx, q) and -(du/dy, q). The transposed blocks give the pressure terms -(p, div v).
+double DivergenceX(const PointValues& u, const PointValues& q) { return -u.gradient.x * q.value; }
+double DivergenceY(const PointValues& u, const PointValues& q) { return -u.gradient.y * q.value; }
 
 /// (u_old, v)/tau, with the velocity of the previous step as an FE function
 struct OldVelocity
@@ -106,9 +85,9 @@ struct OldVelocity
   const FEFunction& Uold;
   double tau;
 
-  double operator()(const QuadPoint& p, const CellGeometry&, const PointValues& v) const
+  double operator()(const QuadPoint& p, const PointValues& v) const
   {
-    return Uold.Evaluate(p).value/tau * v.value;
+    return Uold.Value(p)/tau * v.value;
   }
 };
 
@@ -127,16 +106,14 @@ public:
   ImplicitEuler(Mesh& mesh, double nu, double tau, double& t,
                 ScalarFunction fx, ScalarFunction fy)
     : P2(2), P1(1), V(mesh, P2), Q(mesh, P1, Nowhere), Ux(V), Uy(V), P(Q),
-      A(V, V), BxT(Q, V), ByT(Q, V), Bx(V, Q), By(V, Q), Fx(V), Fy(V),
-      S({&V, &V, &Q}), tau(tau), t(t)
+      A(V, V), Bx(V, Q), By(V, Q), Fx(V), Fy(V),
+      S({V, V, Q}), tau(tau), t(t)
   {
     A.AddVolumeTerm(ViscousStep{nu, tau});
 
-    // -(p, div v) and -(div u, q)
-    BxT.AddVolumeTerm(PressureTerm{0});
-    ByT.AddVolumeTerm(PressureTerm{1});
-    Bx.AddVolumeTerm(DivergenceTerm{0});
-    By.AddVolumeTerm(DivergenceTerm{1});
+    // -(div u, q), split into the two directions
+    Bx.AddVolumeTerm(DivergenceX);
+    By.AddVolumeTerm(DivergenceY);
 
     Fx.AddVolumeForce(fx);
     Fx.AddVolumeTerm(OldVelocity{Ux, tau});
@@ -145,16 +122,15 @@ public:
 
     S.AddBlock(0, 0, A);
     S.AddBlock(1, 1, A);
-    S.AddBlock(0, 2, BxT);
-    S.AddBlock(1, 2, ByT);
     S.AddBlock(2, 0, Bx);
     S.AddBlock(2, 1, By);
+    S.AddTransposedBlock(0, 2, Bx);
+    S.AddTransposedBlock(1, 2, By);
     S.AddRhs(0, Fx);
     S.AddRhs(1, Fy);
-    S.AddMeanValueConstraint(2);
+    S.FixDof(2);
 
     S.AssembleMatrix();
-    LU = std::make_unique<DirectSolver>(S.SystemMatrix());
   }
 
   void Step()
@@ -162,11 +138,17 @@ public:
     t += tau;
 
     S.AssembleRhs();
-    const Vector X = LU->Solve(S.Rhs());
+
+    // Many right hand sides with the same matrix, so the iterative refinement of UMFPACK
+    // is not worth its three-fold cost here
+    const Vector X = S.Solve(false);
 
     Ux = S.Extract(0, X);
     Uy = S.Extract(1, X);
     P = S.Extract(2, X);
+
+    // The fixed DOF leaves the pressure with an arbitrary constant
+    P.SubtractMean();
   }
 
   /// Largest speed in the degrees of freedom
@@ -184,10 +166,9 @@ public:
   FEFunction Ux, Uy, P;
 
 private:
-  BilinearForm A, BxT, ByT, Bx, By;
+  BilinearForm A, Bx, By;
   LinearForm Fx, Fy;
   BlockSystem S;
-  std::unique_ptr<DirectSolver> LU;
 
   const double tau;
   double& t;
@@ -209,6 +190,10 @@ int main()
   std::cout << "Stirred fluid on " << mesh.NrCells() << " cells, " << steps
             << " steps up to t = " << T << std::endl;
 
+  VtkOutput out(mesh);
+  out.AddVector("u", Euler.Ux, Euler.Uy);
+  out.AddScalar("p", Euler.P);
+
   for(int n=1; n<=steps; ++n)
     {
       Euler.Step();
@@ -218,9 +203,6 @@ int main()
           std::ostringstream name;
           name << "stokes_flow_" << std::setw(4) << std::setfill('0') << n/2 << ".vtk";
 
-          VtkOutput out(mesh);
-          out.AddVector("u", Euler.Ux, Euler.Uy);
-          out.AddScalar("p", Euler.P);
           out.Write(name.str());
         }
 

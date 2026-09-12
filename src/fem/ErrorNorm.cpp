@@ -12,6 +12,11 @@ using chemfem::quadrature::QuadratureFormula;
 namespace chemfem{
   namespace fem{
 
+    ErrorNorm::ErrorNorm(ScalarFunction Value) : Value(Value) {}
+
+    ErrorNorm::ErrorNorm(ScalarFunction Value, VectorFunction Gradient)
+      : Value(Value), Gradient(Gradient) {}
+
     void ErrorNorm::SetExactValue(ScalarFunction Value)
     {
       this->Value = Value;
@@ -29,9 +34,14 @@ namespace chemfem{
 
     double ErrorNorm::Compute(Norm norm) const
     {
+      return Compute(*FESolution, norm);
+    }
+
+    double ErrorNorm::Compute(const FEFunction& Solution, Norm norm) const
+    {
       double error = 0.;
 
-      const FESpace& Space = FESolution->GetFESpace();
+      const FESpace& Space = Solution.GetFESpace();
       const Mesh& mesh = Space.GetMesh();
 
       QuadratureFormula quad(chemfem::quadrature::GAUSS_7);
@@ -71,7 +81,7 @@ namespace chemfem{
 		  for(int k=0; k<Space.RefElement().NrDof(); ++k)
 		    {
 		      double form_value = Space.RefElement().Value(k, *Xiq, *Etaq);
-		      double dof_value = (*FESolution)[LocalDof[k]];
+		      double dof_value = Solution[LocalDof[k]];
 		      fe_value += dof_value * form_value;
 		    }
 		  // Value of exact solution
@@ -85,7 +95,7 @@ namespace chemfem{
 		  chemfem::linalg::Vector2D fe_grad;
 		  for(int k=0; k<Space.RefElement().NrDof(); ++k)
 		    {
-		      double dof_value = (*FESolution)[LocalDof[k]];
+		      double dof_value = Solution[LocalDof[k]];
 		      fe_grad += dof_value * Space.RefElement().Gradient(k, *Xiq, *Etaq);
 		    }
 

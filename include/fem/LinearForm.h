@@ -18,20 +18,21 @@ namespace chemfem{
      * This class represents a linear form which stores and assembles the vector for the right-hand
      * side or Neumann boundary conditions.
      *
-     * Terms beyond the predefined ones are given as functors, which get the values of
+     * Terms beyond the predefined ones are given as an integrand, which gets the values of
      * the test function v in a quadrature point, see also BilinearForm.
      */
     class LinearForm
     {
     public:
 
-      /// Integrand of a volume term for the test function v
-      typedef std::function<double(const QuadPoint& p, const CellGeometry& cell,
-                                   const PointValues& v)> VolumeIntegrand;
+      /// Integrand for the test function v
+      typedef std::function<double(const PointValues& v)> Integrand;
 
-      /// Integrand of a boundary term, evaluated on a boundary edge of the cell
-      typedef std::function<double(const QuadPoint& p, const CellGeometry& cell,
-                                   const EdgeGeometry& edge,
+      /// Integrand of a volume term that depends on the quadrature point as well
+      typedef std::function<double(const QuadPoint& p, const PointValues& v)> PointIntegrand;
+
+      /// Integrand of a boundary term that depends on the quadrature point or the edge
+      typedef std::function<double(const QuadPoint& p, const EdgeGeometry& edge,
                                    const PointValues& v)> BoundaryIntegrand;
 
       /**
@@ -51,11 +52,20 @@ namespace chemfem{
        */
       void AddNeumannBC(ScalarFunction);
 
-      /// Adds the integral of the functor over all cells
-      void AddVolumeTerm(VolumeIntegrand);
+      /// Adds the integral of the integrand over all cells
+      void AddVolumeTerm(Integrand);
+
+      /// Adds the integral of the integrand over all cells
+      void AddVolumeTerm(PointIntegrand);
 
       /**
-       * Adds the integral of the functor over the part of the boundary where the
+       * Adds the integral of the integrand over the part of the boundary where the
+       * indicator is true, over the whole boundary if it is omitted
+       */
+      void AddBoundaryTerm(Integrand, BoundaryIndicator = nullptr);
+
+      /**
+       * Adds the integral of the integrand over the part of the boundary where the
        * indicator is true, over the whole boundary if it is omitted
        */
       void AddBoundaryTerm(BoundaryIntegrand, BoundaryIndicator = nullptr);
@@ -75,9 +85,11 @@ namespace chemfem{
       const FESpace& GetTestSpace() const;
 
     private:
+      /// A boundary term, given by one of the two kinds of integrands
       struct BoundaryTerm
       {
-        BoundaryIntegrand integrand;
+        Integrand integrand;
+        BoundaryIntegrand point_integrand;
         BoundaryIndicator part;
       };
 
@@ -86,7 +98,8 @@ namespace chemfem{
        */
       std::vector<FEExpression> Terms;
 
-      std::vector<VolumeIntegrand> VolumeTerms;
+      std::vector<Integrand> VolumeTerms;
+      std::vector<PointIntegrand> PointVolumeTerms;
       std::vector<BoundaryTerm> BoundaryTerms;
 
       /**

@@ -47,6 +47,13 @@ namespace chemfem{
        * round off, at the price of storing the factors.
        */
       Vector Solve(const Vector&, LIN_SOLVER = CG);
+
+      /**
+       * Sets the entries of a row and a column to zero and the diagonal entry to one, which
+       * fixes the corresponding unknown. The diagonal entry has to be part of the sparsity
+       * pattern already.
+       */
+      void EliminateRowAndColumn(size_t);
       
     private:
       size_t *Col = NULL, *Row = NULL;

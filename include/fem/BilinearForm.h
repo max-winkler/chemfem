@@ -19,34 +19,32 @@ namespace chemfem{
      * This class represents a finite element bilinear form. In  linear algebra context
      * this corresponds to a matrix (e.g. stiffness or mass matrix).
      *
-     * Terms beyond the predefined ones are given as functors, the same way as for the
-     * GenericEstimator. The functor gets the values of the trial function u and the
-     * test function v in a quadrature point:
+     * Terms beyond the predefined ones are given as an integrand, which gets the values of
+     * the trial function u and the test function v in a quadrature point. A plain
+     * function, a functor or a lambda may serve as integrand:
      *
      * \code
-     *   struct Mass
-     *   {
-     *     double operator()(const QuadPoint&, const CellGeometry&,
-     *                       const PointValues& u, const PointValues& v) const
-     *     {
-     *       return u.value * v.value;
-     *     }
-     *   };
+     *   double Mass(const PointValues& u, const PointValues& v) { return u.value * v.value; }
      *
-     *   A.AddVolumeTerm(Mass());
+     *   A.AddVolumeTerm(Mass);
      * \endcode
+     *
+     * An integrand that depends on the position, e.g. through a coefficient or an FE
+     * function, gets the quadrature point as first argument.
      */
     class BilinearForm
     {
     public:
 
-      /// Integrand of a volume term for the trial function u and the test function v
-      typedef std::function<double(const QuadPoint& p, const CellGeometry& cell,
-                                   const PointValues& u, const PointValues& v)> VolumeIntegrand;
+      /// Integrand for the trial function u and the test function v
+      typedef std::function<double(const PointValues& u, const PointValues& v)> Integrand;
 
-      /// Integrand of a boundary term, evaluated on a boundary edge of the cell
-      typedef std::function<double(const QuadPoint& p, const CellGeometry& cell,
-                                   const EdgeGeometry& edge,
+      /// Integrand of a volume term that depends on the quadrature point as well
+      typedef std::function<double(const QuadPoint& p,
+                                   const PointValues& u, const PointValues& v)> PointIntegrand;
+
+      /// Integrand of a boundary term that depends on the quadrature point or the edge
+      typedef std::function<double(const QuadPoint& p, const EdgeGeometry& edge,
                                    const PointValues& u, const PointValues& v)> BoundaryIntegrand;
 
       /**
@@ -78,11 +76,20 @@ namespace chemfem{
        */
       void AddReactionTerm(ScalarFunction);
 
-      /// Adds the integral of the functor over all cells
-      void AddVolumeTerm(VolumeIntegrand);
+      /// Adds the integral of the integrand over all cells
+      void AddVolumeTerm(Integrand);
+
+      /// Adds the integral of the integrand over all cells
+      void AddVolumeTerm(PointIntegrand);
 
       /**
-       * Adds the integral of the functor over the part of the boundary where the
+       * Adds the integral of the integrand over the part of the boundary where the
+       * indicator is true, over the whole boundary if it is omitted
+       */
+      void AddBoundaryTerm(Integrand, BoundaryIndicator = nullptr);
+
+      /**
+       * Adds the integral of the integrand over the part of the boundary where the
        * indicator is true, over the whole boundary if it is omitted
        */
       void AddBoundaryTerm(BoundaryIntegrand, BoundaryIndicator = nullptr);
@@ -92,11 +99,25 @@ namespace chemfem{
        */
       void Assemble();
 
+      /// Position of the matrix within a larger one, and whether it is transposed there
+      struct Placement
+      {
+        size_t row, col;
+        bool transposed;
+      };
+
       /**
-       * Assembles the matrix into a larger one, starting at the given row and column.
-       * Used for the blocks of a BlockSystem.
+       * Assembles the matrix, or its transpose, into a larger one, starting at the given
+       * row and column. Used for the blocks of a BlockSystem.
        */
-      void Assemble(chemfem::linalg::SparseMatrixInserter&, size_t RowOffset, size_t ColOffset);
+      void Assemble(chemfem::linalg::SparseMatrixInserter&, size_t RowOffset, size_t ColOffset,
+                    bool Transposed = false);
+
+      /**
+       * Assembles the matrix once and inserts it at several places of a larger one, e.g.
+       * into a block and into its transpose.
+       */
+      void Assemble(chemfem::linalg::SparseMatrixInserter&, const std::vector<Placement>&);
 
       /**
        * Returns the matrix which corresponds to the bilinear form. Before calling this function
@@ -110,12 +131,15 @@ namespace chemfem{
 
     private:
       /// Adds the local matrix of a cell to the global one, only the free DOFs are kept
-      void InsertLocalMatrix(chemfem::linalg::SparseMatrixInserter&, size_t RowOffset,
-                             size_t ColOffset, size_t Cell, const chemfem::linalg::DenseMatrix&);
+      void InsertLocalMatrix(chemfem::linalg::SparseMatrixInserter&,
+                             const std::vector<Placement>&, size_t Cell,
+                             const chemfem::linalg::DenseMatrix&);
 
+      /// A boundary term, given by one of the two kinds of integrands
       struct BoundaryTerm
       {
-        BoundaryIntegrand integrand;
+        Integrand integrand;
+        BoundaryIntegrand point_integrand;
         BoundaryIndicator part;
       };
 
@@ -127,7 +151,8 @@ namespace chemfem{
 
       std::vector<FEExpression> Terms;
 
-      std::vector<VolumeIntegrand> VolumeTerms;
+      std::vector<Integrand> VolumeTerms;
+      std::vector<PointIntegrand> PointVolumeTerms;
       std::vector<BoundaryTerm> BoundaryTerms;
     };
 

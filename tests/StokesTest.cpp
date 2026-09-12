@@ -47,29 +47,9 @@ double fy(const Coordinate& p)
   return -laplace - M_PI*cos(M_PI*p.x)*sin(M_PI*p.y);
 }
 
-/// -(p, dv/dx_i), the trial function is the pressure
-struct PressureTerm
-{
-  int direction;
-
-  double operator()(const QuadPoint&, const CellGeometry&,
-                    const PointValues& p, const PointValues& v) const
-  {
-    return -p.value * v.gradient[direction];
-  }
-};
-
-/// -(du/dx_i, q), the test function belongs to the pressure
-struct DivergenceTerm
-{
-  int direction;
-
-  double operator()(const QuadPoint&, const CellGeometry&,
-                    const PointValues& u, const PointValues& q) const
-  {
-    return -u.gradient[direction] * q.value;
-  }
-};
+// -(du/dx, q) and -(du/dy, q). The transposed blocks give the pressure terms -(p, div v).
+double DivergenceX(const PointValues& u, const PointValues& q) { return -u.gradient.x * q.value; }
+double DivergenceY(const PointValues& u, const PointValues& q) { return -u.gradient.y * q.value; }
 
 bool Nowhere(const Coordinate&)
 {
@@ -104,50 +84,44 @@ int main()
       BilinearForm A(V, V);
       A.AddLaplaceTerm();
 
-      // -(p, div v) and -(div u, q), split into the two directions
-      BilinearForm BxT(Q, V), ByT(Q, V), Bx(V, Q), By(V, Q);
-      BxT.AddVolumeTerm(PressureTerm{0});
-      ByT.AddVolumeTerm(PressureTerm{1});
-      Bx.AddVolumeTerm(DivergenceTerm{0});
-      By.AddVolumeTerm(DivergenceTerm{1});
+      // -(div u, q), split into the two directions
+      BilinearForm Bx(V, Q), By(V, Q);
+      Bx.AddVolumeTerm(DivergenceX);
+      By.AddVolumeTerm(DivergenceY);
 
       LinearForm Fx(V), Fy(V);
       Fx.AddVolumeForce(fx);
       Fy.AddVolumeForce(fy);
 
-      BlockSystem S({&V, &V, &Q});
+      BlockSystem S({V, V, Q});
       S.AddBlock(0, 0, A);
       S.AddBlock(1, 1, A);
-      S.AddBlock(0, 2, BxT);
-      S.AddBlock(1, 2, ByT);
       S.AddBlock(2, 0, Bx);
       S.AddBlock(2, 1, By);
+      S.AddTransposedBlock(0, 2, Bx);
+      S.AddTransposedBlock(1, 2, By);
       S.AddRhs(0, Fx);
       S.AddRhs(1, Fy);
-      S.AddMeanValueConstraint(2);
+      S.FixDof(2);
       S.Assemble();
 
-      Vector X(S.SystemMatrix().Solve(S.Rhs(), LIN_SOLVER::UMFPACK));
+      const Vector X = S.Solve();
 
       FEFunction Ux = S.Extract(0, X);
       FEFunction Uy = S.Extract(1, X);
       FEFunction P = S.Extract(2, X);
 
-      ErrorNorm Ex, Ey, Ep;
-      Ex.SetExactValue(ux);
-      Ex.SetExactGradient(grad_ux);
-      Ex.SetFEFunction(Ux);
-      Ey.SetExactValue(uy);
-      Ey.SetExactGradient(grad_uy);
-      Ey.SetFEFunction(Uy);
-      Ep.SetExactValue(pressure);
-      Ep.SetFEFunction(P);
+      // The fixed DOF leaves the pressure with an arbitrary constant, the exact one has
+      // mean value zero
+      P.SubtractMean();
 
-      h1_u.push_back(hypot(Ex.Compute(H1_SEMI), Ey.Compute(H1_SEMI)));
-      l2_u.push_back(hypot(Ex.Compute(L2), Ey.Compute(L2)));
-      l2_p.push_back(Ep.Compute(L2));
+      ErrorNorm Ex(ux, grad_ux), Ey(uy, grad_uy), Ep(pressure);
 
-      std::cout << std::setw(8) << mesh.NrCells() << std::setw(8) << S.Rhs().size();
+      h1_u.push_back(hypot(Ex.Compute(Ux, H1_SEMI), Ey.Compute(Uy, H1_SEMI)));
+      l2_u.push_back(hypot(Ex.Compute(Ux, L2), Ey.Compute(Uy, L2)));
+      l2_p.push_back(Ep.Compute(P, L2));
+
+      std::cout << std::setw(8) << mesh.NrCells() << std::setw(8) << S.NrDof();
       const std::vector<double>* columns[3] = {&h1_u, &l2_u, &l2_p};
       for(int c=0; c<3; ++c)
         {

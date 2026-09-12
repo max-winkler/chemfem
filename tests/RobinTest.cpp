@@ -57,7 +57,7 @@ bool Robin(const Coordinate& p)
 /// (alpha u, v) on the Robin boundary
 struct RobinTerm
 {
-  double operator()(const QuadPoint& p, const CellGeometry&, const EdgeGeometry&,
+  double operator()(const QuadPoint& p, const EdgeGeometry&,
                     const PointValues& u, const PointValues& v) const
   {
     return alpha(p.x) * u.value * v.value;
@@ -67,7 +67,7 @@ struct RobinTerm
 /// (g, v) on the Robin boundary, with g = grad(u).n + alpha u and n the normal of the edge
 struct RobinData
 {
-  double operator()(const QuadPoint& p, const CellGeometry&, const EdgeGeometry& edge,
+  double operator()(const QuadPoint& p, const EdgeGeometry& edge,
                     const PointValues& v) const
   {
     const double g = dot(exact_grad(p.x), edge.normal) + alpha(p.x)*exact(p.x);

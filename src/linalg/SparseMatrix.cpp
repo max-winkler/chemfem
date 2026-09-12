@@ -35,6 +35,33 @@ namespace chemfem{
       return y;
     }
     
+    void SparseMatrix::EliminateRowAndColumn(size_t k)
+    {
+      if(k >= m || k >= n)
+	{
+	  std::cerr << "Error: The index " << k << " is outside the matrix.\n";
+	  return;
+	}
+
+      bool diagonal = false;
+
+      for(size_t i=0; i<m; ++i)
+	for(size_t j=Row[i]; j<Row[i+1]; ++j)
+	  {
+	    if(i == k && Col[j] == k)
+	      {
+		Entry[j] = 1.;
+		diagonal = true;
+	      }
+	    else if(i == k || Col[j] == k)
+	      Entry[j] = 0.;
+	  }
+
+      if(!diagonal)
+	std::cerr << "Error: The diagonal entry " << k << " is not in the sparsity pattern, "
+		  << "the matrix is singular now.\n";
+    }
+
     IdentityMatrix::IdentityMatrix(size_t m) : SparseMatrix(m, m)
     {
       nnz = m;
