@@ -33,7 +33,20 @@ namespace chemfem{
         Vectors.push_back(VectorField{name, &ux, &uy});
     }
 
-    std::vector<double> VtkOutput::VertexValues(const FEFunction& u) const
+    void VtkOutput::AddVector(const std::string& name, const FEFunction& u)
+    {
+      if(u.GetFESpace().NrComponents() != 2)
+        {
+          std::cerr << "Error: The vector field " << name << " needs an FE function with two "
+                    << "components.\n";
+          return;
+        }
+
+      if(OnMesh(u))
+        Vectors.push_back(VectorField{name, &u, nullptr});
+    }
+
+    std::vector<double> VtkOutput::VertexValues(const FEFunction& u, int component) const
     {
       const FESpace& Space = u.GetFESpace();
       const double Vertex[3][2] = {{0., 0.}, {1., 0.}, {0., 1.}};
@@ -46,8 +59,13 @@ namespace chemfem{
           {
             double value = 0.;
             for(size_t k=0; k<Space.NrLocalDof(); ++k)
-              value += u[Space.GetGlobalIndex(c, k)]
-                * Space.RefElement().Value(k, Vertex[v][0], Vertex[v][1]);
+              {
+                if(Space.RefElement().Component(k) != component)
+                  continue;
+
+                value += u[Space.GetGlobalIndex(c, k)]
+                  * Space.RefElement().Value(k, Vertex[v][0], Vertex[v][1]);
+              }
 
             const size_t node = mesh.Cells[c].LocNode[v];
             sum[node] += value;
@@ -109,8 +127,9 @@ namespace chemfem{
 
       for(size_t v=0; v<Vectors.size(); ++v)
         {
-          const std::vector<double> x = VertexValues(*Vectors[v].x);
-          const std::vector<double> y = VertexValues(*Vectors[v].y);
+          const std::vector<double> x = VertexValues(*Vectors[v].x, 0);
+          const std::vector<double> y = Vectors[v].y ? VertexValues(*Vectors[v].y, 0)
+                                                     : VertexValues(*Vectors[v].x, 1);
 
           ofs << "VECTORS " << Vectors[v].name << " double\n";
           for(size_t n=0; n<x.size(); ++n)

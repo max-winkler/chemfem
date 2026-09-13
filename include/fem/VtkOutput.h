@@ -29,12 +29,16 @@ namespace chemfem{
       /// Adds a vector field given by its two components
       void AddVector(const std::string&, const FEFunction&, const FEFunction&);
 
+      /// Adds a vector field given by one FE function on a space with two components
+      void AddVector(const std::string&, const FEFunction&);
+
       void Write(const std::string&) const;
 
     private:
       bool OnMesh(const FEFunction&) const;
 
-      std::vector<double> VertexValues(const FEFunction&) const;
+      /// Values in the vertices of the given component of an FE function
+      std::vector<double> VertexValues(const FEFunction&, int component = 0) const;
 
       struct ScalarField
       {
@@ -42,6 +46,10 @@ namespace chemfem{
         const FEFunction* function;
       };
 
+      /**
+       * A vector field, either given by two scalar FE functions or, if y is empty, by the
+       * two components of x
+       */
       struct VectorField
       {
         std::string name;

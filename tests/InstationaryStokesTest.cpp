@@ -5,6 +5,7 @@
 
 #include "fem/BlockSystem.h"
 #include "fem/DirichletValues.h"
+#include "fem/ProductElement.h"
 #include "fem/LagrangeElement.h"
 #include "fem/VtkOutput.h"
 #include "mesh/Mesh.h"
@@ -19,10 +20,11 @@ using namespace chemfem::mesh;
 //
 //   du/dt - nu Laplace(u) + grad(p) = 0,  div(u) = 0
 //
-// with Taylor-Hood P2/P1 in space and the implicit Euler method in time. The fluid starts at
-// rest and the parabolic inflow profile is switched on at t = 0. Walls and cylinder are no
-// slip, at the outflow nothing is prescribed. That is the natural condition of the weak
-// form, and it also determines the pressure, so no normalization is needed there.
+// with Taylor-Hood P2/P1 in space and the implicit Euler method in time. The velocity lives
+// in one vector valued space. The fluid starts at rest and the parabolic inflow profile is
+// switched on at t = 0. Walls and cylinder are no slip, at the outflow nothing is
+// prescribed. That is the natural condition of the weak form, and it also determines the
+// pressure, so no normalization is needed there.
 //
 // Every second step is written to cylinder_0001.vtk, cylinder_0002.vtk, ...
 
@@ -31,9 +33,9 @@ const double Height = 0.41;
 const double MaxInflow = 0.3;
 
 /// Parabolic profile of the inflow, its mean value is 2/3 of MaxInflow
-double Inflow(const Coordinate& p)
+Vector2D Inflow(const Coordinate& p)
 {
-  return 4.*MaxInflow*p.y*(Height - p.y)/(Height*Height);
+  return Vector2D(4.*MaxInflow*p.y*(Height - p.y)/(Height*Height), 0.);
 }
 
 /// Everything except the outflow on the right, so walls, cylinder and inflow
@@ -57,15 +59,17 @@ struct ViscousStep
 {
   double nu, tau;
 
-  double operator()(const PointValues& u, const PointValues& v) const
+  double operator()(const VectorValues& u, const VectorValues& v) const
   {
-    return u.value*v.value/tau + nu*dot(u.gradient, v.gradient);
+    return dot(u.value, v.value)/tau + nu*ddot(u.gradient, v.gradient);
   }
 };
 
-// -(du/dx, q) and -(du/dy, q). The transposed blocks give the pressure terms -(p, div v).
-double DivergenceX(const PointValues& u, const PointValues& q) { return -u.gradient.x * q.value; }
-double DivergenceY(const PointValues& u, const PointValues& q) { return -u.gradient.y * q.value; }
+/// -(div u, q). The transposed block gives the pressure term -(p, div v).
+double Divergence(const VectorValues& u, const PointValues& q)
+{
+  return -u.divergence * q.value;
+}
 
 /// (u_old, v)/tau, with the velocity of the previous step as an FE function
 struct OldVelocity
@@ -73,47 +77,34 @@ struct OldVelocity
   const FEFunction& Uold;
   double tau;
 
-  double operator()(const QuadPoint& p, const PointValues& v) const
+  double operator()(const QuadPoint& p, const VectorValues& v) const
   {
-    return Uold.Value(p)/tau * v.value;
+    return dot(Uold.VectorValue(p), v.value)/tau;
   }
 };
 
 /**
  * The implicit Euler method for the Stokes equations with the viscosity nu and the step size
- * tau. The velocity components need one bilinear form each, because they carry different
- * prescribed values.
+ * tau.
  */
 class ImplicitEuler
 {
 public:
   ImplicitEuler(Mesh& mesh, double nu, double tau)
-    : P2(2), P1(1), V(mesh, P2, NoOutflow), Q(mesh, P1, Nowhere),
-      Ux(V), Uy(V), P(Q), gx(V), gy(V),
-      Ax(V, V), Ay(V, V), Bx(V, Q), By(V, Q), Fx(V), Fy(V),
-      S({V, V, Q}), tau(tau)
+    : P2(2), P1(1), Velocity(P2, 2), V(mesh, Velocity, NoOutflow), Q(mesh, P1, Nowhere),
+      U(V), P(Q), g(V), A(V, V), B(V, Q), F(V), S({V, Q}), tau(tau)
   {
-    gx.Set(Inflow, InflowBoundary);      // gy stays zero everywhere
+    g.Set(Inflow, InflowBoundary);
 
-    Ax.AddVolumeTerm(ViscousStep{nu, tau});
-    Ay.AddVolumeTerm(ViscousStep{nu, tau});
+    A.AddVolumeTerm(ViscousStep{nu, tau});
+    B.AddVolumeTerm(Divergence);
+    F.AddVolumeTerm(OldVelocity{U, tau});
 
-    Bx.AddVolumeTerm(DivergenceX);
-    By.AddVolumeTerm(DivergenceY);
-
-    Fx.AddVolumeTerm(OldVelocity{Ux, tau});
-    Fy.AddVolumeTerm(OldVelocity{Uy, tau});
-
-    S.AddBlock(0, 0, Ax);
-    S.AddBlock(1, 1, Ay);
-    S.AddBlock(2, 0, Bx);
-    S.AddBlock(2, 1, By);
-    S.AddTransposedBlock(0, 2, Bx);
-    S.AddTransposedBlock(1, 2, By);
-    S.AddRhs(0, Fx);
-    S.AddRhs(1, Fy);
-    S.SetDirichletValues(0, gx);
-    S.SetDirichletValues(1, gy);
+    S.AddBlock(0, 0, A);
+    S.AddBlock(1, 0, B);
+    S.AddTransposedBlock(0, 1, B);
+    S.AddRhs(0, F);
+    S.SetDirichletValues(0, g);
 
     S.AssembleMatrix();
   }
@@ -126,32 +117,32 @@ public:
     // not worth its three-fold cost here
     const Vector X = S.Solve(false);
 
-    Ux = S.Extract(0, X);
-    Uy = S.Extract(1, X);
-    P = S.Extract(2, X);
+    U = S.Extract(0, X);
+    P = S.Extract(1, X);
   }
 
   /// Largest speed in the degrees of freedom
   double MaxSpeed() const
   {
     double speed = 0.;
-    for(size_t k=0; k<V.NrDof(); ++k)
-      speed = std::max(speed, hypot(Ux[k], Uy[k]));
+    for(size_t k=0; k+1<V.NrDof(); k+=2)
+      speed = std::max(speed, hypot(U[k], U[k+1]));
     return speed;
   }
 
   size_t NrDof() const { return S.NrDof(); }
 
   LagrangeElement P2, P1;
+  ProductElement Velocity;
   FESpace V, Q;
 
-  FEFunction Ux, Uy, P;
+  FEFunction U, P;
 
 private:
-  DirichletValues gx, gy;
+  DirichletValues g;
 
-  BilinearForm Ax, Ay, Bx, By;
-  LinearForm Fx, Fy;
+  BilinearForm A, B;
+  LinearForm F;
   BlockSystem S;
 
   const double tau;
@@ -179,7 +170,7 @@ int main()
             << std::endl;
 
   VtkOutput out(mesh);
-  out.AddVector("u", Euler.Ux, Euler.Uy);
+  out.AddVector("u", Euler.U);
   out.AddScalar("p", Euler.P);
 
   for(int n=1; n<=steps; ++n)

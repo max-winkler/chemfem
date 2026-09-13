@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "fem/BlockSystem.h"
+#include "fem/ProductElement.h"
 #include "fem/LagrangeElement.h"
 #include "fem/ErrorNorm.h"
 #include "fem/VtkOutput.h"
@@ -14,9 +15,10 @@ using namespace chemfem::linalg;
 using namespace chemfem::mesh;
 
 // Stokes equations  -Laplace(u) + grad(p) = f,  div(u) = 0  on the unit square with
-// u = 0 on the boundary, discretized with the Taylor-Hood pair P2/P1. The velocity is
-// the curl of the stream function x^2 (1-x)^2 y^2 (1-y)^2, the pressure has mean value
-// zero, which the discrete pressure gets from a Lagrange multiplier.
+// u = 0 on the boundary, discretized with the Taylor-Hood pair P2/P1. The velocity lives in
+// one vector valued space, so the whole system has two unknowns, u and p. The velocity is
+// the curl of the stream function x^2 (1-x)^2 y^2 (1-y)^2, the pressure has mean value zero,
+// which the discrete pressure gets from fixing one of its degrees of freedom.
 
 // g(t) = t^2 (1-t)^2 and its derivatives
 double g0(double t) { return t*t*(1.-t)*(1.-t); }
@@ -35,21 +37,32 @@ double pressure(const Coordinate& p)
   return cos(M_PI*p.x)*cos(M_PI*p.y);
 }
 
-double fx(const Coordinate& p)
+Vector2D f(const Coordinate& p)
 {
-  const double laplace = g2(p.x)*g1(p.y) + g0(p.x)*g3(p.y);
-  return -laplace - M_PI*sin(M_PI*p.x)*cos(M_PI*p.y);
+  const double laplace_x = g2(p.x)*g1(p.y) + g0(p.x)*g3(p.y);
+  const double laplace_y = -(g3(p.x)*g0(p.y) + g1(p.x)*g2(p.y));
+
+  return Vector2D(-laplace_x - M_PI*sin(M_PI*p.x)*cos(M_PI*p.y),
+                  -laplace_y - M_PI*cos(M_PI*p.x)*sin(M_PI*p.y));
 }
 
-double fy(const Coordinate& p)
+/// (grad u, grad v)
+double Viscous(const VectorValues& u, const VectorValues& v)
 {
-  const double laplace = -(g3(p.x)*g0(p.y) + g1(p.x)*g2(p.y));
-  return -laplace - M_PI*cos(M_PI*p.x)*sin(M_PI*p.y);
+  return ddot(u.gradient, v.gradient);
 }
 
-// -(du/dx, q) and -(du/dy, q). The transposed blocks give the pressure terms -(p, div v).
-double DivergenceX(const PointValues& u, const PointValues& q) { return -u.gradient.x * q.value; }
-double DivergenceY(const PointValues& u, const PointValues& q) { return -u.gradient.y * q.value; }
+/// -(div u, q). The transposed block gives the pressure term -(p, div v).
+double Divergence(const VectorValues& u, const PointValues& q)
+{
+  return -u.divergence * q.value;
+}
+
+/// (f, v)
+double Force(const QuadPoint& p, const VectorValues& v)
+{
+  return dot(f(p.x), v.value);
+}
 
 bool Nowhere(const Coordinate&)
 {
@@ -77,48 +90,41 @@ int main()
   for(int level=0; level<levels; ++level)
     {
       LagrangeElement P2(2), P1(1);
+      ProductElement Velocity(P2, 2);
 
-      FESpace V(mesh, P2);
+      FESpace V(mesh, Velocity);
       FESpace Q(mesh, P1, Nowhere);
 
       BilinearForm A(V, V);
-      A.AddLaplaceTerm();
+      A.AddVolumeTerm(Viscous);
 
-      // -(div u, q), split into the two directions
-      BilinearForm Bx(V, Q), By(V, Q);
-      Bx.AddVolumeTerm(DivergenceX);
-      By.AddVolumeTerm(DivergenceY);
+      BilinearForm B(V, Q);
+      B.AddVolumeTerm(Divergence);
 
-      LinearForm Fx(V), Fy(V);
-      Fx.AddVolumeForce(fx);
-      Fy.AddVolumeForce(fy);
+      LinearForm F(V);
+      F.AddVolumeTerm(Force);
 
-      BlockSystem S({V, V, Q});
+      BlockSystem S({V, Q});
       S.AddBlock(0, 0, A);
-      S.AddBlock(1, 1, A);
-      S.AddBlock(2, 0, Bx);
-      S.AddBlock(2, 1, By);
-      S.AddTransposedBlock(0, 2, Bx);
-      S.AddTransposedBlock(1, 2, By);
-      S.AddRhs(0, Fx);
-      S.AddRhs(1, Fy);
-      S.FixDof(2);
+      S.AddBlock(1, 0, B);
+      S.AddTransposedBlock(0, 1, B);
+      S.AddRhs(0, F);
+      S.FixDof(1);
       S.Assemble();
 
       const Vector X = S.Solve();
 
-      FEFunction Ux = S.Extract(0, X);
-      FEFunction Uy = S.Extract(1, X);
-      FEFunction P = S.Extract(2, X);
+      FEFunction U = S.Extract(0, X);
+      FEFunction P = S.Extract(1, X);
 
-      // The fixed DOF leaves the pressure with an arbitrary constant, the exact one has
-      // mean value zero
+      // The fixed DOF leaves the pressure with an arbitrary constant, the exact one has mean
+      // value zero
       P.SubtractMean();
 
       ErrorNorm Ex(ux, grad_ux), Ey(uy, grad_uy), Ep(pressure);
 
-      h1_u.push_back(hypot(Ex.Compute(Ux, H1_SEMI), Ey.Compute(Uy, H1_SEMI)));
-      l2_u.push_back(hypot(Ex.Compute(Ux, L2), Ey.Compute(Uy, L2)));
+      h1_u.push_back(hypot(Ex.Compute(U, H1_SEMI, 0), Ey.Compute(U, H1_SEMI, 1)));
+      l2_u.push_back(hypot(Ex.Compute(U, L2, 0), Ey.Compute(U, L2, 1)));
       l2_p.push_back(Ep.Compute(P, L2));
 
       std::cout << std::setw(8) << mesh.NrCells() << std::setw(8) << S.NrDof();
@@ -137,7 +143,7 @@ int main()
       if(level+1 == levels)
         {
           VtkOutput out(mesh);
-          out.AddVector("u", Ux, Uy);
+          out.AddVector("u", U);
           out.AddScalar("p", P);
           out.Write("stokes.vtk");
         }

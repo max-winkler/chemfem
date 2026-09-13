@@ -70,6 +70,26 @@ namespace chemfem{
       return value;
     }
 
+    chemfem::linalg::Vector2D FEFunction::VectorValue(const QuadPoint& p) const
+    {
+      if(CacheValid == VECTOR_ONLY && SamePoint(p, CachedPoint))
+	return CachedVector;
+
+      const Element& E = Space->RefElement();
+
+      chemfem::linalg::Vector2D value;
+
+      for(size_t k=0; k<Space->NrLocalDof(); ++k)
+	value[E.Component(k)] += Data[Space->GetGlobalIndex(p.cell, k)]
+	  * E.Value(k, p.xi, p.eta);
+
+      CachedVector = value;
+      CachedPoint = p;
+      CacheValid = VECTOR_ONLY;
+
+      return value;
+    }
+
     PointValues FEFunction::Evaluate(const QuadPoint& p) const
     {
       if(CacheValid == EVERYTHING && SamePoint(p, CachedPoint))

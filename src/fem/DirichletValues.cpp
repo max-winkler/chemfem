@@ -1,5 +1,7 @@
 #include "fem/DirichletValues.h"
 
+#include <iostream>
+
 #include "mesh/Mesh.h"
 
 using chemfem::linalg::Coordinate;
@@ -37,6 +39,40 @@ namespace chemfem{
 
 	      if(!part || part(x))
 		Values[dof] = Value(x);
+	    }
+	}
+    }
+
+    void DirichletValues::Set(VectorFunction Value, BoundaryIndicator part)
+    {
+      const Mesh& mesh = Space->GetMesh();
+      const Element& E = Space->RefElement();
+
+      if(E.NrComponents() != 2)
+	{
+	  std::cerr << "Error: A vector valued Dirichlet value needs a space with two "
+		    << "components.\n";
+	  return;
+	}
+
+      for(size_t c=0; c<mesh.NrCells(); ++c)
+	{
+	  const Node& x0 = mesh.Nodes[mesh.Cells[c].LocNode[0]];
+	  const Coordinate b{x0.getX(), x0.getY()};
+
+	  const Matrix2D Jac = mesh.Jacobian(c);
+
+	  for(size_t k=0; k<Space->NrLocalDof(); ++k)
+	    {
+	      const size_t dof = Space->GetGlobalIndex(c, k);
+
+	      if(Space->Dofs.IsFree(dof))
+		continue;
+
+	      const Coordinate x = b + Jac*E.NodalPoint(k);
+
+	      if(!part || part(x))
+		Values[dof] = Value(x)[E.Component(k)];
 	    }
 	}
     }

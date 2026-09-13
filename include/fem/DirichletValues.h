@@ -40,6 +40,12 @@ namespace chemfem{
        */
       void Set(ScalarFunction, BoundaryIndicator = nullptr);
 
+      /**
+       * The same for a vector valued space: each DOF takes the component of the value that
+       * belongs to it.
+       */
+      void Set(VectorFunction, BoundaryIndicator = nullptr);
+
       /// Value prescribed for a degree of freedom, zero for the free ones
       double operator[](size_t) const;
 
