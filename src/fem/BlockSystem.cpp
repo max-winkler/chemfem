@@ -101,13 +101,7 @@ namespace chemfem{
       Constraints.push_back(i);
     }
 
-    void BlockSystem::Assemble()
-    {
-      AssembleMatrix();
-      AssembleRhs();
-    }
-
-    void BlockSystem::AssembleMatrix()
+    SparseMatrix& BlockSystem::AssembleMatrix()
     {
       const size_t n = Offset.back() + Constraints.size();
 
@@ -192,11 +186,13 @@ namespace chemfem{
 
       for(size_t d=0; d<FixedDofs.size(); ++d)
         Matrix.EliminateRowAndColumn(FixedDofs[d]);
+
+      return Matrix;
     }
 
-    void BlockSystem::AssembleRhs()
+    Vector BlockSystem::AssembleRhs()
     {
-      RhsVector = Vector(Offset.back() + Constraints.size());
+      Vector Rhs(Offset.back() + Constraints.size());
 
       for(size_t b=0; b<RhsBlocks.size(); ++b)
         {
@@ -205,7 +201,7 @@ namespace chemfem{
 
           const Vector& F = form.LoadVector();
           for(size_t k=0; k<F.size(); ++k)
-            RhsVector[Offset[RhsBlocks[b].row] + k] += F[k];
+            Rhs[Offset[RhsBlocks[b].row] + k] += F[k];
         }
 
       // The prescribed values move to the right hand side, A_fd g_d of every block
@@ -217,14 +213,16 @@ namespace chemfem{
           const Vector& lifting = Blocks[b].form->DirichletRhs();
 
           for(size_t k=0; k<lifting.size(); ++k)
-            RhsVector[Offset[Blocks[b].row] + k] -= lifting[k];
+            Rhs[Offset[Blocks[b].row] + k] -= lifting[k];
         }
 
       for(size_t d=0; d<FixedDofs.size(); ++d)
-        RhsVector[FixedDofs[d]] = 0.;
+        Rhs[FixedDofs[d]] = 0.;
+
+      return Rhs;
     }
 
-    void BlockSystem::AddToRhs(size_t i, const Vector& v)
+    void BlockSystem::AddToRhs(Vector& Rhs, size_t i, const Vector& v) const
     {
       if(i >= Spaces.size() || v.size() != Spaces[i]->NrFreeDof())
         {
@@ -234,7 +232,7 @@ namespace chemfem{
         }
 
       for(size_t k=0; k<v.size(); ++k)
-        RhsVector[Offset[i] + k] += v[k];
+        Rhs[Offset[i] + k] += v[k];
     }
 
     Vector BlockSystem::FreeDof(size_t i, const Vector& X) const
@@ -247,22 +245,17 @@ namespace chemfem{
       return free;
     }
 
-    Vector BlockSystem::Solve(bool IterativeRefinement)
+    Vector BlockSystem::Solve(const Vector& Rhs)
     {
       if(!LU)
-        LU = std::make_unique<DirectSolver>(Matrix, IterativeRefinement);
+        LU = std::make_unique<DirectSolver>(Matrix, false);
 
-      return LU->Solve(RhsVector);
+      return LU->Solve(Rhs);
     }
 
     SparseMatrix& BlockSystem::SystemMatrix()
     {
       return Matrix;
-    }
-
-    Vector& BlockSystem::Rhs()
-    {
-      return RhsVector;
     }
 
     size_t BlockSystem::NrDof() const

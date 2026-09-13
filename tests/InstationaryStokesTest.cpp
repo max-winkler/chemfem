@@ -54,29 +54,6 @@ bool Nowhere(const Coordinate&)
   return false;
 }
 
-/// (u, v)/tau + nu (grad u, grad v), the part of a time step acting on the new velocity
-struct ViscousStep
-{
-  double nu, tau;
-
-  double operator()(const VectorValues& u, const VectorValues& v) const
-  {
-    return dot(u.value, v.value)/tau + nu*ddot(u.gradient, v.gradient);
-  }
-};
-
-/// -(div u, q). The transposed block gives the pressure term -(p, div v).
-double Divergence(const VectorValues& u, const PointValues& q)
-{
-  return -u.divergence * q.value;
-}
-
-/// (u, v), the mass term that carries the old velocity to the right hand side
-double Mass(const VectorValues& u, const VectorValues& v)
-{
-  return dot(u.value, v.value);
-}
-
 /// Largest speed in the degrees of freedom of a vector valued function
 double MaxSpeed(const FEFunction& u)
 {
@@ -111,9 +88,16 @@ int main()
   g.Set(Inflow, InflowBoundary);
 
   BilinearForm A(V, V), B(V, Q), M(V, V);
-  A.AddVolumeTerm(ViscousStep{nu, tau});
-  B.AddVolumeTerm(Divergence);
-  M.AddVolumeTerm(Mass);
+
+  A.AddVolumeTerm([nu, tau](const VectorValues& u, const VectorValues& v)
+                  { return dot(u.value, v.value)/tau + nu*ddot(u.gradient, v.gradient); });
+
+  // The transposed block gives the pressure term -(p, div v)
+  B.AddVolumeTerm([](const VectorValues& u, const PointValues& q)
+                  { return -u.divergence * q.value; });
+
+  M.AddVolumeTerm([](const VectorValues& u, const VectorValues& v)
+                  { return dot(u.value, v.value); });
 
   BlockSystem S({V, Q});
   S.AddBlock(0, 0, A);
@@ -122,16 +106,17 @@ int main()
   S.SetDirichletValues(0, g);
   S.AssembleMatrix();
 
-  // The old velocity enters the right hand side as (1/tau) M u_old. Assembling the mass
-  // matrix once and multiplying is far cheaper than integrating u_old in every step. Its
-  // Dirichlet columns hold the prescribed values, so the fluid starts at rest inside and with
-  // the inflow profile on the boundary.
+  // The old velocity enters the right hand side as (1/tau) M u_old, its Dirichlet columns
+  // hold the inflow profile
   M.SetDirichletValues(g);
   M.Assemble();
 
+  // Constant in time, only the mass term is added in each step
+  const Vector Rhs0 = S.AssembleRhs();
+
   FEFunction U(V), P(Q);
 
-  // The free degrees of freedom of the velocity of the previous step
+  // Velocity of the previous step, free DOFs only
   Vector UFree(V.NrFreeDof());
 
   std::cout << "Channel with a cylinder, " << mesh.NrCells() << " cells, "
@@ -144,12 +129,10 @@ int main()
 
   for(int n=1; n<=steps; ++n)
     {
-      S.AssembleRhs();
-      S.AddToRhs(0, (1./tau) * (M.SystemMatrix()*UFree + M.DirichletRhs()));
+      Vector Rhs = Rhs0;
+      S.AddToRhs(Rhs, 0, (1./tau) * (M.SystemMatrix()*UFree + M.DirichletRhs()));
 
-      // Many right hand sides with the same matrix, so the iterative refinement of UMFPACK is
-      // not worth its three-fold cost here
-      const Vector X = S.Solve(false);
+      const Vector X = S.Solve(Rhs);
 
       UFree = S.FreeDof(0, X);
 
@@ -171,8 +154,7 @@ int main()
 
   const double speed = MaxSpeed(U);
 
-  // The inflow reaches 0.3, the fluid accelerates beside the cylinder, so the maximum has to
-  // settle somewhat above that
+  // The inflow reaches 0.3 and the fluid accelerates beside the cylinder
   if(!(speed > 0.3 && speed < 1.))
     {
       std::cerr << "ERROR: the flow does not develop as expected, maximum speed " << speed

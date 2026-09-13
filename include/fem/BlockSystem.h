@@ -26,9 +26,9 @@ namespace chemfem{
      *   S.AddBlock(2, 0, Bx);  S.AddTransposedBlock(0, 2, Bx);
      *   S.AddRhs(0, Fx);
      *   S.FixDof(2);
-     *   S.Assemble();
+     *   S.AssembleMatrix();
      *
-     *   FEFunction Ux = S.Extract(0, S.Solve());
+     *   FEFunction Ux = S.Extract(0, S.Solve(S.AssembleRhs()));
      * \endcode
      *
      * The unknowns are numbered block by block. The block (i,j) couples the test functions
@@ -76,38 +76,35 @@ namespace chemfem{
        */
       void AddMeanValueConstraint(size_t i);
 
-      /// Assembles the matrix and the right hand side
-      void Assemble();
-
-      /// Assembles only the matrix, with its blocks and constraints
-      void AssembleMatrix();
+      /// Assembles the matrix from its blocks and constraints
+      SparseMatrix& AssembleMatrix();
 
       /**
-       * Adds a vector to the right hand side of the block i, after it has been assembled.
-       * Used for contributions that are not an integral over the mesh, e.g. the mass matrix
-       * times the solution of the previous time step.
+       * Assembles the right hand side from the linear forms and the Dirichlet lifting. It does
+       * not depend on the matrix, so with data that does not change in time it can be computed
+       * once outside a time loop.
        */
-      void AddToRhs(size_t i, const Vector&);
+      Vector AssembleRhs();
+
+      /**
+       * Adds a vector to the block i of a right hand side. Used for contributions that are not
+       * an integral over the mesh, e.g. the mass matrix times the solution of the previous
+       * time step.
+       */
+      void AddToRhs(Vector&, size_t i, const Vector&) const;
 
       /// The free degrees of freedom of the unknown i, taken from the solution of the system
       Vector FreeDof(size_t i, const Vector&) const;
 
       /**
-       * Assembles only the right hand side. In a time stepping scheme with a constant step
-       * size the matrix stays the same, and only this has to be redone in each step.
+       * Solves the system for the given right hand side with UMFPACK, without its iterative
+       * refinement. The factorization is computed on the first call and kept until the matrix
+       * is assembled again, so further right hand sides only cost a forward and a backward
+       * substitution. For an ill conditioned system, build a DirectSolver from SystemMatrix().
        */
-      void AssembleRhs();
-
-      /**
-       * Solves the assembled system with UMFPACK. The factorization is computed on the first
-       * call and kept until the matrix is assembled again, so further right hand sides only
-       * cost a forward and a backward substitution.
-       */
-      Vector Solve(bool IterativeRefinement = true);
+      Vector Solve(const Vector&);
 
       SparseMatrix& SystemMatrix();
-
-      Vector& Rhs();
 
       /// Number of FE unknowns, without the Lagrange multipliers of the constraints
       size_t NrDof() const;
@@ -147,7 +144,6 @@ namespace chemfem{
       std::vector<const DirichletValues*> Values;
 
       SparseMatrix Matrix;
-      Vector RhsVector;
 
       std::unique_ptr<chemfem::linalg::DirectSolver> LU;
     };

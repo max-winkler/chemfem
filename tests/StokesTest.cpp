@@ -110,9 +110,9 @@ int main()
       S.AddTransposedBlock(0, 1, B);
       S.AddRhs(0, F);
       S.FixDof(1);
-      S.Assemble();
+      S.AssembleMatrix();
 
-      const Vector X = S.Solve();
+      const Vector X = S.Solve(S.AssembleRhs());
 
       FEFunction U = S.Extract(0, X);
       FEFunction P = S.Extract(1, X);
