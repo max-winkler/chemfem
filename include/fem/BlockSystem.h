@@ -83,6 +83,16 @@ namespace chemfem{
       void AssembleMatrix();
 
       /**
+       * Adds a vector to the right hand side of the block i, after it has been assembled.
+       * Used for contributions that are not an integral over the mesh, e.g. the mass matrix
+       * times the solution of the previous time step.
+       */
+      void AddToRhs(size_t i, const Vector&);
+
+      /// The free degrees of freedom of the unknown i, taken from the solution of the system
+      Vector FreeDof(size_t i, const Vector&) const;
+
+      /**
        * Assembles only the right hand side. In a time stepping scheme with a constant step
        * size the matrix stays the same, and only this has to be redone in each step.
        */

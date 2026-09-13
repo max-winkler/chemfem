@@ -224,6 +224,29 @@ namespace chemfem{
         RhsVector[FixedDofs[d]] = 0.;
     }
 
+    void BlockSystem::AddToRhs(size_t i, const Vector& v)
+    {
+      if(i >= Spaces.size() || v.size() != Spaces[i]->NrFreeDof())
+        {
+          std::cerr << "Error: The vector added to the right hand side of the block " << i
+                    << " has the wrong length.\n";
+          return;
+        }
+
+      for(size_t k=0; k<v.size(); ++k)
+        RhsVector[Offset[i] + k] += v[k];
+    }
+
+    Vector BlockSystem::FreeDof(size_t i, const Vector& X) const
+    {
+      Vector free(Spaces[i]->NrFreeDof());
+
+      for(size_t k=0; k<free.size(); ++k)
+        free[k] = X[Offset[i] + k];
+
+      return free;
+    }
+
     Vector BlockSystem::Solve(bool IterativeRefinement)
     {
       if(!LU)

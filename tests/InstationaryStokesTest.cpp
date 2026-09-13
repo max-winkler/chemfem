@@ -71,88 +71,27 @@ double Divergence(const VectorValues& u, const PointValues& q)
   return -u.divergence * q.value;
 }
 
-/// (u_old, v)/tau, with the velocity of the previous step as an FE function
-struct OldVelocity
+/// (u, v), the mass term that carries the old velocity to the right hand side
+double Mass(const VectorValues& u, const VectorValues& v)
 {
-  const FEFunction& Uold;
-  double tau;
+  return dot(u.value, v.value);
+}
 
-  double operator()(const QuadPoint& p, const VectorValues& v) const
-  {
-    return dot(Uold.VectorValue(p), v.value)/tau;
-  }
-};
-
-/**
- * The implicit Euler method for the Stokes equations with the viscosity nu and the step size
- * tau.
- */
-class ImplicitEuler
+/// Largest speed in the degrees of freedom of a vector valued function
+double MaxSpeed(const FEFunction& u)
 {
-public:
-  ImplicitEuler(Mesh& mesh, double nu, double tau)
-    : P2(2), P1(1), Velocity(P2, 2), V(mesh, Velocity, NoOutflow), Q(mesh, P1, Nowhere),
-      U(V), P(Q), g(V), A(V, V), B(V, Q), F(V), S({V, Q}), tau(tau)
-  {
-    g.Set(Inflow, InflowBoundary);
-
-    A.AddVolumeTerm(ViscousStep{nu, tau});
-    B.AddVolumeTerm(Divergence);
-    F.AddVolumeTerm(OldVelocity{U, tau});
-
-    S.AddBlock(0, 0, A);
-    S.AddBlock(1, 0, B);
-    S.AddTransposedBlock(0, 1, B);
-    S.AddRhs(0, F);
-    S.SetDirichletValues(0, g);
-
-    S.AssembleMatrix();
-  }
-
-  void Step()
-  {
-    S.AssembleRhs();
-
-    // Many right hand sides with the same matrix, so the iterative refinement of UMFPACK is
-    // not worth its three-fold cost here
-    const Vector X = S.Solve(false);
-
-    U = S.Extract(0, X);
-    P = S.Extract(1, X);
-  }
-
-  /// Largest speed in the degrees of freedom
-  double MaxSpeed() const
-  {
-    double speed = 0.;
-    for(size_t k=0; k+1<V.NrDof(); k+=2)
-      speed = std::max(speed, hypot(U[k], U[k+1]));
-    return speed;
-  }
-
-  size_t NrDof() const { return S.NrDof(); }
-
-  LagrangeElement P2, P1;
-  ProductElement Velocity;
-  FESpace V, Q;
-
-  FEFunction U, P;
-
-private:
-  DirichletValues g;
-
-  BilinearForm A, B;
-  LinearForm F;
-  BlockSystem S;
-
-  const double tau;
-};
+  double speed = 0.;
+  for(size_t k=0; k+1<u.GetFESpace().NrDof(); k+=2)
+    speed = std::max(speed, hypot(u[k], u[k+1]));
+  return speed;
+}
 
 int main()
 {
   const double nu = 0.01;
   const double T = 2.;
   const int steps = 100;
+  const double tau = T/steps;
 
   Mesh mesh("meshes/cylinder.msh");
 
@@ -163,19 +102,59 @@ int main()
       return 1;
     }
 
-  ImplicitEuler Euler(mesh, nu, T/steps);
+  LagrangeElement P2(2), P1(1);
+  ProductElement Velocity(P2, 2);
+
+  FESpace V(mesh, Velocity, NoOutflow), Q(mesh, P1, Nowhere);
+
+  DirichletValues g(V);
+  g.Set(Inflow, InflowBoundary);
+
+  BilinearForm A(V, V), B(V, Q), M(V, V);
+  A.AddVolumeTerm(ViscousStep{nu, tau});
+  B.AddVolumeTerm(Divergence);
+  M.AddVolumeTerm(Mass);
+
+  BlockSystem S({V, Q});
+  S.AddBlock(0, 0, A);
+  S.AddBlock(1, 0, B);
+  S.AddTransposedBlock(0, 1, B);
+  S.SetDirichletValues(0, g);
+  S.AssembleMatrix();
+
+  // The old velocity enters the right hand side as (1/tau) M u_old. Assembling the mass
+  // matrix once and multiplying is far cheaper than integrating u_old in every step. Its
+  // Dirichlet columns hold the prescribed values, so the fluid starts at rest inside and with
+  // the inflow profile on the boundary.
+  M.SetDirichletValues(g);
+  M.Assemble();
+
+  FEFunction U(V), P(Q);
+
+  // The free degrees of freedom of the velocity of the previous step
+  Vector UFree(V.NrFreeDof());
 
   std::cout << "Channel with a cylinder, " << mesh.NrCells() << " cells, "
-            << Euler.NrDof() << " unknowns, " << steps << " steps up to t = " << T
+            << S.NrDof() << " unknowns, " << steps << " steps up to t = " << T
             << std::endl;
 
   VtkOutput out(mesh);
-  out.AddVector("u", Euler.U);
-  out.AddScalar("p", Euler.P);
+  out.AddVector("u", U);
+  out.AddScalar("p", P);
 
   for(int n=1; n<=steps; ++n)
     {
-      Euler.Step();
+      S.AssembleRhs();
+      S.AddToRhs(0, (1./tau) * (M.SystemMatrix()*UFree + M.DirichletRhs()));
+
+      // Many right hand sides with the same matrix, so the iterative refinement of UMFPACK is
+      // not worth its three-fold cost here
+      const Vector X = S.Solve(false);
+
+      UFree = S.FreeDof(0, X);
+
+      U = S.Extract(0, X);
+      P = S.Extract(1, X);
 
       if(n % 2 == 0)
         {
@@ -187,10 +166,10 @@ int main()
 
       if(n % 20 == 0)
         std::cout << std::fixed << std::setprecision(2) << "  t = " << n*T/steps
-                  << "   max speed " << std::setprecision(4) << Euler.MaxSpeed() << std::endl;
+                  << "   max speed " << std::setprecision(4) << MaxSpeed(U) << std::endl;
     }
 
-  const double speed = Euler.MaxSpeed();
+  const double speed = MaxSpeed(U);
 
   // The inflow reaches 0.3, the fluid accelerates beside the cylinder, so the maximum has to
   // settle somewhat above that
