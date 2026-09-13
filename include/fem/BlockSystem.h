@@ -54,6 +54,14 @@ namespace chemfem{
       void AddRhs(size_t i, LinearForm&);
 
       /**
+       * Prescribes the Dirichlet values of the unknown i. They enter the right hand side as
+       * the lifting of the blocks in the column i, and Extract puts them into the solution.
+       * A form that is used in several columns cannot carry values, because it holds only
+       * one set of them. Use one form per column in that case.
+       */
+      void SetDirichletValues(size_t i, const DirichletValues&);
+
+      /**
        * Fixes one degree of freedom of the unknown i to zero, e.g. to determine the constant
        * of a pressure. This keeps the matrix sparse, unlike AddMeanValueConstraint, and the
        * solution is normalized afterwards with FEFunction::SubtractMean.
@@ -124,6 +132,9 @@ namespace chemfem{
 
       /// Indices of the unknowns fixed by FixDof
       std::vector<size_t> FixedDofs;
+
+      /// The prescribed values of each unknown, empty where there are none
+      std::vector<const DirichletValues*> Values;
 
       SparseMatrix Matrix;
       Vector RhsVector;

@@ -29,6 +29,8 @@ namespace chemfem{
 
       for(size_t i=0; i<this->Spaces.size(); ++i)
         Offset[i+1] = Offset[i] + this->Spaces[i]->NrFreeDof();
+
+      Values.assign(this->Spaces.size(), nullptr);
     }
 
     void BlockSystem::AddBlock(size_t i, size_t j, BilinearForm& form)
@@ -71,6 +73,18 @@ namespace chemfem{
       RhsBlocks.push_back(RhsBlock{i, &form});
     }
 
+    void BlockSystem::SetDirichletValues(size_t i, const DirichletValues& g)
+    {
+      if(i >= Spaces.size() || &g.GetFESpace() != Spaces[i])
+        {
+          std::cerr << "Error: The Dirichlet values for the unknown " << i
+                    << " have to belong to its space.\n";
+          return;
+        }
+
+      Values[i] = &g;
+    }
+
     void BlockSystem::FixDof(size_t i, size_t dof)
     {
       if(i >= Spaces.size() || dof >= Spaces[i]->NrFreeDof())
@@ -101,6 +115,32 @@ namespace chemfem{
       LU.reset();
 
       SparseMatrixInserter Ins(Matrix);
+
+      // The values prescribed for an unknown belong to the forms of its column
+      for(size_t b=0; b<Blocks.size(); ++b)
+        {
+          if(!Values[Blocks[b].col])
+            continue;
+
+          if(Blocks[b].transposed)
+            {
+              std::cerr << "Error: Prescribed values in the transposed block ("
+                        << Blocks[b].row << "," << Blocks[b].col << ") are not supported.\n";
+              continue;
+            }
+
+          Blocks[b].form->SetDirichletValues(*Values[Blocks[b].col]);
+        }
+
+      for(size_t a=0; a<Blocks.size(); ++a)
+        for(size_t b=a+1; b<Blocks.size(); ++b)
+          if(Blocks[a].form == Blocks[b].form && !Blocks[a].transposed && !Blocks[b].transposed
+             && Blocks[a].col != Blocks[b].col
+             && (Values[Blocks[a].col] || Values[Blocks[b].col]))
+            std::cerr << "Error: The bilinear form of the blocks (" << Blocks[a].row << ","
+                      << Blocks[a].col << ") and (" << Blocks[b].row << "," << Blocks[b].col
+                      << ") carries prescribed values, but it can hold only one set. Use one "
+                      << "form per column.\n";
 
       // Every form is assembled once and inserted into all blocks it appears in
       std::vector<BilinearForm*> Forms;
@@ -168,6 +208,18 @@ namespace chemfem{
             RhsVector[Offset[RhsBlocks[b].row] + k] += F[k];
         }
 
+      // The prescribed values move to the right hand side, A_fd g_d of every block
+      for(size_t b=0; b<Blocks.size(); ++b)
+        {
+          if(Blocks[b].transposed || !Values[Blocks[b].col])
+            continue;
+
+          const Vector& lifting = Blocks[b].form->DirichletRhs();
+
+          for(size_t k=0; k<lifting.size(); ++k)
+            RhsVector[Offset[Blocks[b].row] + k] -= lifting[k];
+        }
+
       for(size_t d=0; d<FixedDofs.size(); ++d)
         RhsVector[FixedDofs[d]] = 0.;
     }
@@ -203,7 +255,11 @@ namespace chemfem{
         FreeDof[k] = X[Offset[i] + k];
 
       FEFunction u(*Spaces[i]);
-      u.CreateFunction(FreeDof);
+
+      if(Values[i])
+        u.CreateFunction(FreeDof, *Values[i]);
+      else
+        u.CreateFunction(FreeDof);
 
       return u;
     }

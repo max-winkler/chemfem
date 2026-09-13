@@ -10,7 +10,7 @@ using namespace chemfem::mesh;
 
 int main()
 {
-  Mesh mesh("tests/mesh.msh");
+  Mesh mesh("meshes/simple.msh");
 
   std::cout << mesh.NrNodes() << " nodes, " << mesh.NrCells() << " cells, "
             << mesh.NrEdges() << " edges" << std::endl;

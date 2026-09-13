@@ -8,4 +8,3 @@ Make.inc
 compile_commands.json
 tests/*Test
 tests/LocalRefinement
-meshes/*.msh

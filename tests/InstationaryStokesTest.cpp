@@ -2,67 +2,55 @@
 #include <iomanip>
 #include <sstream>
 #include <cmath>
-#include <memory>
 
 #include "fem/BlockSystem.h"
+#include "fem/DirichletValues.h"
 #include "fem/LagrangeElement.h"
 #include "fem/VtkOutput.h"
-#include "mesh/UnitSquareMesh.h"
-#include "linalg/DirectSolver.h"
+#include "mesh/Mesh.h"
 
 using namespace chemfem::fem;
 using namespace chemfem::linalg;
 using namespace chemfem::mesh;
 
-// Stirred fluid in a closed box, described by the instationary Stokes equations
+// Flow through a channel with a cylinder, read from a mesh of gmsh. The geometry is the one
+// of the DFG benchmark: a channel of 2.2 x 0.41 with a cylinder of radius 0.05 around
+// (0.2, 0.2), see meshes/cylinder.geo.
 //
-//   du/dt - nu Laplace(u) + grad(p) = f,  div(u) = 0,  u = 0 on the walls,
+//   du/dt - nu Laplace(u) + grad(p) = 0,  div(u) = 0
 //
-// with Taylor-Hood P2/P1 in space and the implicit Euler method in time. Each step solves
+// with Taylor-Hood P2/P1 in space and the implicit Euler method in time. The fluid starts at
+// rest and the parabolic inflow profile is switched on at t = 0. Walls and cylinder are no
+// slip, at the outflow nothing is prescribed. That is the natural condition of the weak
+// form, and it also determines the pressure, so no normalization is needed there.
 //
-//   (u, v)/tau + nu (grad u, grad v) - (p, div v) = (f, v) + (u_old, v)/tau
-//                                     -(div u, q) = 0
-//
-// whose matrix does not change, so it is factorized only once.
-//
-// The fluid starts at rest and is driven by two stirrers, forces with the profile of a
-// Gaussian vortex, which circle around the center of the box. The low viscosity lets the
-// fluid keep its momentum, so the whole box is spun up over the revolutions.
-//
-// Every second step is written to stokes_flow_0001.vtk, stokes_flow_0002.vtk, ... Open
-// the series in ParaView and show u e.g. with the Surface LIC representation.
+// Every second step is written to cylinder_0001.vtk, cylinder_0002.vtk, ...
 
-/**
- * Force of the two stirrers. The functor holds a reference to the time of the time loop,
- * so the copies the linear forms keep of it always see the current time.
- */
-struct Stirring
+const double Length = 2.2;
+const double Height = 0.41;
+const double MaxInflow = 0.3;
+
+/// Parabolic profile of the inflow, its mean value is 2/3 of MaxInflow
+double Inflow(const Coordinate& p)
 {
-  const double& t;
-  int component;
+  return 4.*MaxInflow*p.y*(Height - p.y)/(Height*Height);
+}
 
-  double operator()(const Coordinate& p) const
-  {
-    const double width = 0.005;
+/// Everything except the outflow on the right, so walls, cylinder and inflow
+bool NoOutflow(const Coordinate& p)
+{
+  return p.x < Length - 1.e-8;
+}
 
-    double f = 0.;
+bool InflowBoundary(const Coordinate& p)
+{
+  return p.x < 1.e-8;
+}
 
-    // Two stirrers on opposite sides of a circle of radius 0.25, one revolution per time unit
-    for(int s=0; s<2; ++s)
-      {
-        const double angle = 2.*M_PI*t + s*M_PI;
-        const double dx = p.x - (0.5 + 0.25*cos(angle));
-        const double dy = p.y - (0.5 + 0.25*sin(angle));
-
-        const double bump = exp(-(dx*dx + dy*dy)/width);
-
-        // The force is the curl (d/dy, -d/dx) of the bump, a counterclockwise vortex
-        f += component == 0 ? -2.*dy/width*bump : 2.*dx/width*bump;
-      }
-
-    return f;
-  }
-};
+bool Nowhere(const Coordinate&)
+{
+  return false;
+}
 
 /// (u, v)/tau + nu (grad u, grad v), the part of a time step acting on the new velocity
 struct ViscousStep
@@ -91,64 +79,56 @@ struct OldVelocity
   }
 };
 
-bool Nowhere(const Coordinate&)
-{
-  return false;
-}
-
 /**
- * The implicit Euler method for the Stokes equations with the viscosity nu and the step
- * size tau. The fluid starts at rest, each call of Step() advances the time t by tau.
+ * The implicit Euler method for the Stokes equations with the viscosity nu and the step size
+ * tau. The velocity components need one bilinear form each, because they carry different
+ * prescribed values.
  */
 class ImplicitEuler
 {
 public:
-  ImplicitEuler(Mesh& mesh, double nu, double tau, double& t,
-                ScalarFunction fx, ScalarFunction fy)
-    : P2(2), P1(1), V(mesh, P2), Q(mesh, P1, Nowhere), Ux(V), Uy(V), P(Q),
-      A(V, V), Bx(V, Q), By(V, Q), Fx(V), Fy(V),
-      S({V, V, Q}), tau(tau), t(t)
+  ImplicitEuler(Mesh& mesh, double nu, double tau)
+    : P2(2), P1(1), V(mesh, P2, NoOutflow), Q(mesh, P1, Nowhere),
+      Ux(V), Uy(V), P(Q), gx(V), gy(V),
+      Ax(V, V), Ay(V, V), Bx(V, Q), By(V, Q), Fx(V), Fy(V),
+      S({V, V, Q}), tau(tau)
   {
-    A.AddVolumeTerm(ViscousStep{nu, tau});
+    gx.Set(Inflow, InflowBoundary);      // gy stays zero everywhere
 
-    // -(div u, q), split into the two directions
+    Ax.AddVolumeTerm(ViscousStep{nu, tau});
+    Ay.AddVolumeTerm(ViscousStep{nu, tau});
+
     Bx.AddVolumeTerm(DivergenceX);
     By.AddVolumeTerm(DivergenceY);
 
-    Fx.AddVolumeForce(fx);
     Fx.AddVolumeTerm(OldVelocity{Ux, tau});
-    Fy.AddVolumeForce(fy);
     Fy.AddVolumeTerm(OldVelocity{Uy, tau});
 
-    S.AddBlock(0, 0, A);
-    S.AddBlock(1, 1, A);
+    S.AddBlock(0, 0, Ax);
+    S.AddBlock(1, 1, Ay);
     S.AddBlock(2, 0, Bx);
     S.AddBlock(2, 1, By);
     S.AddTransposedBlock(0, 2, Bx);
     S.AddTransposedBlock(1, 2, By);
     S.AddRhs(0, Fx);
     S.AddRhs(1, Fy);
-    S.FixDof(2);
+    S.SetDirichletValues(0, gx);
+    S.SetDirichletValues(1, gy);
 
     S.AssembleMatrix();
   }
 
   void Step()
   {
-    t += tau;
-
     S.AssembleRhs();
 
-    // Many right hand sides with the same matrix, so the iterative refinement of UMFPACK
-    // is not worth its three-fold cost here
+    // Many right hand sides with the same matrix, so the iterative refinement of UMFPACK is
+    // not worth its three-fold cost here
     const Vector X = S.Solve(false);
 
     Ux = S.Extract(0, X);
     Uy = S.Extract(1, X);
     P = S.Extract(2, X);
-
-    // The fixed DOF leaves the pressure with an arbitrary constant
-    P.SubtractMean();
   }
 
   /// Largest speed in the degrees of freedom
@@ -160,35 +140,43 @@ public:
     return speed;
   }
 
+  size_t NrDof() const { return S.NrDof(); }
+
   LagrangeElement P2, P1;
   FESpace V, Q;
 
   FEFunction Ux, Uy, P;
 
 private:
-  BilinearForm A, Bx, By;
+  DirichletValues gx, gy;
+
+  BilinearForm Ax, Ay, Bx, By;
   LinearForm Fx, Fy;
   BlockSystem S;
 
   const double tau;
-  double& t;
 };
 
 int main()
 {
   const double nu = 0.01;
   const double T = 2.;
-  const int steps = 200;
+  const int steps = 100;
 
-  Mesh mesh = UnitSquareMesh(3);
-  for(int i=0; i<8; ++i)
-    mesh.RefineUniform();
+  Mesh mesh("meshes/cylinder.msh");
 
-  double t = 0.;
-  ImplicitEuler Euler(mesh, nu, T/steps, t, Stirring{t, 0}, Stirring{t, 1});
+  if(mesh.NrCells() == 0)
+    {
+      std::cerr << "ERROR: the mesh could not be read. Generate it with "
+                << "gmsh -2 meshes/cylinder.geo -o meshes/cylinder.msh\n";
+      return 1;
+    }
 
-  std::cout << "Stirred fluid on " << mesh.NrCells() << " cells, " << steps
-            << " steps up to t = " << T << std::endl;
+  ImplicitEuler Euler(mesh, nu, T/steps);
+
+  std::cout << "Channel with a cylinder, " << mesh.NrCells() << " cells, "
+            << Euler.NrDof() << " unknowns, " << steps << " steps up to t = " << T
+            << std::endl;
 
   VtkOutput out(mesh);
   out.AddVector("u", Euler.Ux, Euler.Uy);
@@ -201,26 +189,28 @@ int main()
       if(n % 2 == 0)
         {
           std::ostringstream name;
-          name << "stokes_flow_" << std::setw(4) << std::setfill('0') << n/2 << ".vtk";
+          name << "cylinder_" << std::setw(4) << std::setfill('0') << n/2 << ".vtk";
 
           out.Write(name.str());
         }
 
       if(n % 20 == 0)
-        std::cout << std::fixed << std::setprecision(2) << "  t = " << t
-                  << "   max speed " << std::scientific << std::setprecision(3)
-                  << Euler.MaxSpeed() << std::endl;
+        std::cout << std::fixed << std::setprecision(2) << "  t = " << n*T/steps
+                  << "   max speed " << std::setprecision(4) << Euler.MaxSpeed() << std::endl;
     }
 
   const double speed = Euler.MaxSpeed();
 
-  if(!(speed > 1.e-3 && speed < 1.e3))
+  // The inflow reaches 0.3, the fluid accelerates beside the cylinder, so the maximum has to
+  // settle somewhat above that
+  if(!(speed > 0.3 && speed < 1.))
     {
-      std::cerr << "ERROR: the fluid is at rest or the simulation blows up.\n";
+      std::cerr << "ERROR: the flow does not develop as expected, maximum speed " << speed
+                << ".\n";
       return 1;
     }
 
   std::cout << "\nInstationaryStokesTest was successful, " << steps/2
-            << " frames written to stokes_flow_*.vtk.\n";
+            << " frames written to cylinder_*.vtk.\n";
   return 0;
 }
