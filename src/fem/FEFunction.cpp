@@ -1,6 +1,7 @@
 #include <cmath>
 
 #include "fem/FEFunction.h"
+#include "fem/DirichletValues.h"
 
 #include "quadrature/QuadFormula.h"
 
@@ -28,6 +29,12 @@ namespace chemfem{
     void FEFunction::CreateFunction(const Vector& FreeDof)
     {
       Data = Space->IncorporateBC(FreeDof);
+      CacheValid = NOTHING;
+    }
+
+    void FEFunction::CreateFunction(const Vector& FreeDof, const DirichletValues& g)
+    {
+      Data = Space->IncorporateBC(FreeDof, g);
       CacheValid = NOTHING;
     }
 

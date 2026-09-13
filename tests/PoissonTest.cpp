@@ -1,10 +1,11 @@
 #include <iostream>
 #include <iomanip>
-#include <fstream>
 #include <cmath>
+#include <vector>
 
 #include "fem/LinearForm.h"
 #include "fem/BilinearForm.h"
+#include "fem/DirichletValues.h"
 #include "fem/LagrangeElement.h"
 #include "fem/FEFunction.h"
 #include "fem/ErrorNorm.h"
@@ -15,111 +16,124 @@ using namespace chemfem::fem;
 using namespace chemfem::linalg;
 using namespace chemfem::mesh;
 
-double f(const Coordinate& p)
-{
-  return 32.*(p.x*(1.-p.x) + p.y*(1.-p.y)) + 16.*p.x*(1.-p.x)*p.y*(1.-p.y);
-}
-
-double c(const Coordinate& p)
-{
-  return 1.;
-}
+// -Laplace(u) + u = f  on the unit square with the exact solution u = x(1-x)(1-y). It
+// vanishes on three sides and equals x(1-x) on the bottom one, so the test also covers
+// inhomogeneous Dirichlet values.
 
 double exact(const Coordinate& p)
 {
-  return 16.*p.x*(1.-p.x)*p.y*(1.-p.y);
+  return p.x*(1.-p.x)*(1.-p.y);
 }
 
 Vector2D exact_grad(const Coordinate& p)
 {
-  Vector2D grad;
-  grad[0] = 16.*p.y*(1.-p.y)*(1.-2.*p.x); 
-  grad[1] = 16.*p.x*(1.-p.x)*(1.-2.*p.y);
-  return grad;
+  return Vector2D((1.-2.*p.x)*(1.-p.y), -p.x*(1.-p.x));
+}
+
+double f(const Coordinate& p)
+{
+  return 2.*(1.-p.y) + exact(p);
+}
+
+double One(const Coordinate&)
+{
+  return 1.;
+}
+
+/// The bottom side y = 0, where the solution does not vanish
+bool Bottom(const Coordinate& p)
+{
+  return p.y < 1.e-12;
 }
 
 int main()
 {
+  const int levels = 6;
+
   Mesh mesh = UnitSquareMesh(2);
-  
-  const int max_iter = 8;
 
   std::vector<double> l2_errors, h1_errors;
-  
-  for(int iter=0; iter<max_iter; ++iter)
-    {
-      std::cout << " Computation on level " << iter+1 << std::endl;
-      std::cout << "======================================\n";
-      
-      std::cout << "Nr of nodes : " << mesh.NrNodes() << std::endl;
-      std::cout << "Nr of cells : " << mesh.NrCells() << std::endl;
 
-      // std::cout << mesh << std::endl;
-      
+  std::cout << std::setw(8) << "Cells" << std::setw(8) << "DOFs"
+            << std::setw(12) << "L2 error" << std::setw(8) << "eoc"
+            << std::setw(12) << "H1 error" << std::setw(8) << "eoc" << std::endl;
+
+  for(int level=0; level<levels; ++level)
+    {
       LagrangeElement element(1);
       FESpace Space(mesh, element);
-      
-      std::cout << "Space:\n" << Space << std::endl;
-      
-      BilinearForm Laplace(Space, Space);
-      Laplace.AddLaplaceTerm();
-      Laplace.AddReactionTerm(c);
-      Laplace.Assemble();
 
-      SparseMatrix& Matrix = Laplace.SystemMatrix();
-      
+      DirichletValues g(Space);
+      g.Set(exact, Bottom);
+
+      BilinearForm A(Space, Space);
+      A.AddLaplaceTerm();
+      A.AddReactionTerm(One);
+      A.SetDirichletValues(g);
+      A.Assemble();
+
       LinearForm F(Space);
       F.AddVolumeForce(f);
       F.Assemble();
-  
-      Vector& Vec = F.LoadVector();
-    
-      Vector X(Matrix.Solve(Vec));
-      
-      Vector Res(Matrix*X - Vec);
-      std::cout << "Error of equation system: " << Res.Norm() << std::endl;
-      
-      FEFunction Sol(Space);
-      Sol.CreateFunction(X);
-      Sol.WriteVtk("solution.vtk");
-    
-      ErrorNorm Error;
-      Error.SetExactValue(&exact);
-      Error.SetExactGradient(&exact_grad);
-      Error.SetFEFunction(Sol);
 
-      double l2_error = Error.Compute(L2);
-      double h1_error = Error.Compute(H1_SEMI);
-      
-      l2_errors.push_back(l2_error);
-      h1_errors.push_back(h1_error);
-      
-      if(iter+1 < max_iter)
+      // The prescribed values move to the right hand side as the lifting A_fd g_d
+      const Vector Rhs = F.LoadVector() - A.DirichletRhs();
+
+      FEFunction Sol(Space);
+      Sol.CreateFunction(A.SystemMatrix().Solve(Rhs, LIN_SOLVER::UMFPACK), g);
+
+      ErrorNorm Error(exact, exact_grad);
+
+      l2_errors.push_back(Error.Compute(Sol, L2));
+      h1_errors.push_back(Error.Compute(Sol, H1_SEMI));
+
+      std::cout << std::setw(8) << mesh.NrCells() << std::setw(8) << Space.NrFreeDof()
+                << std::scientific << std::setprecision(3)
+                << std::setw(12) << l2_errors.back();
+      if(level > 0)
+        std::cout << std::fixed << std::setw(8)
+                  << log2(l2_errors[level-1]/l2_errors[level]);
+      else
+        std::cout << std::setw(8) << "";
+      std::cout << std::scientific << std::setw(12) << h1_errors.back();
+      if(level > 0)
+        std::cout << std::fixed << std::setw(8)
+                  << log2(h1_errors[level-1]/h1_errors[level]);
+      std::cout << std::endl;
+
+      if(level+1 == levels)
+        Sol.WriteVtk("poisson.vtk");
+
+      // Each call bisects every cell once, so two of them halve h
+      if(level+1 < levels)
         {
           mesh.RefineUniform();
           mesh.RefineUniform();
         }
-    }  
-
-  std::cout << std::setw(10) << "Iteration"
-	  << std::setw(20) << "L2-error" << std::setw(20) << "L2-eoc"
-	  << std::setw(20) << "H1-error" << std::setw(20) << "H1-eoc"
-	  << std::endl;
-  
-  for(int iter=0; iter<max_iter; ++iter)
-    {
-      double l2_eoc = 0., h1_eoc = 0.;
-      
-      if(iter>0)
-	{
-	  l2_eoc = log(l2_errors[iter] / l2_errors[iter-1]) / log(0.5);
-	  h1_eoc = log(h1_errors[iter] / h1_errors[iter-1]) / log(0.5);
-	}
-
-      std::cout << std::setw(10) << iter
-		<< std::setw(20) << l2_errors[iter] << std::setw(20) << l2_eoc
-		<< std::setw(20) << h1_errors[iter] << std::setw(20) << h1_eoc
-		<< std::endl;
     }
+
+  std::cout << std::defaultfloat << std::setprecision(6);
+
+  const double l2_eoc = log2(l2_errors[levels-2]/l2_errors[levels-1]);
+  const double h1_eoc = log2(h1_errors[levels-2]/h1_errors[levels-1]);
+
+  bool ok = true;
+
+  if(std::fabs(l2_eoc - 2.) > 0.15)
+    {
+      std::cerr << "ERROR: the L2 error does not converge with order 2.\n";
+      ok = false;
+    }
+
+  if(std::fabs(h1_eoc - 1.) > 0.15)
+    {
+      std::cerr << "ERROR: the H1 error does not converge with order 1.\n";
+      ok = false;
+    }
+
+  if(!ok)
+    return 1;
+
+  std::cout << "\nPoissonTest was successful.\n";
   return 0;
 }

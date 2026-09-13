@@ -11,6 +11,7 @@ namespace chemfem{
 
     // Forward declarations
     class FEFunction;
+    class DirichletValues;
 
     /**
      * This class represents a finite element space which is characterized by
@@ -20,6 +21,7 @@ namespace chemfem{
     {
       friend class BilinearForm;
       friend class LinearForm;
+      friend class DirichletValues;
 
     public:
       /**
@@ -61,6 +63,11 @@ namespace chemfem{
        * a vector where also Dirichlet DOFs are incorporated.
        */
       Vector IncorporateBC(const Vector&) const;
+
+      /**
+       * The same, with the prescribed values at the Dirichlet DOFs instead of zero.
+       */
+      Vector IncorporateBC(const Vector&, const DirichletValues&) const;
 
       /**
        * Returns a reference to the finite element mesh.

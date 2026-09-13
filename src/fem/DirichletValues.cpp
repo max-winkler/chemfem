@@ -1,0 +1,55 @@
+#include "fem/DirichletValues.h"
+
+#include "mesh/Mesh.h"
+
+using chemfem::linalg::Coordinate;
+using chemfem::linalg::Matrix2D;
+
+using chemfem::mesh::Mesh;
+using chemfem::mesh::Node;
+
+namespace chemfem{
+  namespace fem{
+
+    DirichletValues::DirichletValues(const FESpace& Space)
+      : Space(&Space), Values(Space.NrDof(), 0.) {}
+
+    void DirichletValues::Set(ScalarFunction Value, BoundaryIndicator part)
+    {
+      const Mesh& mesh = Space->GetMesh();
+      const Element& E = Space->RefElement();
+
+      for(size_t c=0; c<mesh.NrCells(); ++c)
+	{
+	  const Node& x0 = mesh.Nodes[mesh.Cells[c].LocNode[0]];
+	  const Coordinate b{x0.getX(), x0.getY()};
+
+	  const Matrix2D Jac = mesh.Jacobian(c);
+
+	  for(size_t k=0; k<Space->NrLocalDof(); ++k)
+	    {
+	      const size_t dof = Space->GetGlobalIndex(c, k);
+
+	      if(Space->Dofs.IsFree(dof))
+		continue;
+
+	      const Coordinate x = b + Jac*E.NodalPoint(k);
+
+	      if(!part || part(x))
+		Values[dof] = Value(x);
+	    }
+	}
+    }
+
+    double DirichletValues::operator[](size_t dof) const
+    {
+      return Values[dof];
+    }
+
+    const FESpace& DirichletValues::GetFESpace() const
+    {
+      return *Space;
+    }
+
+  }
+}

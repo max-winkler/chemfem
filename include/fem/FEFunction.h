@@ -10,6 +10,8 @@
 namespace chemfem{
   namespace fem{
 
+    class DirichletValues;
+
     /**
      * Each instance of this class represents a function from some finite element space.
      */
@@ -43,6 +45,11 @@ namespace chemfem{
        * The degrees of freedom at Dirichlet nodes are taken from the FE space.
        */
       void CreateFunction(const Vector&);
+
+      /**
+       * The same, with the prescribed values at the Dirichlet DOFs instead of zero.
+       */
+      void CreateFunction(const Vector&, const DirichletValues&);
 
       /**
        * Initializes the FE function by the coefficients of the degrees of freedom.

@@ -1,4 +1,5 @@
 #include "fem/FESpace.h"
+#include "fem/DirichletValues.h"
 
 namespace chemfem{
   namespace fem{
@@ -46,12 +47,18 @@ namespace chemfem{
       Vector full(Dofs.NrDof());
 
       for(size_t k=0; k<Dofs.NrDof(); ++k)
-	{
-	  if(Dofs.IsFree(k))
-	    full[k] = inner[Dofs.ReducedIndex(k)];
+	if(Dofs.IsFree(k))
+	  full[k] = inner[Dofs.ReducedIndex(k)];
 
-	  // TODO: Implement also inhomogeneous Dirichlet boundary conditions.
-	}
+      return full;
+    }
+
+    Vector FESpace::IncorporateBC(const Vector& inner, const DirichletValues& g) const
+    {
+      Vector full(Dofs.NrDof());
+
+      for(size_t k=0; k<Dofs.NrDof(); ++k)
+	full[k] = Dofs.IsFree(k) ? inner[Dofs.ReducedIndex(k)] : g[k];
 
       return full;
     }

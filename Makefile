@@ -39,6 +39,7 @@ OBJ = 	src/linalg/Vector.o \
 	src/mesh/RefDataBisection2.o \
 	src/quadrature/QuadFormula.o \
 	src/fem/FESpace.o \
+	src/fem/DirichletValues.o \
 	src/fem/DofManager.o \
 	src/fem/FEFunction.o \
 	src/fem/Element.o \

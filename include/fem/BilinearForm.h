@@ -9,6 +9,7 @@
 #include "fem/FESpace.h"
 #include "fem/FEExpression.h"
 #include "fem/PointValues.h"
+#include "fem/DirichletValues.h"
 
 using chemfem::linalg::SparseMatrix;
 
@@ -95,6 +96,13 @@ namespace chemfem{
       void AddBoundaryTerm(BoundaryIntegrand, BoundaryIndicator = nullptr);
 
       /**
+       * Sets the values prescribed on the Dirichlet boundary. They enter the right hand side
+       * as the lifting A_fd g_d, which DirichletRhs() returns after the assembly and which
+       * has to be subtracted from the load vector. Without them the values are zero.
+       */
+      void SetDirichletValues(const DirichletValues&);
+
+      /**
        * Assembles the finite element matrix.
        */
       void Assemble();
@@ -125,6 +133,12 @@ namespace chemfem{
        */
       SparseMatrix& SystemMatrix();
 
+      /**
+       * The contribution of the prescribed Dirichlet values to the right hand side. Subtract
+       * it from the load vector, it is zero without SetDirichletValues.
+       */
+      const Vector& DirichletRhs() const;
+
       const FESpace& GetTrialSpace() const;
 
       const FESpace& GetTestSpace() const;
@@ -147,7 +161,9 @@ namespace chemfem{
       const FESpace& TestSpace;
 
       SparseMatrix Matrix;
-      Vector DirichletRhs;
+      Vector DirichletTerm;
+
+      const DirichletValues* PrescribedValues = nullptr;
 
       std::vector<FEExpression> Terms;
 

@@ -27,7 +27,24 @@ namespace chemfem{
 
     BilinearForm::BilinearForm(const FESpace& TrialSpace, const FESpace& TestSpace)
       : TrialSpace(TrialSpace), TestSpace(TestSpace), Matrix(0,0),
-	DirichletRhs(TestSpace.NrDof()) {}
+	DirichletTerm(TestSpace.NrFreeDof()) {}
+
+    void BilinearForm::SetDirichletValues(const DirichletValues& g)
+    {
+      if(&g.GetFESpace() != &TrialSpace)
+        {
+          std::cerr << "Error: The Dirichlet values have to belong to the trial space of the "
+                    << "bilinear form.\n";
+          return;
+        }
+
+      PrescribedValues = &g;
+    }
+
+    const Vector& BilinearForm::DirichletRhs() const
+    {
+      return DirichletTerm;
+    }
 
     void BilinearForm::AddDiffusionTerm(ScalarFunction DiffusionCoeff)
     {
@@ -91,6 +108,8 @@ namespace chemfem{
     void BilinearForm::Assemble()
     {
       Matrix = SparseMatrix(TestSpace.NrFreeDof(), TrialSpace.NrFreeDof());
+      DirichletTerm = Vector(TestSpace.NrFreeDof());
+
       SparseMatrixInserter Ins(Matrix);
 
       Assemble(Ins, 0, 0);
@@ -387,12 +406,11 @@ namespace chemfem{
                       Ins.Insert(Places[p].row + Row, Places[p].col + Col, LocMatrix[k][l]);
                   }
               }
-            else
+            else if(PrescribedValues)
               {
-                //DOF is a Dirichlet DOF
-                // \todo Modify this when implementing inhomogeneous Dirichlet conditions
-                double Value = 0.;
-                DirichletRhs[TestDofs.ReducedIndex(DofTest)] += LocMatrix[k][l] * Value;
+                // The DOF is prescribed, so its column moves to the right hand side
+                DirichletTerm[TestDofs.ReducedIndex(DofTest)]
+                  += LocMatrix[k][l] * (*PrescribedValues)[DofTrial];
               }
           }
     }
