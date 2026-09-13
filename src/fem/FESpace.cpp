@@ -37,6 +37,11 @@ namespace chemfem{
       return Dofs.NrLocalDof();
     }
 
+    size_t FESpace::NrComponents() const
+    {
+      return refElement.NrComponents();
+    }
+
     const Element& FESpace::RefElement() const
     {
       return refElement;

@@ -4,11 +4,17 @@ namespace chemfem{
   namespace fem{
 
     Element::Element(FEType type, int degree)
-      : type(type), degree(degree), dofs_per_vertex(0), dofs_per_edge(0), dofs_interior(0) {}
+      : type(type), degree(degree), dofs_per_vertex(0), dofs_per_edge(0), dofs_interior(0),
+	nr_components(1) {}
 
     int Element::NrDof() const
     {
       return nr_dof;
+    }
+
+    int Element::NrComponents() const
+    {
+      return nr_components;
     }
 
     int Element::DofsPerVertex() const

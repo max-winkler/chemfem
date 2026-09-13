@@ -29,6 +29,31 @@ namespace chemfem{
       return table;
     }
 
+    VectorValues MapFromReference(const PointValues& ref, const Matrix2D& InvJacT,
+                                  int component)
+    {
+      const chemfem::linalg::Vector2D g = InvJacT * ref.gradient;
+
+      VectorValues v;
+
+      if(component == 0)
+        {
+          v.value = chemfem::linalg::Vector2D(ref.value, 0.);
+          v.gradient = Matrix2D(g.x, g.y, 0., 0.);
+          v.divergence = g.x;
+          v.curl = -g.y;
+        }
+      else
+        {
+          v.value = chemfem::linalg::Vector2D(0., ref.value);
+          v.gradient = Matrix2D(0., 0., g.x, g.y);
+          v.divergence = g.y;
+          v.curl = g.x;
+        }
+
+      return v;
+    }
+
     PointValues MapFromReference(const PointValues& ref, const Matrix2D& InvJacT)
     {
       PointValues v;

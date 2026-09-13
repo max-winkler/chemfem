@@ -35,6 +35,13 @@ namespace chemfem{
       typedef std::function<double(const QuadPoint& p, const EdgeGeometry& edge,
                                    const PointValues& v)> BoundaryIntegrand;
 
+      /// Integrand on a vector valued space
+      typedef std::function<double(const VectorValues& v)> VectorIntegrand;
+
+      /// The same, depending on the quadrature point as well
+      typedef std::function<double(const QuadPoint& p,
+                                   const VectorValues& v)> VectorPointIntegrand;
+
       /**
        * Constructor which associates the linear form with a function space.
        */
@@ -57,6 +64,12 @@ namespace chemfem{
 
       /// Adds the integral of the integrand over all cells
       void AddVolumeTerm(PointIntegrand);
+
+      /// Adds the integral of the integrand over all cells
+      void AddVolumeTerm(VectorIntegrand);
+
+      /// Adds the integral of the integrand over all cells
+      void AddVolumeTerm(VectorPointIntegrand);
 
       /**
        * Adds the integral of the integrand over the part of the boundary where the
@@ -100,6 +113,8 @@ namespace chemfem{
 
       std::vector<Integrand> VolumeTerms;
       std::vector<PointIntegrand> PointVolumeTerms;
+      std::vector<VectorIntegrand> VectorTerms;
+      std::vector<VectorPointIntegrand> VectorPointTerms;
       std::vector<BoundaryTerm> BoundaryTerms;
 
       /**

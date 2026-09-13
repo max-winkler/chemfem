@@ -29,6 +29,7 @@ namespace chemfem{
       const size_t nv = element.DofsPerVertex();
       const size_t ne = element.DofsPerEdge();
       const size_t ni = element.DofsInterior();
+      const size_t nc = element.NrComponents();
 
       const size_t edge_offset = mesh.NrNodes()*nv;
       const size_t interior_offset = edge_offset + mesh.NrEdges()*ne;
@@ -54,7 +55,13 @@ namespace chemfem{
 	      const bool reversed = (mesh.Edges[e].Node0 != cell.LocNode[k]);
 
 	      for(size_t j=0; j<ne; ++j)
-		*local++ = edge_offset + e*ne + (reversed ? ne-1-j : j);
+		{
+		  // Only the scalar DOFs along the edge are mirrored, the components of one
+		  // of them keep their order
+		  const size_t mirrored = (ne/nc - 1 - j/nc)*nc + j%nc;
+
+		  *local++ = edge_offset + e*ne + (reversed ? mirrored : j);
+		}
 	    }
 
 	  for(size_t j=0; j<ni; ++j)

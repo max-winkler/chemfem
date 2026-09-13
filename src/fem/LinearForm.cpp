@@ -45,6 +45,24 @@ namespace chemfem{
       PointVolumeTerms.push_back(term);
     }
 
+    void LinearForm::AddVolumeTerm(VectorIntegrand term)
+    {
+      if(TestSpace.NrComponents() > 1)
+	VectorTerms.push_back(term);
+      else
+	std::cerr << "Error: The integrand expects a vector valued space, but the test space "
+		  << "is scalar.\n";
+    }
+
+    void LinearForm::AddVolumeTerm(VectorPointIntegrand term)
+    {
+      if(TestSpace.NrComponents() > 1)
+	VectorPointTerms.push_back(term);
+      else
+	std::cerr << "Error: The integrand expects a vector valued space, but the test space "
+		  << "is scalar.\n";
+    }
+
     void LinearForm::AddBoundaryTerm(Integrand term, BoundaryIndicator part)
     {
       BoundaryTerms.push_back(BoundaryTerm{term, nullptr, part});
@@ -81,7 +99,10 @@ namespace chemfem{
 
       double *TestFuncValue = new double[NrTest];
 
-      const bool HasIntegrands = !VolumeTerms.empty() || !PointVolumeTerms.empty();
+      const bool ScalarTerms = !VolumeTerms.empty() || !PointVolumeTerms.empty();
+      const bool VectorValued = !VectorTerms.empty() || !VectorPointTerms.empty();
+
+      const bool HasIntegrands = ScalarTerms || VectorValued;
 
       // The basis functions on the reference element in the quadrature points, the same
       // for every cell
@@ -90,6 +111,7 @@ namespace chemfem{
 	RefTest = TabulateReference(TestSpace.RefElement(), Xi, Eta);
 
       std::vector<PointValues> TestValues(NrTest);
+      std::vector<VectorValues> TestVectors(NrTest);
 
       // Iterate over all cells
       int CellInd;
@@ -152,19 +174,35 @@ namespace chemfem{
 	      if(HasIntegrands)
 		{
 		  for(int k=0; k<NrTest; ++k)
-		    TestValues[k] = MapFromReference(RefTest[q*NrTest + k], InvJac);
+		    {
+		      const PointValues& ref = RefTest[q*NrTest + k];
+
+		      if(ScalarTerms)
+			TestValues[k] = MapFromReference(ref, InvJac);
+		      if(VectorValued)
+			TestVectors[k] = MapFromReference(ref, InvJac,
+							  TestSpace.RefElement().Component(k));
+		    }
 
 		  for(size_t t=0; t<VolumeTerms.size(); ++t)
 		    for(int k=0; k<NrTest; ++k)
 		      LocVec[k] += (*Wq) * VolumeTerms[t](TestValues[k]) * det;
 
-		  if(!PointVolumeTerms.empty())
+		  for(size_t t=0; t<VectorTerms.size(); ++t)
+		    for(int k=0; k<NrTest; ++k)
+		      LocVec[k] += (*Wq) * VectorTerms[t](TestVectors[k]) * det;
+
+		  if(!PointVolumeTerms.empty() || !VectorPointTerms.empty())
 		    {
 		      const QuadPoint Point{XYq, size_t(CellInd), *Xiq, *Etaq};
 
 		      for(size_t t=0; t<PointVolumeTerms.size(); ++t)
 			for(int k=0; k<NrTest; ++k)
 			  LocVec[k] += (*Wq) * PointVolumeTerms[t](Point, TestValues[k]) * det;
+
+		      for(size_t t=0; t<VectorPointTerms.size(); ++t)
+			for(int k=0; k<NrTest; ++k)
+			  LocVec[k] += (*Wq) * VectorPointTerms[t](Point, TestVectors[k]) * det;
 		    }
 		}
 	    } // loop over quadrature points

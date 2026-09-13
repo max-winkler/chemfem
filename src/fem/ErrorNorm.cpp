@@ -37,7 +37,7 @@ namespace chemfem{
       return Compute(*FESolution, norm);
     }
 
-    double ErrorNorm::Compute(const FEFunction& Solution, Norm norm) const
+    double ErrorNorm::Compute(const FEFunction& Solution, Norm norm, int component) const
     {
       double error = 0.;
 
@@ -80,6 +80,11 @@ namespace chemfem{
 		  double fe_value = 0.;
 		  for(int k=0; k<Space.RefElement().NrDof(); ++k)
 		    {
+		      // On a vector valued space only the basis functions of the component
+		      // that is asked for contribute
+		      if(Space.RefElement().Component(k) != component)
+			continue;
+
 		      double form_value = Space.RefElement().Value(k, *Xiq, *Etaq);
 		      double dof_value = Solution[LocalDof[k]];
 		      fe_value += dof_value * form_value;
@@ -95,6 +100,11 @@ namespace chemfem{
 		  chemfem::linalg::Vector2D fe_grad;
 		  for(int k=0; k<Space.RefElement().NrDof(); ++k)
 		    {
+		      // On a vector valued space only the basis functions of the component
+		      // that is asked for contribute
+		      if(Space.RefElement().Component(k) != component)
+			continue;
+
 		      double dof_value = Solution[LocalDof[k]];
 		      fe_grad += dof_value * Space.RefElement().Gradient(k, *Xiq, *Etaq);
 		    }

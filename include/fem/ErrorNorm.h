@@ -48,8 +48,11 @@ namespace chemfem{
        */
       double Compute(Norm) const;
 
-      /// Error of the given FE function in the given norm
-      double Compute(const FEFunction&, Norm) const;
+      /**
+       * Error of the given FE function in the given norm. On a vector valued space the
+       * component says which one of them is compared to the exact solution.
+       */
+      double Compute(const FEFunction&, Norm, int component = 0) const;
 
     private:
 

@@ -32,6 +32,19 @@ namespace chemfem{
        */
       int NrDof() const;
 
+      /**
+       * Number of components of the basis functions, 1 for a scalar element. A basis
+       * function of an element with several components has exactly one component that does
+       * not vanish, and Value, Gradient and Hessian describe that one.
+       */
+      int NrComponents() const;
+
+      /// The component a local basis function belongs to
+      int Component(int k) const { return k % nr_components; }
+
+      /// Index of a local basis function within the scalar element behind it
+      int ScalarIndex(int k) const { return k / nr_components; }
+
       /// Number of DOFs on each vertex of the cell
       int DofsPerVertex() const;
 
@@ -78,6 +91,14 @@ namespace chemfem{
       int nr_dof;
       int degree;
       int dofs_per_vertex, dofs_per_edge, dofs_interior;
+
+      /**
+       * The components are interleaved: the local basis function k belongs to the component
+       * k % nr_components of the scalar basis function k / nr_components. The blocks of the
+       * vertices, edges and the interior are thereby preserved, each of them nr_components
+       * times as long.
+       */
+      int nr_components;
     };
 
     /**

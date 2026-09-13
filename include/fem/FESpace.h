@@ -47,6 +47,9 @@ namespace chemfem{
        */
       size_t NrLocalDof() const;
 
+      /// Number of components of the FE functions, 1 for a scalar space
+      size_t NrComponents() const;
+
       /**
        * Returns the global index of a local degree of freedom. The first argument
        * is the index of the cell, the second one the local index.

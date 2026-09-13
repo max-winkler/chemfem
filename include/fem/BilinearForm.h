@@ -48,6 +48,22 @@ namespace chemfem{
       typedef std::function<double(const QuadPoint& p, const EdgeGeometry& edge,
                                    const PointValues& u, const PointValues& v)> BoundaryIntegrand;
 
+      /// Integrand on a vector valued trial and test space
+      typedef std::function<double(const VectorValues& u,
+                                   const VectorValues& v)> VectorIntegrand;
+
+      /// The same, depending on the quadrature point as well
+      typedef std::function<double(const QuadPoint& p, const VectorValues& u,
+                                   const VectorValues& v)> VectorPointIntegrand;
+
+      /// Integrand with a vector valued trial and a scalar test function, e.g. -(div u, q)
+      typedef std::function<double(const VectorValues& u,
+                                   const PointValues& v)> VectorScalarIntegrand;
+
+      /// Integrand with a scalar trial and a vector valued test function, e.g. -(p, div v)
+      typedef std::function<double(const PointValues& u,
+                                   const VectorValues& v)> ScalarVectorIntegrand;
+
       /**
        * Constructor which initializes an empty bilinear form for a given
        * trial and test space.
@@ -82,6 +98,18 @@ namespace chemfem{
 
       /// Adds the integral of the integrand over all cells
       void AddVolumeTerm(PointIntegrand);
+
+      /// Adds the integral of the integrand over all cells
+      void AddVolumeTerm(VectorIntegrand);
+
+      /// Adds the integral of the integrand over all cells
+      void AddVolumeTerm(VectorPointIntegrand);
+
+      /// Adds the integral of the integrand over all cells
+      void AddVolumeTerm(VectorScalarIntegrand);
+
+      /// Adds the integral of the integrand over all cells
+      void AddVolumeTerm(ScalarVectorIntegrand);
 
       /**
        * Adds the integral of the integrand over the part of the boundary where the
@@ -169,6 +197,10 @@ namespace chemfem{
 
       std::vector<Integrand> VolumeTerms;
       std::vector<PointIntegrand> PointVolumeTerms;
+      std::vector<VectorIntegrand> VectorTerms;
+      std::vector<VectorPointIntegrand> VectorPointTerms;
+      std::vector<VectorScalarIntegrand> VectorScalarTerms;
+      std::vector<ScalarVectorIntegrand> ScalarVectorTerms;
       std::vector<BoundaryTerm> BoundaryTerms;
     };
 

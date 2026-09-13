@@ -28,6 +28,21 @@ namespace chemfem{
       double laplacian;
     };
 
+    /**
+     * Values of a vector valued function in a point, in physical coordinates. The integrands
+     * of a form on a vector valued space get them for the trial and the test function.
+     */
+    struct VectorValues
+    {
+      chemfem::linalg::Vector2D value;
+      /// Row i holds the gradient of the component i
+      chemfem::linalg::Matrix2D gradient;
+      /// Trace of the gradient
+      double divergence;
+      /// The scalar rotation, du_1/dx - du_0/dy
+      double curl;
+    };
+
     /// A quadrature point, in physical coordinates and on the reference element of its cell
     struct QuadPoint
     {
@@ -73,6 +88,13 @@ namespace chemfem{
      * B^-T H B^-1.
      */
     PointValues MapFromReference(const PointValues&, const chemfem::linalg::Matrix2D& InvJacT);
+
+    /**
+     * The same for a basis function of a product element: it is the given scalar function in
+     * the given component and zero in the others.
+     */
+    VectorValues MapFromReference(const PointValues&, const chemfem::linalg::Matrix2D& InvJacT,
+                                  int component);
 
   };
 };

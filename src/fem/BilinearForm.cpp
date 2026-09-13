@@ -80,6 +80,53 @@ namespace chemfem{
       PointVolumeTerms.push_back(term);
     }
 
+    namespace {
+
+      bool CheckVector(const FESpace& Space, const char* which)
+      {
+        if(Space.NrComponents() > 1)
+          return true;
+
+        std::cerr << "Error: The integrand expects a vector valued " << which
+                  << " space, but that space is scalar.\n";
+        return false;
+      }
+
+      bool CheckScalar(const FESpace& Space, const char* which)
+      {
+        if(Space.NrComponents() == 1)
+          return true;
+
+        std::cerr << "Error: The integrand expects a scalar " << which
+                  << " space, but that space is vector valued.\n";
+        return false;
+      }
+    }
+
+    void BilinearForm::AddVolumeTerm(VectorIntegrand term)
+    {
+      if(CheckVector(TrialSpace, "trial") && CheckVector(TestSpace, "test"))
+        VectorTerms.push_back(term);
+    }
+
+    void BilinearForm::AddVolumeTerm(VectorPointIntegrand term)
+    {
+      if(CheckVector(TrialSpace, "trial") && CheckVector(TestSpace, "test"))
+        VectorPointTerms.push_back(term);
+    }
+
+    void BilinearForm::AddVolumeTerm(VectorScalarIntegrand term)
+    {
+      if(CheckVector(TrialSpace, "trial") && CheckScalar(TestSpace, "test"))
+        VectorScalarTerms.push_back(term);
+    }
+
+    void BilinearForm::AddVolumeTerm(ScalarVectorIntegrand term)
+    {
+      if(CheckScalar(TrialSpace, "trial") && CheckVector(TestSpace, "test"))
+        ScalarVectorTerms.push_back(term);
+    }
+
     void BilinearForm::AddBoundaryTerm(Integrand term, BoundaryIndicator part)
     {
       BoundaryTerms.push_back(BoundaryTerm{term, nullptr, part});
@@ -150,7 +197,17 @@ namespace chemfem{
       double *ValueTest = new double[NrTest];
       double *ValueTrial = new double[NrTrial];
 
-      const bool HasIntegrands = !VolumeTerms.empty() || !PointVolumeTerms.empty();
+      const bool ScalarTest = !VolumeTerms.empty() || !PointVolumeTerms.empty()
+        || !VectorScalarTerms.empty();
+      const bool VectorTest = !VectorTerms.empty() || !VectorPointTerms.empty()
+        || !ScalarVectorTerms.empty();
+      const bool ScalarTrial = !VolumeTerms.empty() || !PointVolumeTerms.empty()
+        || !ScalarVectorTerms.empty();
+      const bool VectorTrial = !VectorTerms.empty() || !VectorPointTerms.empty()
+        || !VectorScalarTerms.empty();
+
+      const bool HasIntegrands = ScalarTest || VectorTest;
+      const bool NeedsPoint = !PointVolumeTerms.empty() || !VectorPointTerms.empty();
 
       // The basis functions on the reference element in the quadrature points, the same
       // for every cell
@@ -162,6 +219,7 @@ namespace chemfem{
         }
 
       std::vector<PointValues> TestValues(NrTest), TrialValues(NrTrial);
+      std::vector<VectorValues> TestVectors(NrTest), TrialVectors(NrTrial);
 
       // Iterate over all cells
       int CellInd;
@@ -258,10 +316,26 @@ namespace chemfem{
               if(HasIntegrands)
                 {
                   for(int k=0; k<NrTest; ++k)
-                    TestValues[k] = MapFromReference(RefTest[q*NrTest + k], InvJac);
+                    {
+                      const PointValues& ref = RefTest[q*NrTest + k];
+
+                      if(ScalarTest)
+                        TestValues[k] = MapFromReference(ref, InvJac);
+                      if(VectorTest)
+                        TestVectors[k] = MapFromReference(ref, InvJac,
+                                                          TestSpace.RefElement().Component(k));
+                    }
 
                   for(int l=0; l<NrTrial; ++l)
-                    TrialValues[l] = MapFromReference(RefTrial[q*NrTrial + l], InvJac);
+                    {
+                      const PointValues& ref = RefTrial[q*NrTrial + l];
+
+                      if(ScalarTrial)
+                        TrialValues[l] = MapFromReference(ref, InvJac);
+                      if(VectorTrial)
+                        TrialVectors[l] = MapFromReference(ref, InvJac,
+                                                           TrialSpace.RefElement().Component(l));
+                    }
 
                   for(size_t t=0; t<VolumeTerms.size(); ++t)
                     for(int k=0; k<NrTest; ++k)
@@ -269,7 +343,25 @@ namespace chemfem{
                         LocMatrix[k][l] += (*Wq)
                           * VolumeTerms[t](TrialValues[l], TestValues[k]) * det;
 
-                  if(!PointVolumeTerms.empty())
+                  for(size_t t=0; t<VectorTerms.size(); ++t)
+                    for(int k=0; k<NrTest; ++k)
+                      for(int l=0; l<NrTrial; ++l)
+                        LocMatrix[k][l] += (*Wq)
+                          * VectorTerms[t](TrialVectors[l], TestVectors[k]) * det;
+
+                  for(size_t t=0; t<VectorScalarTerms.size(); ++t)
+                    for(int k=0; k<NrTest; ++k)
+                      for(int l=0; l<NrTrial; ++l)
+                        LocMatrix[k][l] += (*Wq)
+                          * VectorScalarTerms[t](TrialVectors[l], TestValues[k]) * det;
+
+                  for(size_t t=0; t<ScalarVectorTerms.size(); ++t)
+                    for(int k=0; k<NrTest; ++k)
+                      for(int l=0; l<NrTrial; ++l)
+                        LocMatrix[k][l] += (*Wq)
+                          * ScalarVectorTerms[t](TrialValues[l], TestVectors[k]) * det;
+
+                  if(NeedsPoint)
                     {
                       const QuadPoint Point{XYq, size_t(CellInd), *Xiq, *Etaq};
 
@@ -278,6 +370,12 @@ namespace chemfem{
                           for(int l=0; l<NrTrial; ++l)
                             LocMatrix[k][l] += (*Wq)
                               * PointVolumeTerms[t](Point, TrialValues[l], TestValues[k]) * det;
+
+                      for(size_t t=0; t<VectorPointTerms.size(); ++t)
+                        for(int k=0; k<NrTest; ++k)
+                          for(int l=0; l<NrTrial; ++l)
+                            LocMatrix[k][l] += (*Wq)
+                              * VectorPointTerms[t](Point, TrialVectors[l], TestVectors[k]) * det;
                     }
                 }
             } // loop over quadrature points
