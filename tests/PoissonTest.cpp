@@ -9,6 +9,7 @@
 #include "fem/LagrangeElement.h"
 #include "fem/FEFunction.h"
 #include "fem/ErrorNorm.h"
+#include "fem/VtkOutput.h"
 #include "mesh/UnitSquareMesh.h"
 #include "linalg/SparseMatrix.h"
 
@@ -102,7 +103,14 @@ int main()
       std::cout << std::endl;
 
       if(level+1 == levels)
-        Sol.WriteVtk("poisson.vtk");
+        {
+          FEFunction Interpolant = Space.Interpolate(exact);
+
+          VtkOutput out(mesh);
+          out.AddScalar("u", Sol);
+          out.AddScalar("u_exact", Interpolant);
+          out.Write("poisson.vtk");
+        }
 
       // Each call bisects every cell once, so two of them halve h
       if(level+1 < levels)
