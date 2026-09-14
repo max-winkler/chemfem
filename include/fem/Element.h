@@ -12,7 +12,7 @@ namespace chemfem{
   namespace fem{
 
     /// Finite element type.
-    enum FEType {Lagrange, CrouzeixRaviart};
+    enum FEType {Lagrange, CrouzeixRaviart, DG};
 
     /**
      * This class represents a single finite element. This is a virtual class and
