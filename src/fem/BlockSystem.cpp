@@ -231,6 +231,14 @@ namespace chemfem{
           return;
         }
 
+      if(Rhs.size() != Offset.back() + Constraints.size())
+        {
+          std::cerr << "Error: The right hand side has length " << Rhs.size()
+                    << ", but the system has " << Offset.back() + Constraints.size()
+                    << " rows.\n";
+          return;
+        }
+
       for(size_t k=0; k<v.size(); ++k)
         Rhs[Offset[i] + k] += v[k];
     }
