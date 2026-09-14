@@ -54,6 +54,18 @@ namespace chemfem{
       return v;
     }
 
+    VectorValues MapFromReference(const VectorRefValues& ref, const Matrix2D& Jac, double det)
+    {
+      VectorValues v;
+
+      v.value = (1./det) * (Jac * ref.value);
+      v.gradient = Matrix2D(0., 0., 0., 0.);
+      v.divergence = ref.divergence / det;
+      v.curl = 0.;
+
+      return v;
+    }
+
     PointValues MapFromReference(const PointValues& ref, const Matrix2D& InvJacT)
     {
       PointValues v;

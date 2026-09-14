@@ -96,6 +96,15 @@ namespace chemfem{
     VectorValues MapFromReference(const PointValues&, const chemfem::linalg::Matrix2D& InvJacT,
                                   int component);
 
+    /**
+     * Maps a vector valued reference basis function to a cell with the contravariant Piola
+     * transform, s = (1/det J) J s_ref. The divergence transforms as div s = (1/det J) div
+     * s_ref, which is why the flux of s through an edge equals the one of s_ref through the
+     * corresponding reference edge. The gradient is not provided.
+     */
+    VectorValues MapFromReference(const VectorRefValues&, const chemfem::linalg::Matrix2D& Jac,
+                                  double det);
+
   };
 };
 

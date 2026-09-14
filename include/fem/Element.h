@@ -12,7 +12,21 @@ namespace chemfem{
   namespace fem{
 
     /// Finite element type.
-    enum FEType {Lagrange, CrouzeixRaviart, DG};
+    enum FEType {Lagrange, CrouzeixRaviart, DG, RaviartThomas};
+
+    /**
+     * How a cell builds its basis functions from the reference ones. Affine leaves the
+     * values unchanged and maps only the derivatives, ContravariantPiola also mixes the
+     * components and is needed by the H(div) conforming elements.
+     */
+    enum MappingType {Affine, ContravariantPiola};
+
+    /// Value and divergence of a vector valued basis function on the reference element
+    struct VectorRefValues
+    {
+      Vector2D value;
+      double divergence;
+    };
 
     /**
      * This class represents a single finite element. This is a virtual class and
@@ -86,7 +100,21 @@ namespace chemfem{
        */
       virtual chemfem::linalg::Coordinate NodalPoint(int) const = 0;
 
+      /// The mapping a cell needs to build its basis functions from the reference ones
+      MappingType Mapping() const { return mapping; }
+
+      /**
+       * Value and divergence of a vector valued reference basis function. Only elements
+       * with a Piola mapping provide them, everything else is described by Value.
+       */
+      virtual VectorRefValues VectorReference(int, double, double) const
+      {
+        return VectorRefValues{Vector2D(0., 0.), 0.};
+      }
+
     protected:
+      MappingType mapping = Affine;
+
       FEType type;
       int nr_dof;
       int degree;

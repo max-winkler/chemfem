@@ -92,6 +92,9 @@ namespace chemfem{
 	case DG:
 	  os << "discontinuous Galerkin";
 	  break;
+	case RaviartThomas:
+	  os << "Raviart-Thomas";
+	  break;
 	}
       os << " of degree " << space.refElement.Degree() << std::endl;
 
