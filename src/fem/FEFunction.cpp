@@ -54,7 +54,7 @@ namespace chemfem{
 
     double FEFunction::Value(const QuadPoint& p) const
     {
-      if(CacheValid != NOTHING && SamePoint(p, CachedPoint))
+      if((CacheValid == VALUE_ONLY || CacheValid == EVERYTHING) && SamePoint(p, CachedPoint))
 	return CachedValues.value;
 
       const Element& E = Space->RefElement();
