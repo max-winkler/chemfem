@@ -82,6 +82,11 @@ namespace chemfem{
     std::vector<PointValues> TabulateReference(const Element&, const chemfem::linalg::Vector& Xi,
                                                const chemfem::linalg::Vector& Eta);
 
+    /// The same for an element whose reference basis functions are vector valued
+    std::vector<VectorRefValues> TabulateVectorReference(const Element&,
+                                                         const chemfem::linalg::Vector& Xi,
+                                                         const chemfem::linalg::Vector& Eta);
+
     /**
      * Maps values on the reference element to the cell with the inverse transposed
      * Jacobian B^-T of the affine reference map: the gradient becomes B^-T g, the Hessian
@@ -101,9 +106,12 @@ namespace chemfem{
      * transform, s = (1/det J) J s_ref. The divergence transforms as div s = (1/det J) div
      * s_ref, which is why the flux of s through an edge equals the one of s_ref through the
      * corresponding reference edge. The gradient is not provided.
+     *
+     * The sign turns the reference flux of an edge DOF into the one of the globally fixed
+     * normal of that edge, so that two neighbouring cells agree on it.
      */
     VectorValues MapFromReference(const VectorRefValues&, const chemfem::linalg::Matrix2D& Jac,
-                                  double det);
+                                  double det, double sign = 1.);
 
   };
 };

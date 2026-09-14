@@ -44,6 +44,15 @@ namespace chemfem{
       /// Global indices of all local DOFs of a cell
       const size_t* LocalDofMap(size_t) const;
 
+      /**
+       * Sign of a local DOF, +1 or -1. An edge DOF of an H(div) conforming element measures
+       * the flux through a globally fixed normal of the edge, while the reference basis
+       * function refers to the outward normal of its own cell. The two neighbours of an edge
+       * see opposite normals, so the cell that traverses the edge against its own direction
+       * gets -1. Everything else is +1.
+       */
+      double LocalSign(size_t cell, size_t local) const;
+
       /// False if the DOF is fixed by a Dirichlet condition
       bool IsFree(size_t) const;
 
@@ -63,6 +72,9 @@ namespace chemfem{
 
       /// Global indices of the local DOFs, NrLocalDof() consecutive entries per cell
       std::vector<size_t> DofMap;
+
+      /// Signs of the local DOFs, laid out like DofMap. Empty unless the element needs them.
+      std::vector<double> Sign;
 
       std::vector<bool> Free;
       std::vector<size_t> Reduced;

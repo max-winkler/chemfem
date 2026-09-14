@@ -37,6 +37,11 @@ namespace chemfem{
       nr_dof = interior_offset + mesh.NrCells()*ni;
       DofMap.resize(mesh.NrCells()*nr_local_dof);
 
+      const bool piola = (element.Mapping() == ContravariantPiola);
+
+      if(piola)
+	Sign.assign(mesh.NrCells()*nr_local_dof, 1.);
+
       for(size_t c=0; c<mesh.NrCells(); ++c)
 	{
 	  const Cell& cell = mesh.Cells[c];
@@ -61,6 +66,9 @@ namespace chemfem{
 		  const size_t mirrored = (ne/nc - 1 - j/nc)*nc + j%nc;
 
 		  *local++ = edge_offset + e*ne + (reversed ? mirrored : j);
+
+		  if(piola && reversed)
+		    Sign[c*nr_local_dof + 3*nv + k*ne + j] = -1.;
 		}
 	    }
 
@@ -139,6 +147,11 @@ namespace chemfem{
     const size_t* DofManager::LocalDofMap(size_t cell) const
     {
       return &DofMap[cell*nr_local_dof];
+    }
+
+    double DofManager::LocalSign(size_t cell, size_t local) const
+    {
+      return Sign.empty() ? 1. : Sign[cell*nr_local_dof + local];
     }
 
     bool DofManager::IsFree(size_t dof) const

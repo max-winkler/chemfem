@@ -209,13 +209,24 @@ namespace chemfem{
       const bool HasIntegrands = ScalarTest || VectorTest;
       const bool NeedsPoint = !PointVolumeTerms.empty() || !VectorPointTerms.empty();
 
+      const bool PiolaTest = TestSpace.RefElement().Mapping() == ContravariantPiola;
+      const bool PiolaTrial = TrialSpace.RefElement().Mapping() == ContravariantPiola;
+
       // The basis functions on the reference element in the quadrature points, the same
       // for every cell
       std::vector<PointValues> RefTest, RefTrial;
+      std::vector<VectorRefValues> VecRefTest, VecRefTrial;
       if(HasIntegrands)
         {
-          RefTest = TabulateReference(TestSpace.RefElement(), Xi, Eta);
-          RefTrial = TabulateReference(TrialSpace.RefElement(), Xi, Eta);
+          if(PiolaTest)
+            VecRefTest = TabulateVectorReference(TestSpace.RefElement(), Xi, Eta);
+          else
+            RefTest = TabulateReference(TestSpace.RefElement(), Xi, Eta);
+
+          if(PiolaTrial)
+            VecRefTrial = TabulateVectorReference(TrialSpace.RefElement(), Xi, Eta);
+          else
+            RefTrial = TabulateReference(TrialSpace.RefElement(), Xi, Eta);
         }
 
       std::vector<PointValues> TestValues(NrTest), TrialValues(NrTrial);
@@ -317,6 +328,13 @@ namespace chemfem{
                 {
                   for(int k=0; k<NrTest; ++k)
                     {
+                      if(PiolaTest)
+                        {
+                          TestVectors[k] = MapFromReference(VecRefTest[q*NrTest + k], Jac, det,
+                                                            TestSpace.LocalSign(CellInd, k));
+                          continue;
+                        }
+
                       const PointValues& ref = RefTest[q*NrTest + k];
 
                       if(ScalarTest)
@@ -328,6 +346,13 @@ namespace chemfem{
 
                   for(int l=0; l<NrTrial; ++l)
                     {
+                      if(PiolaTrial)
+                        {
+                          TrialVectors[l] = MapFromReference(VecRefTrial[q*NrTrial + l], Jac, det,
+                                                             TrialSpace.LocalSign(CellInd, l));
+                          continue;
+                        }
+
                       const PointValues& ref = RefTrial[q*NrTrial + l];
 
                       if(ScalarTrial)

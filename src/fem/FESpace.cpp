@@ -78,6 +78,11 @@ namespace chemfem{
       return Dofs.LocalDofMap(k);
     }
 
+    double FESpace::LocalSign(size_t cell, size_t local) const
+    {
+      return Dofs.LocalSign(cell, local);
+    }
+
     std::ostream& operator<<(std::ostream& os, const FESpace& space)
     {
       os << "FE Space of type ";

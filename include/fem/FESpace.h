@@ -83,6 +83,12 @@ namespace chemfem{
       const size_t* GetLocalDofMap(size_t) const;
 
       /**
+       * Sign of a local DOF, +1 or -1. Only the edge DOFs of an H(div) conforming element
+       * carry -1, and only in the cell that traverses the edge against its own direction.
+       */
+      double LocalSign(size_t cell, size_t local) const;
+
+      /**
        * Interpolates a smooth function into the finite element space
        */
       FEFunction Interpolate(ScalarFunction);

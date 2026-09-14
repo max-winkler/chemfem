@@ -79,9 +79,27 @@ namespace chemfem{
 
       chemfem::linalg::Vector2D value;
 
-      for(size_t k=0; k<Space->NrLocalDof(); ++k)
-	value[E.Component(k)] += Data[Space->GetGlobalIndex(p.cell, k)]
-	  * E.Value(k, p.xi, p.eta);
+      if(E.Mapping() == ContravariantPiola)
+	{
+	  const chemfem::linalg::Matrix2D Jac = Space->GetMesh().Jacobian(p.cell);
+	  const double det = Space->GetMesh().Determinant(p.cell);
+
+	  for(size_t k=0; k<Space->NrLocalDof(); ++k)
+	    {
+	      const chemfem::linalg::Vector2D basis
+		= MapFromReference(E.VectorReference(k, p.xi, p.eta), Jac, det,
+				   Space->LocalSign(p.cell, k)).value;
+
+	      const double coeff = Data[Space->GetGlobalIndex(p.cell, k)];
+
+	      value[0] += coeff * basis[0];
+	      value[1] += coeff * basis[1];
+	    }
+	}
+      else
+	for(size_t k=0; k<Space->NrLocalDof(); ++k)
+	  value[E.Component(k)] += Data[Space->GetGlobalIndex(p.cell, k)]
+	    * E.Value(k, p.xi, p.eta);
 
       CachedVector = value;
       CachedPoint = p;
