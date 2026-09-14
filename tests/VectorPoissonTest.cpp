@@ -81,8 +81,8 @@ bool Run(int degree, int levels)
 
       ErrorNorm Ex(ux, grad_ux), Ey(uy, grad_uy);
 
-      l2_errors.push_back(hypot(Ex.Compute(Sol, L2, 0), Ey.Compute(Sol, L2, 1)));
-      h1_errors.push_back(hypot(Ex.Compute(Sol, H1_SEMI, 0), Ey.Compute(Sol, H1_SEMI, 1)));
+      l2_errors.push_back(std::hypot(Ex.Compute(Sol, L2, 0), Ey.Compute(Sol, L2, 1)));
+      h1_errors.push_back(std::hypot(Ex.Compute(Sol, H1_SEMI, 0), Ey.Compute(Sol, H1_SEMI, 1)));
 
       std::cout << std::setw(8) << mesh.NrCells() << std::setw(8) << V.NrFreeDof()
                 << std::scientific << std::setprecision(3)

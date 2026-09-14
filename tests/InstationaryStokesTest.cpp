@@ -59,7 +59,7 @@ double MaxSpeed(const FEFunction& u)
 {
   double speed = 0.;
   for(size_t k=0; k+1<u.GetFESpace().NrDof(); k+=2)
-    speed = std::max(speed, hypot(u[k], u[k+1]));
+    speed = std::max(speed, std::hypot(u[k], u[k+1]));
   return speed;
 }
 

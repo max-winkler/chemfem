@@ -123,8 +123,8 @@ int main()
 
       ErrorNorm Ex(ux, grad_ux), Ey(uy, grad_uy), Ep(pressure);
 
-      h1_u.push_back(hypot(Ex.Compute(U, H1_SEMI, 0), Ey.Compute(U, H1_SEMI, 1)));
-      l2_u.push_back(hypot(Ex.Compute(U, L2, 0), Ey.Compute(U, L2, 1)));
+      h1_u.push_back(std::hypot(Ex.Compute(U, H1_SEMI, 0), Ey.Compute(U, H1_SEMI, 1)));
+      l2_u.push_back(std::hypot(Ex.Compute(U, L2, 0), Ey.Compute(U, L2, 1)));
       l2_p.push_back(Ep.Compute(P, L2));
 
       std::cout << std::setw(8) << mesh.NrCells() << std::setw(8) << S.NrDof();
