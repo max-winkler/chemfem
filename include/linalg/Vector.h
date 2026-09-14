@@ -44,6 +44,11 @@ namespace chemfem{
        * Copy constructor.
        */
       Vector(const Vector&);
+
+      /**
+       * Move constructor, takes over the memory of a temporary instead of copying it.
+       */
+      Vector(Vector&&) noexcept;
       
       /**
        * Destructor, deletes used memory.
@@ -69,6 +74,12 @@ namespace chemfem{
        * Copy an instance of the class Vector.
        */
       Vector& operator=(const Vector&);
+
+      /**
+       * Move assignment. Assigning the result of a function to an existing vector is not
+       * elided by the compiler, so this saves an allocation and a copy there.
+       */
+      Vector& operator=(Vector&&) noexcept;
 
       /**
        * Copy the values of an array to the vector

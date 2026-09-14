@@ -45,6 +45,12 @@ namespace chemfem{
       data = new double[n];
       std::copy(other.data, other.data+n, data);
     }
+
+    Vector::Vector(Vector&& other) noexcept : n(other.n), data(other.data)
+    {
+      other.n = 0;
+      other.data = NULL;
+    }
     
     Vector::~Vector()
     {
@@ -80,6 +86,22 @@ namespace chemfem{
 	}
 
       std::copy(v.data, v.data+n, data);
+      return *this;
+    }
+
+    Vector& Vector::operator=(Vector&& v) noexcept
+    {
+      if(this == &v)
+        return *this;
+
+      delete[] data;
+
+      n = v.n;
+      data = v.data;
+
+      v.n = 0;
+      v.data = NULL;
+
       return *this;
     }
 
