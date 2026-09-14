@@ -43,6 +43,13 @@ namespace chemfem{
                                    const VectorValues& v)> VectorPointIntegrand;
 
       /**
+       * Integrand of a boundary term on a vector valued space, e.g. the natural condition
+       * -<g, tau.n> that carries the Dirichlet data of a mixed formulation.
+       */
+      typedef std::function<double(const QuadPoint& p, const EdgeGeometry& edge,
+                                   const VectorValues& v)> VectorBoundaryIntegrand;
+
+      /**
        * Constructor which associates the linear form with a function space.
        */
       LinearForm(const FESpace&);
@@ -84,6 +91,12 @@ namespace chemfem{
       void AddBoundaryTerm(BoundaryIntegrand, BoundaryIndicator = nullptr);
 
       /**
+       * Adds the integral of the integrand over the part of the boundary where the
+       * indicator is true, over the whole boundary if it is omitted
+       */
+      void AddBoundaryTerm(VectorBoundaryIntegrand, BoundaryIndicator = nullptr);
+
+      /**
        * Assembles the load vector. Before calling this routine all terms that are required should be
        * added to the linear form.
        */
@@ -98,11 +111,12 @@ namespace chemfem{
       const FESpace& GetTestSpace() const;
 
     private:
-      /// A boundary term, given by one of the two kinds of integrands
+      /// A boundary term, given by one of the three kinds of integrands
       struct BoundaryTerm
       {
         Integrand integrand;
         BoundaryIntegrand point_integrand;
+        VectorBoundaryIntegrand vector_integrand;
         BoundaryIndicator part;
       };
 

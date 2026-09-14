@@ -47,7 +47,7 @@ namespace chemfem{
 
     void LinearForm::AddVolumeTerm(VectorIntegrand term)
     {
-      if(TestSpace.NrComponents() > 1)
+      if(TestSpace.IsVectorValued())
 	VectorTerms.push_back(term);
       else
 	std::cerr << "Error: The integrand expects a vector valued space, but the test space "
@@ -56,7 +56,7 @@ namespace chemfem{
 
     void LinearForm::AddVolumeTerm(VectorPointIntegrand term)
     {
-      if(TestSpace.NrComponents() > 1)
+      if(TestSpace.IsVectorValued())
 	VectorPointTerms.push_back(term);
       else
 	std::cerr << "Error: The integrand expects a vector valued space, but the test space "
@@ -65,12 +65,21 @@ namespace chemfem{
 
     void LinearForm::AddBoundaryTerm(Integrand term, BoundaryIndicator part)
     {
-      BoundaryTerms.push_back(BoundaryTerm{term, nullptr, part});
+      BoundaryTerms.push_back(BoundaryTerm{term, nullptr, nullptr, part});
     }
 
     void LinearForm::AddBoundaryTerm(BoundaryIntegrand term, BoundaryIndicator part)
     {
-      BoundaryTerms.push_back(BoundaryTerm{nullptr, term, part});
+      BoundaryTerms.push_back(BoundaryTerm{nullptr, term, nullptr, part});
+    }
+
+    void LinearForm::AddBoundaryTerm(VectorBoundaryIntegrand term, BoundaryIndicator part)
+    {
+      if(TestSpace.IsVectorValued())
+	BoundaryTerms.push_back(BoundaryTerm{nullptr, nullptr, term, part});
+      else
+	std::cerr << "Error: The integrand expects a vector valued space, but the test space "
+		  << "is scalar.\n";
     }
 
     Vector& LinearForm::LoadVector()
@@ -142,7 +151,8 @@ namespace chemfem{
 
 	      // Function value of test functions
 	      for(int k=0; k<NrTest; ++k)
-		TestFuncValue[k] = TestSpace.RefElement().Value(k, *Xiq, *Etaq);
+		TestFuncValue[k] = Terms.empty()
+			  ? 0. : TestSpace.RefElement().Value(k, *Xiq, *Etaq);
 
 	      // Iterate over all terms
 	      for(std::vector<FEExpression>::const_iterator Term = Terms.begin();
@@ -301,7 +311,12 @@ namespace chemfem{
 	  EdgeGeom.local_index = LocEdge;
 	  EdgeGeom.boundary = true;
 
-	  const Matrix2D InvJac = mesh.Jacobian(CellIndex).Transpose().Invert();
+	  const Matrix2D Jac = mesh.Jacobian(CellIndex);
+	  const Matrix2D InvJac = Jac.Transpose().Invert();
+	  const double CellDet = mesh.Determinant(CellIndex);
+
+	  const bool Piola
+	    = TestSpace.RefElement().Mapping() == ContravariantPiola;
 
 	  Vector LocVec(NrTest);
 
@@ -317,8 +332,15 @@ namespace chemfem{
 				    CellIndex, xi, eta};
 
 	      for(int i=0; i<NrTest; ++i)
-		TestValues[i] = MapFromReference(
-		  ReferenceValues(TestSpace.RefElement(), i, xi, eta), InvJac);
+		{
+		  if(Piola)
+		    TestVectors[i] = MapFromReference(
+		      TestSpace.RefElement().VectorReference(i, xi, eta), Jac, CellDet,
+		      TestSpace.LocalSign(CellIndex, i));
+		  else
+		    TestValues[i] = MapFromReference(
+		      ReferenceValues(TestSpace.RefElement(), i, xi, eta), InvJac);
+		}
 
 	      for(size_t a=0; a<Active.size(); ++a)
 		{
@@ -326,9 +348,10 @@ namespace chemfem{
 
 		  for(int i=0; i<NrTest; ++i)
 		    {
-		      const double value = T.integrand
-			? T.integrand(TestValues[i])
-			: T.point_integrand(Point, EdgeGeom, TestValues[i]);
+		      const double value = T.vector_integrand
+			? T.vector_integrand(Point, EdgeGeom, TestVectors[i])
+			: (T.integrand ? T.integrand(TestValues[i])
+			   : T.point_integrand(Point, EdgeGeom, TestValues[i]));
 
 		      LocVec[i] += LineWeights[q] * value * EdgeGeom.h;
 		    }

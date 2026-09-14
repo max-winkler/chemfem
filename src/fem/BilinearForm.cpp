@@ -84,7 +84,7 @@ namespace chemfem{
 
       bool CheckVector(const FESpace& Space, const char* which)
       {
-        if(Space.NrComponents() > 1)
+        if(Space.IsVectorValued())
           return true;
 
         std::cerr << "Error: The integrand expects a vector valued " << which
@@ -94,7 +94,7 @@ namespace chemfem{
 
       bool CheckScalar(const FESpace& Space, const char* which)
       {
-        if(Space.NrComponents() == 1)
+        if(!Space.IsVectorValued())
           return true;
 
         std::cerr << "Error: The integrand expects a scalar " << which
@@ -259,16 +259,21 @@ namespace chemfem{
               const Coordinate XiEtaq{*Xiq, *Etaq};
               const Coordinate XYq = b + Jac*XiEtaq;
 
-              for(int k=0; k<NrTest; ++k)
+              // Only the FEExpression terms read these, and an element with a Piola mapping
+              // has no scalar values to offer
+              if(!Terms.empty())
                 {
-                  GradTest[k] = InvJac * TestSpace.RefElement().Gradient(k, *Xiq, *Etaq);
-                  ValueTest[k] = TestSpace.RefElement().Value(k, *Xiq, *Etaq);
-                }
+                  for(int k=0; k<NrTest; ++k)
+                    {
+                      GradTest[k] = InvJac * TestSpace.RefElement().Gradient(k, *Xiq, *Etaq);
+                      ValueTest[k] = TestSpace.RefElement().Value(k, *Xiq, *Etaq);
+                    }
 
-              for(int l=0; l<NrTrial; ++l)
-                {
-                  GradTrial[l] = InvJac * TrialSpace.RefElement().Gradient(l, *Xiq, *Etaq);
-                  ValueTrial[l] = TrialSpace.RefElement().Value(l, *Xiq, *Etaq);
+                  for(int l=0; l<NrTrial; ++l)
+                    {
+                      GradTrial[l] = InvJac * TrialSpace.RefElement().Gradient(l, *Xiq, *Etaq);
+                      ValueTrial[l] = TrialSpace.RefElement().Value(l, *Xiq, *Etaq);
+                    }
                 }
 
               // Iterate over all terms

@@ -83,6 +83,11 @@ namespace chemfem{
       return Dofs.LocalSign(cell, local);
     }
 
+    bool FESpace::IsVectorValued() const
+    {
+      return NrComponents() > 1 || refElement.Mapping() == ContravariantPiola;
+    }
+
     std::ostream& operator<<(std::ostream& os, const FESpace& space)
     {
       os << "FE Space of type ";

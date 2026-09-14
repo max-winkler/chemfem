@@ -51,6 +51,13 @@ namespace chemfem{
       size_t NrComponents() const;
 
       /**
+       * True if the functions of this space are vector valued, either because the DOFs are
+       * interleaved components as for a product element, or because the basis functions are
+       * vectors already on the reference element as for Raviart-Thomas.
+       */
+      bool IsVectorValued() const;
+
+      /**
        * Returns the global index of a local degree of freedom. The first argument
        * is the index of the cell, the second one the local index.
        */
