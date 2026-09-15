@@ -3,6 +3,7 @@
 #include <sstream>
 #include <cmath>
 
+#include "Verbosity.h"
 #include "fem/BlockSystem.h"
 #include "fem/DirichletValues.h"
 #include "fem/ProductElement.h"
@@ -122,6 +123,9 @@ int main()
   std::cout << "Channel with a cylinder, " << mesh.NrCells() << " cells, "
             << S.NrDof() << " unknowns, " << steps << " steps up to t = " << T
             << std::endl;
+
+  // 50 frames with the same name pattern, the summary at the end is more useful
+  chemfem::SetVerbose(false);
 
   VtkOutput out(mesh);
   out.AddVector("u", U);

@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "Verbosity.h"
 #include "fem/LinearForm.h"
 #include "fem/BilinearForm.h"
 #include "fem/LagrangeElement.h"
@@ -153,6 +154,9 @@ void PrintTable(const std::string& caption, const std::vector<Row>& rows)
 
 int main()
 {
+  // One VTK file per refinement level, the tables below are the interesting output
+  chemfem::SetVerbose(false);
+
   GenericEstimator Estimator = GenericEstimator::Residual(f);
 
   // ------------------------------------------------------------------ uniform

@@ -8,6 +8,8 @@
 
 #include "mesh/Mesh.h"
 
+#include "Verbosity.h"
+
 #include "mesh/RefDataRegular.h"
 #include "mesh/RefDataBisection0.h"
 #include "mesh/RefDataBisection1.h"
@@ -355,6 +357,9 @@ namespace chemfem{
 
       for (i=0, it = x.begin(); i<nr_nodes; ++it, ++i)
         ofs << *it << std::endl;
+
+      if(chemfem::Verbose())
+        std::cout << "Wrote " << filename << std::endl;
     }
 
     const std::vector<Cell>& Mesh::GetCellList() const

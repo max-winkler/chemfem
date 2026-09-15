@@ -1,5 +1,7 @@
 #include "fem/VtkOutput.h"
 
+#include "Verbosity.h"
+
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -111,7 +113,11 @@ namespace chemfem{
         ofs << "5\n";
 
       if(Scalars.empty() && Vectors.empty())
-        return;
+        {
+          if(Verbose())
+            std::cout << "Wrote " << filename << std::endl;
+          return;
+        }
 
       ofs << "POINT_DATA " << mesh.NrNodes() << "\n";
 
@@ -135,6 +141,9 @@ namespace chemfem{
           for(size_t n=0; n<x.size(); ++n)
             ofs << x[n] << " " << y[n] << " 0\n";
         }
+
+      if(Verbose())
+        std::cout << "Wrote " << filename << std::endl;
     }
 
   }
