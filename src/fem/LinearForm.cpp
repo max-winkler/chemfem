@@ -25,23 +25,51 @@ namespace chemfem{
 
     void LinearForm::AddVolumeForce(ScalarFunction F)
     {
+      if(TestSpace.IsVectorValued())
+        {
+          std::cerr << "Error: A scalar volume force needs a scalar test space, the assembly "
+                    << "would ignore the components.\n";
+          return;
+        }
+
       FEExpression Expression(VOLUME_FORCE, F);
       Terms.push_back(Expression);
     }
 
     void LinearForm::AddNeumannBC(ScalarFunction G)
     {
+      if(TestSpace.IsVectorValued())
+        {
+          std::cerr << "Error: A scalar Neumann condition needs a scalar test space. On a "
+                    << "vector valued one, use AddBoundaryTerm with a vector integrand.\n";
+          return;
+        }
+
       FEExpression Expression(NEUMANN_BC, G);
       Terms.push_back(Expression);
     }
 
     void LinearForm::AddVolumeTerm(Integrand term)
     {
+      if(TestSpace.IsVectorValued())
+        {
+          std::cerr << "Error: This integrand expects a scalar test space, the assembly would "
+                    << "ignore the components.\n";
+          return;
+        }
+
       VolumeTerms.push_back(term);
     }
 
     void LinearForm::AddVolumeTerm(PointIntegrand term)
     {
+      if(TestSpace.IsVectorValued())
+        {
+          std::cerr << "Error: This integrand expects a scalar test space, the assembly would "
+                    << "ignore the components.\n";
+          return;
+        }
+
       PointVolumeTerms.push_back(term);
     }
 
@@ -65,11 +93,25 @@ namespace chemfem{
 
     void LinearForm::AddBoundaryTerm(Integrand term, BoundaryIndicator part)
     {
+      if(TestSpace.IsVectorValued())
+        {
+          std::cerr << "Error: This integrand expects a scalar test space, the boundary loop "
+                    << "would ignore the components.\n";
+          return;
+        }
+
       BoundaryTerms.push_back(BoundaryTerm{term, nullptr, nullptr, part});
     }
 
     void LinearForm::AddBoundaryTerm(BoundaryIntegrand term, BoundaryIndicator part)
     {
+      if(TestSpace.IsVectorValued())
+        {
+          std::cerr << "Error: This integrand expects a scalar test space, the boundary loop "
+                    << "would ignore the components.\n";
+          return;
+        }
+
       BoundaryTerms.push_back(BoundaryTerm{nullptr, term, nullptr, part});
     }
 

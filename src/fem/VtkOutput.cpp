@@ -97,9 +97,7 @@ namespace chemfem{
 
     bool VtkOutput::IsCellData(const FEFunction& u) const
     {
-      const Element& E = u.GetFESpace().RefElement();
-
-      return E.DofsPerVertex() == 0 && E.DofsPerEdge() == 0;
+      return u.GetFESpace().AllDofsInterior();
     }
 
     std::vector<double> VtkOutput::CellValues(const FEFunction& u, int component) const

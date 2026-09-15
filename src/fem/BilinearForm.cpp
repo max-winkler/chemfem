@@ -46,40 +46,6 @@ namespace chemfem{
       return DirichletTerm;
     }
 
-    void BilinearForm::AddDiffusionTerm(ScalarFunction DiffusionCoeff)
-    {
-      FEExpression expression(SECOND_ORDER, DiffusionCoeff);
-      Terms.push_back(expression);
-    }
-
-    void BilinearForm::AddLaplaceTerm()
-    {
-      FEExpression expression(SECOND_ORDER, Identity);
-      Terms.push_back(expression);
-    }
-
-    void BilinearForm::AddConvectionTerm(VectorFunction ConvectionField)
-    {
-      FEExpression expression(FIRST_ORDER, ConvectionField);
-      Terms.push_back(expression);
-    }
-
-    void BilinearForm::AddReactionTerm(ScalarFunction ReactionCoeff)
-    {
-      FEExpression expression(ZERO_ORDER, ReactionCoeff);
-      Terms.push_back(expression);
-    }
-
-    void BilinearForm::AddVolumeTerm(Integrand term)
-    {
-      VolumeTerms.push_back(term);
-    }
-
-    void BilinearForm::AddVolumeTerm(PointIntegrand term)
-    {
-      PointVolumeTerms.push_back(term);
-    }
-
     namespace {
 
       bool CheckVector(const FESpace& Space, const char* which)
@@ -87,7 +53,7 @@ namespace chemfem{
         if(Space.IsVectorValued())
           return true;
 
-        std::cerr << "Error: The integrand expects a vector valued " << which
+        std::cerr << "Error: This term needs a vector valued " << which
                   << " space, but that space is scalar.\n";
         return false;
       }
@@ -97,10 +63,64 @@ namespace chemfem{
         if(!Space.IsVectorValued())
           return true;
 
-        std::cerr << "Error: The integrand expects a scalar " << which
+        std::cerr << "Error: This term needs a scalar " << which
                   << " space, but that space is vector valued.\n";
         return false;
       }
+
+      /// Both spaces of a term that is evaluated with scalar values
+      bool CheckScalarPair(const FESpace& Trial, const FESpace& Test)
+      {
+        return CheckScalar(Trial, "trial") && CheckScalar(Test, "test");
+      }
+    }
+
+    void BilinearForm::AddDiffusionTerm(ScalarFunction DiffusionCoeff)
+    {
+      if(!CheckScalarPair(TrialSpace, TestSpace))
+        return;
+
+      FEExpression expression(SECOND_ORDER, DiffusionCoeff);
+      Terms.push_back(expression);
+    }
+
+    void BilinearForm::AddLaplaceTerm()
+    {
+      if(!CheckScalarPair(TrialSpace, TestSpace))
+        return;
+
+      FEExpression expression(SECOND_ORDER, Identity);
+      Terms.push_back(expression);
+    }
+
+    void BilinearForm::AddConvectionTerm(VectorFunction ConvectionField)
+    {
+      if(!CheckScalarPair(TrialSpace, TestSpace))
+        return;
+
+      FEExpression expression(FIRST_ORDER, ConvectionField);
+      Terms.push_back(expression);
+    }
+
+    void BilinearForm::AddReactionTerm(ScalarFunction ReactionCoeff)
+    {
+      if(!CheckScalarPair(TrialSpace, TestSpace))
+        return;
+
+      FEExpression expression(ZERO_ORDER, ReactionCoeff);
+      Terms.push_back(expression);
+    }
+
+    void BilinearForm::AddVolumeTerm(Integrand term)
+    {
+      if(CheckScalarPair(TrialSpace, TestSpace))
+        VolumeTerms.push_back(term);
+    }
+
+    void BilinearForm::AddVolumeTerm(PointIntegrand term)
+    {
+      if(CheckScalarPair(TrialSpace, TestSpace))
+        PointVolumeTerms.push_back(term);
     }
 
     void BilinearForm::AddVolumeTerm(VectorIntegrand term)
@@ -129,12 +149,15 @@ namespace chemfem{
 
     void BilinearForm::AddBoundaryTerm(Integrand term, BoundaryIndicator part)
     {
-      BoundaryTerms.push_back(BoundaryTerm{term, nullptr, part});
+      // The boundary loop builds scalar values only, it would ignore the components
+      if(CheckScalarPair(TrialSpace, TestSpace))
+        BoundaryTerms.push_back(BoundaryTerm{term, nullptr, part});
     }
 
     void BilinearForm::AddBoundaryTerm(BoundaryIntegrand term, BoundaryIndicator part)
     {
-      BoundaryTerms.push_back(BoundaryTerm{nullptr, term, part});
+      if(CheckScalarPair(TrialSpace, TestSpace))
+        BoundaryTerms.push_back(BoundaryTerm{nullptr, term, part});
     }
 
     SparseMatrix& BilinearForm::SystemMatrix()

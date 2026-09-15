@@ -87,6 +87,16 @@ namespace chemfem{
       const size_t nr_cells = mesh.NrCells();
       Vector Indicators(nr_cells);
 
+      // The integrands get scalar PointValues, which FEFunction::Evaluate builds without
+      // looking at the component: on a product space it would add the components of the
+      // solution together, on a Piola mapped one there are no scalar values at all
+      if(Space.IsVectorValued())
+        {
+          std::cerr << "Error: The estimator evaluates scalar values, it cannot be used on "
+                    << "a vector valued space.\n";
+          return Indicators;
+        }
+
       if(VolumeTerms.empty() && EdgeTerms.empty())
         return Indicators;
 

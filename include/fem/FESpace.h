@@ -58,6 +58,13 @@ namespace chemfem{
       bool IsVectorValued() const;
 
       /**
+       * True if all DOFs of the element sit in the interior of a cell, as for the DG
+       * elements. No DOF of such a space touches the boundary, so essential conditions
+       * cannot be imposed on it at all, and its functions are written as VTK cell data.
+       */
+      bool AllDofsInterior() const;
+
+      /**
        * Returns the global index of a local degree of freedom. The first argument
        * is the index of the cell, the second one the local index.
        */

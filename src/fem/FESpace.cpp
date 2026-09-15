@@ -88,6 +88,11 @@ namespace chemfem{
       return NrComponents() > 1 || refElement.Mapping() == ContravariantPiola;
     }
 
+    bool FESpace::AllDofsInterior() const
+    {
+      return refElement.DofsPerVertex() == 0 && refElement.DofsPerEdge() == 0;
+    }
+
     std::ostream& operator<<(std::ostream& os, const FESpace& space)
     {
       os << "FE Space of type ";

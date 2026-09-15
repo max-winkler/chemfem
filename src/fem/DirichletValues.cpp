@@ -16,8 +16,36 @@ namespace chemfem{
     DirichletValues::DirichletValues(const FESpace& Space)
       : Space(&Space), Values(Space.NrDof(), 0.) {}
 
+    namespace {
+
+      /// Whether values can be prescribed on the space at all
+      bool CanPrescribe(const FESpace& Space)
+      {
+        if(Space.RefElement().Mapping() == ContravariantPiola)
+          {
+            std::cerr << "Error: The DOFs of this space are fluxes through the edges, not "
+                      << "point values, so Dirichlet values cannot be interpolated into "
+                      << "it.\n";
+            return false;
+          }
+
+        if(Space.AllDofsInterior())
+          {
+            std::cerr << "Error: No DOF of this space touches the boundary, so essential "
+                      << "conditions cannot be imposed on it. A DG space takes boundary "
+                      << "conditions weakly instead.\n";
+            return false;
+          }
+
+        return true;
+      }
+    }
+
     void DirichletValues::Set(ScalarFunction Value, BoundaryIndicator part)
     {
+      if(!CanPrescribe(*Space))
+        return;
+
       const Mesh& mesh = Space->GetMesh();
       const Element& E = Space->RefElement();
 
@@ -45,6 +73,9 @@ namespace chemfem{
 
     void DirichletValues::Set(VectorFunction Value, BoundaryIndicator part)
     {
+      if(!CanPrescribe(*Space))
+        return;
+
       const Mesh& mesh = Space->GetMesh();
       const Element& E = Space->RefElement();
 
