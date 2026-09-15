@@ -40,6 +40,16 @@ namespace chemfem{
       /// Values in the vertices of the given component of an FE function
       std::vector<double> VertexValues(const FEFunction&, int component = 0) const;
 
+      /// Value in the barycenter of every cell, for functions that live cell by cell
+      std::vector<double> CellValues(const FEFunction&, int component = 0) const;
+
+      /**
+       * True if all DOFs of the space sit in the interior of a cell, as for the DG
+       * elements. Such a function is written as cell data, averaging it onto the vertices
+       * would invent a continuity it does not have.
+       */
+      bool IsCellData(const FEFunction&) const;
+
       struct ScalarField
       {
         std::string name;

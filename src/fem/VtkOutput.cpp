@@ -95,6 +95,38 @@ namespace chemfem{
       return sum;
     }
 
+    bool VtkOutput::IsCellData(const FEFunction& u) const
+    {
+      const Element& E = u.GetFESpace().RefElement();
+
+      return E.DofsPerVertex() == 0 && E.DofsPerEdge() == 0;
+    }
+
+    std::vector<double> VtkOutput::CellValues(const FEFunction& u, int component) const
+    {
+      const FESpace& Space = u.GetFESpace();
+
+      std::vector<double> values(mesh.NrCells(), 0.);
+
+      for(size_t c=0; c<mesh.NrCells(); ++c)
+        {
+          double value = 0.;
+
+          for(size_t k=0; k<Space.NrLocalDof(); ++k)
+            {
+              if(Space.RefElement().Component(k) != component)
+                continue;
+
+              value += u[Space.GetGlobalIndex(c, k)]
+                * Space.RefElement().Value(k, 1./3, 1./3);
+            }
+
+          values[c] = value;
+        }
+
+      return values;
+    }
+
     void VtkOutput::Write(const std::string& filename) const
     {
       std::ofstream ofs(filename);
@@ -133,27 +165,68 @@ namespace chemfem{
           return;
         }
 
-      ofs << "POINT_DATA " << mesh.NrNodes() << "\n";
+      std::vector<size_t> PointScalars, CellScalars, PointVectors, CellVectors;
 
       for(size_t s=0; s<Scalars.size(); ++s)
-        {
-          const std::vector<double> values = VertexValues(*Scalars[s].function);
-
-          ofs << "SCALARS " << Scalars[s].name << " double 1\n"
-              << "LOOKUP_TABLE default\n";
-          for(size_t n=0; n<values.size(); ++n)
-            ofs << values[n] << "\n";
-        }
+        (IsCellData(*Scalars[s].function) ? CellScalars : PointScalars).push_back(s);
 
       for(size_t v=0; v<Vectors.size(); ++v)
-        {
-          const std::vector<double> x = VertexValues(*Vectors[v].x, 0);
-          const std::vector<double> y = Vectors[v].y ? VertexValues(*Vectors[v].y, 0)
-                                                     : VertexValues(*Vectors[v].x, 1);
+        (IsCellData(*Vectors[v].x) ? CellVectors : PointVectors).push_back(v);
 
-          ofs << "VECTORS " << Vectors[v].name << " double\n";
-          for(size_t n=0; n<x.size(); ++n)
-            ofs << x[n] << " " << y[n] << " 0\n";
+      if(!PointScalars.empty() || !PointVectors.empty())
+        {
+          ofs << "POINT_DATA " << mesh.NrNodes() << "\n";
+
+          for(size_t i=0; i<PointScalars.size(); ++i)
+            {
+              const ScalarField& field = Scalars[PointScalars[i]];
+              const std::vector<double> values = VertexValues(*field.function);
+
+              ofs << "SCALARS " << field.name << " double 1\n"
+                  << "LOOKUP_TABLE default\n";
+              for(size_t n=0; n<values.size(); ++n)
+                ofs << values[n] << "\n";
+            }
+
+          for(size_t i=0; i<PointVectors.size(); ++i)
+            {
+              const VectorField& field = Vectors[PointVectors[i]];
+              const std::vector<double> x = VertexValues(*field.x, 0);
+              const std::vector<double> y = field.y ? VertexValues(*field.y, 0)
+                                                    : VertexValues(*field.x, 1);
+
+              ofs << "VECTORS " << field.name << " double\n";
+              for(size_t n=0; n<x.size(); ++n)
+                ofs << x[n] << " " << y[n] << " 0\n";
+            }
+        }
+
+      if(!CellScalars.empty() || !CellVectors.empty())
+        {
+          ofs << "CELL_DATA " << mesh.NrCells() << "\n";
+
+          for(size_t i=0; i<CellScalars.size(); ++i)
+            {
+              const ScalarField& field = Scalars[CellScalars[i]];
+              const std::vector<double> values = CellValues(*field.function);
+
+              ofs << "SCALARS " << field.name << " double 1\n"
+                  << "LOOKUP_TABLE default\n";
+              for(size_t c=0; c<values.size(); ++c)
+                ofs << values[c] << "\n";
+            }
+
+          for(size_t i=0; i<CellVectors.size(); ++i)
+            {
+              const VectorField& field = Vectors[CellVectors[i]];
+              const std::vector<double> x = CellValues(*field.x, 0);
+              const std::vector<double> y = field.y ? CellValues(*field.y, 0)
+                                                    : CellValues(*field.x, 1);
+
+              ofs << "VECTORS " << field.name << " double\n";
+              for(size_t c=0; c<x.size(); ++c)
+                ofs << x[c] << " " << y[c] << " 0\n";
+            }
         }
 
       if(Verbose())
