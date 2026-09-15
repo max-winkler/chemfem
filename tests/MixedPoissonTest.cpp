@@ -21,10 +21,7 @@ using namespace chemfem::mesh;
 // The flux lives in the lowest order Raviart-Thomas space, the solution in the piecewise
 // constants. That pair is inf-sup stable because div(RT_0) = DG_0 holds exactly. The
 // Dirichlet data of u is natural here, it enters the right hand side over the boundary, so
-// neither space carries an essential condition.
-//
-// Only the error of u is measured, it converges with order 1. ErrorNorm cannot evaluate a
-// Piola mapped function yet.
+// neither space carries an essential condition. Both unknowns converge with order 1.
 
 double exact(const Coordinate& p)
 {
@@ -35,6 +32,17 @@ double exact(const Coordinate& p)
 double force(const Coordinate& p)
 {
   return 2.*M_PI*M_PI*exact(p);
+}
+
+/// The two components of the exact flux sigma = -grad(u)
+double flux_x(const Coordinate& p)
+{
+  return -M_PI*cos(M_PI*p.x)*cos(M_PI*p.y);
+}
+
+double flux_y(const Coordinate& p)
+{
+  return M_PI*sin(M_PI*p.x)*sin(M_PI*p.y);
 }
 
 bool Nowhere(const Coordinate&)
@@ -48,11 +56,12 @@ int main()
 
   Mesh mesh = UnitSquareMesh(3);
 
-  std::vector<double> errors;
+  std::vector<double> u_errors, sigma_errors;
   bool ok = true;
 
   std::cout << std::setw(8) << "Cells" << std::setw(10) << "DOFs"
-            << std::setw(12) << "u L2" << std::setw(8) << "eoc" << std::endl;
+            << std::setw(12) << "u L2" << std::setw(8) << "eoc"
+            << std::setw(12) << "sigma L2" << std::setw(8) << "eoc" << std::endl;
 
   for(int level=0; level<levels; ++level)
     {
@@ -99,15 +108,26 @@ int main()
 
       const Vector X = S.Solve(S.AssembleRhs());
 
+      FEFunction Sigma = S.Extract(0, X);
       FEFunction U = S.Extract(1, X);
 
-      ErrorNorm Error(exact);
-      errors.push_back(Error.Compute(U, L2));
+      ErrorNorm Eu(exact), Ex(flux_x), Ey(flux_y);
+
+      u_errors.push_back(Eu.Compute(U, L2));
+      sigma_errors.push_back(std::hypot(Ex.Compute(Sigma, L2, 0), Ey.Compute(Sigma, L2, 1)));
 
       std::cout << std::setw(8) << mesh.NrCells() << std::setw(10) << S.NrDof()
-                << std::scientific << std::setprecision(3) << std::setw(12) << errors.back();
+                << std::scientific << std::setprecision(3) << std::setw(12)
+                << u_errors.back();
       if(level > 0)
-        std::cout << std::fixed << std::setw(8) << log2(errors[level-1]/errors[level]);
+        std::cout << std::fixed << std::setw(8)
+                  << log2(u_errors[level-1]/u_errors[level]);
+      else
+        std::cout << std::setw(8) << "";
+      std::cout << std::scientific << std::setw(12) << sigma_errors.back();
+      if(level > 0)
+        std::cout << std::fixed << std::setw(8)
+                  << log2(sigma_errors[level-1]/sigma_errors[level]);
       std::cout << std::endl;
 
       if(level+1 < levels)
@@ -117,11 +137,18 @@ int main()
         }
     }
 
-  const double eoc = log2(errors[levels-2]/errors[levels-1]);
+  const double u_eoc = log2(u_errors[levels-2]/u_errors[levels-1]);
+  const double sigma_eoc = log2(sigma_errors[levels-2]/sigma_errors[levels-1]);
 
-  if(std::fabs(eoc - 1.) > 0.15)
+  if(std::fabs(u_eoc - 1.) > 0.15)
     {
       std::cerr << "ERROR: the error of u does not converge with order 1.\n";
+      ok = false;
+    }
+
+  if(std::fabs(sigma_eoc - 1.) > 0.15)
+    {
+      std::cerr << "ERROR: the error of sigma does not converge with order 1.\n";
       ok = false;
     }
 

@@ -44,6 +44,17 @@ namespace chemfem{
       const FESpace& Space = Solution.GetFESpace();
       const Mesh& mesh = Space.GetMesh();
 
+      // A Piola mapped basis function contributes to both components, and it has no
+      // gradient, so only the L2 norm is available for such a space
+      const bool Piola = Space.RefElement().Mapping() == ContravariantPiola;
+
+      if(Piola && norm != L2)
+        {
+          std::cerr << "Error: Only the L2 norm is available on a space with a Piola "
+                    << "mapping.\n";
+          return 0.;
+        }
+
       QuadratureFormula quad(chemfem::quadrature::GAUSS_7);
       Vector Weights, Xi, Eta;
       quad.FormulaData(Weights, Xi, Eta);
@@ -82,10 +93,13 @@ namespace chemfem{
 		    {
 		      // On a vector valued space only the basis functions of the component
 		      // that is asked for contribute
-		      if(Space.RefElement().Component(k) != component)
+		      if(!Piola && Space.RefElement().Component(k) != component)
 			continue;
 
-		      double form_value = Space.RefElement().Value(k, *Xiq, *Etaq);
+		      double form_value = Piola
+			? MapFromReference(Space.RefElement().VectorReference(k, *Xiq, *Etaq),
+					   Jac, det, Space.LocalSign(CellInd, k)).value[component]
+			: Space.RefElement().Value(k, *Xiq, *Etaq);
 		      double dof_value = Solution[LocalDof[k]];
 		      fe_value += dof_value * form_value;
 		    }
@@ -102,7 +116,7 @@ namespace chemfem{
 		    {
 		      // On a vector valued space only the basis functions of the component
 		      // that is asked for contribute
-		      if(Space.RefElement().Component(k) != component)
+		      if(!Piola && Space.RefElement().Component(k) != component)
 			continue;
 
 		      double dof_value = Solution[LocalDof[k]];
