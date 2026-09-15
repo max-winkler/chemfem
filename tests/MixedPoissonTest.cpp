@@ -7,6 +7,7 @@
 #include "fem/RaviartThomasElement.h"
 #include "fem/DGElement.h"
 #include "fem/ErrorNorm.h"
+#include "fem/VtkOutput.h"
 #include "mesh/UnitSquareMesh.h"
 
 using namespace chemfem::fem;
@@ -129,6 +130,14 @@ int main()
         std::cout << std::fixed << std::setw(8)
                   << log2(sigma_errors[level-1]/sigma_errors[level]);
       std::cout << std::endl;
+
+      if(level+1 == levels)
+        {
+          VtkOutput out(mesh);
+          out.AddVector("sigma", Sigma);
+          out.AddScalar("u", U);
+          out.Write("mixed_poisson.vtk");
+        }
 
       if(level+1 < levels)
         {

@@ -37,7 +37,11 @@ namespace chemfem{
 
     void VtkOutput::AddVector(const std::string& name, const FEFunction& u)
     {
-      if(u.GetFESpace().NrComponents() != 2)
+      // Either two interleaved components, as for a product element, or a Piola mapped
+      // element, whose basis functions are vectors in themselves
+      const FESpace& Space = u.GetFESpace();
+
+      if(Space.NrComponents() != 2 && Space.RefElement().Mapping() != ContravariantPiola)
         {
           std::cerr << "Error: The vector field " << name << " needs an FE function with two "
                     << "components.\n";
@@ -56,17 +60,27 @@ namespace chemfem{
       std::vector<double> sum(mesh.NrNodes(), 0.);
       std::vector<int> count(mesh.NrNodes(), 0);
 
+      // A Piola mapped basis function contributes to both components, so the filter on the
+      // component does not apply to it and its value needs the mapping of its cell
+      const bool Piola = Space.RefElement().Mapping() == ContravariantPiola;
+
       for(size_t c=0; c<mesh.NrCells(); ++c)
         for(int v=0; v<3; ++v)
           {
             double value = 0.;
             for(size_t k=0; k<Space.NrLocalDof(); ++k)
               {
-                if(Space.RefElement().Component(k) != component)
+                if(!Piola && Space.RefElement().Component(k) != component)
                   continue;
 
-                value += u[Space.GetGlobalIndex(c, k)]
-                  * Space.RefElement().Value(k, Vertex[v][0], Vertex[v][1]);
+                const double basis = Piola
+                  ? MapFromReference(Space.RefElement().VectorReference(k, Vertex[v][0],
+                                                                        Vertex[v][1]),
+                                     mesh.Jacobian(c), mesh.Determinant(c),
+                                     Space.LocalSign(c, k)).value[component]
+                  : Space.RefElement().Value(k, Vertex[v][0], Vertex[v][1]);
+
+                value += u[Space.GetGlobalIndex(c, k)] * basis;
               }
 
             const size_t node = mesh.Cells[c].LocNode[v];
