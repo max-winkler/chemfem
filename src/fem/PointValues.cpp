@@ -6,7 +6,7 @@ using chemfem::linalg::Vector;
 namespace chemfem{
   namespace fem{
 
-    PointValues ReferenceValues(const Element& E, int k, double xi, double eta)
+    PointValues ReferenceValues(const ScalarElement& E, int k, double xi, double eta)
     {
       PointValues r;
       r.value = E.Value(k, xi, eta);
@@ -16,7 +16,7 @@ namespace chemfem{
       return r;
     }
 
-    std::vector<PointValues> TabulateReference(const Element& E, const Vector& Xi,
+    std::vector<PointValues> TabulateReference(const ScalarElement& E, const Vector& Xi,
                                                const Vector& Eta)
     {
       const size_t n = E.NrDof();
@@ -54,28 +54,29 @@ namespace chemfem{
       return v;
     }
 
-    std::vector<VectorRefValues> TabulateVectorReference(const Element& E, const Vector& Xi,
+    std::vector<ReferenceVector> TabulateVectorReference(const VectorElement& E, const Vector& Xi,
                                                          const Vector& Eta)
     {
       const size_t n = E.NrDof();
-      std::vector<VectorRefValues> table(Xi.size()*n);
+      std::vector<ReferenceVector> table(Xi.size()*n);
 
       for(size_t q=0; q<Xi.size(); ++q)
         for(size_t k=0; k<n; ++k)
-          table[q*n + k] = E.VectorReference(k, Xi[q], Eta[q]);
+          table[q*n + k] = ReferenceVector{E.Value(k, Xi[q], Eta[q]),
+                                           E.Gradient(k, Xi[q], Eta[q])};
 
       return table;
     }
 
-    VectorValues MapFromReference(const VectorRefValues& ref, const Matrix2D& Jac, double det,
+    VectorValues MapFromReference(const ReferenceVector& ref, const Matrix2D& Jac, double det,
                                   double sign)
     {
       VectorValues v;
 
       v.value = (sign/det) * (Jac * ref.value);
-      v.gradient = Matrix2D(0., 0., 0., 0.);
-      v.divergence = sign * ref.divergence / det;
-      v.curl = 0.;
+      v.gradient = (sign/det) * (Jac * ref.gradient * Jac.Invert());
+      v.divergence = v.gradient.Trace();
+      v.curl = v.gradient.a10 - v.gradient.a01;
 
       return v;
     }

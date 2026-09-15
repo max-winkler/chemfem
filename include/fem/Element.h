@@ -14,19 +14,6 @@ namespace chemfem{
     /// Finite element type.
     enum FEType {Lagrange, CrouzeixRaviart, DG, RaviartThomas};
 
-    /**
-     * How a cell builds its basis functions from the reference ones. Affine leaves the
-     * values unchanged and maps only the derivatives, ContravariantPiola also mixes the
-     * components and is needed by the H(div) conforming elements.
-     */
-    enum MappingType {Affine, ContravariantPiola};
-
-    /// Value and divergence of a vector valued basis function on the reference element
-    struct VectorRefValues
-    {
-      Vector2D value;
-      double divergence;
-    };
 
     /**
      * This class represents a single finite element. This is a virtual class and
@@ -79,41 +66,13 @@ namespace chemfem{
       int Degree() const;
 
       /**
-       * Return the function value of the trial functions
-       */
-      virtual double Value(int, double, double) const = 0;
-
-      /**
-       * Returns the gradient of the trial function.
-       */
-      virtual Vector2D Gradient(int, double, double) const = 0;
-
-      /**
-       * Returns the Hessian of the trial function on the reference element. It is
-       * symmetric, so only one of the two off-diagonal entries carries information.
-       */
-      virtual Matrix2D Hessian(int, double, double) const = 0;
-
-      /**
-       * Reference coordinates of the point whose function value the local DOF is. Used
-       * for the interpolation.
+       * Reference coordinates of the point the local DOF belongs to: a vertex, an edge
+       * midpoint or the barycenter. For a DOF that is not a point value, such as the flux
+       * of a Raviart-Thomas element, it is the point its edge is represented by.
        */
       virtual chemfem::linalg::Coordinate NodalPoint(int) const = 0;
 
-      /// The mapping a cell needs to build its basis functions from the reference ones
-      MappingType Mapping() const { return mapping; }
-
-      /**
-       * Value and divergence of a vector valued reference basis function. Only elements
-       * with a Piola mapping provide them, everything else is described by Value.
-       */
-      virtual VectorRefValues VectorReference(int, double, double) const
-      {
-        return VectorRefValues{Vector2D(0., 0.), 0.};
-      }
-
     protected:
-      MappingType mapping = Affine;
 
       FEType type;
       int nr_dof;
@@ -127,6 +86,52 @@ namespace chemfem{
        * times as long.
        */
       int nr_components;
+    };
+
+    /**
+     * An element whose shape functions are scalar. A basis function of a vector valued
+     * space built from such an element, as ProductElement does, is that scalar function
+     * placed in the component Component(k), so the accessors below describe it completely.
+     */
+    class ScalarElement : public Element
+    {
+    public:
+      ScalarElement(FEType type, int degree) : Element(type, degree) {}
+
+      /// Value of the shape function k in the reference point
+      virtual double Value(int, double, double) const = 0;
+
+      /// Its gradient on the reference element
+      virtual Vector2D Gradient(int, double, double) const = 0;
+
+      /**
+       * Its Hessian on the reference element. It is symmetric, so only one of the two
+       * off-diagonal entries carries information.
+       */
+      virtual Matrix2D Hessian(int, double, double) const = 0;
+    };
+
+    /**
+     * An element whose shape functions are vector fields already on the reference element,
+     * such as Raviart-Thomas. They are not built from a scalar function, and a cell maps
+     * them with a Piola transform rather than by leaving the values unchanged.
+     */
+    class VectorElement : public Element
+    {
+    public:
+      VectorElement(FEType type, int degree) : Element(type, degree) {}
+
+      /// Value of the shape function k in the reference point
+      virtual Vector2D Value(int, double, double) const = 0;
+
+      /// Its gradient on the reference element, row i holds the gradient of component i
+      virtual Matrix2D Gradient(int, double, double) const = 0;
+
+      /// Trace of the gradient
+      double Divergence(int k, double xi, double eta) const
+      {
+        return Gradient(k, xi, eta).Trace();
+      }
     };
 
     /**

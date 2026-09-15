@@ -21,7 +21,7 @@ namespace chemfem{
       /// Whether values can be prescribed on the space at all
       bool CanPrescribe(const FESpace& Space)
       {
-        if(Space.RefElement().Mapping() == ContravariantPiola)
+        if(Space.AsVector())
           {
             std::cerr << "Error: The DOFs of this space are fluxes through the edges, not "
                       << "point values, so Dirichlet values cannot be interpolated into "

@@ -76,6 +76,15 @@ namespace chemfem{
       const Element& RefElement() const;
 
       /**
+       * The element as a scalar one, or null if its shape functions are vectors. Resolved
+       * once when the space is built, so the branch costs nothing in an assembly loop.
+       */
+      const ScalarElement* AsScalar() const;
+
+      /// The element as a vector one, or null if its shape functions are scalars
+      const VectorElement* AsVector() const;
+
+      /**
        * For a given vector representing the values at the free DOFs, this function returns
        * a vector where also Dirichlet DOFs are incorporated.
        */
@@ -109,6 +118,9 @@ namespace chemfem{
 
     private:
       Element& refElement;
+
+      const ScalarElement* scalar;
+      const VectorElement* vector;
 
       chemfem::mesh::Mesh& mesh;
 

@@ -17,21 +17,15 @@ namespace chemfem{
      * other two and divergence 2. A cell maps them with the contravariant Piola transform,
      * so the scalar Value of the base class does not describe them.
      */
-    class RaviartThomasElement : public Element
+    class RaviartThomasElement : public VectorElement
     {
     public:
       RaviartThomasElement();
 
-      VectorRefValues VectorReference(int, double, double) const;
+      Vector2D Value(int, double, double) const;
 
-      /// Not available, the basis functions are vector valued
-      double Value(int, double, double) const;
-
-      /// Not available, the basis functions are vector valued
-      Vector2D Gradient(int, double, double) const;
-
-      /// Not available, the basis functions are vector valued
-      Matrix2D Hessian(int, double, double) const;
+      /// The identity for every basis function, they are all of the form x + const
+      Matrix2D Gradient(int, double, double) const;
 
       /// Midpoint of the edge the DOF belongs to
       chemfem::linalg::Coordinate NodalPoint(int) const;

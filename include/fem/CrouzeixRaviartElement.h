@@ -10,7 +10,7 @@ namespace chemfem{
      * Nonconforming P1 element of Crouzeix and Raviart. Its DOFs are the function values
      * in the edge midpoints, the local DOF k belongs to the local edge k.
      */
-    class CrouzeixRaviartElement : public Element
+    class CrouzeixRaviartElement : public ScalarElement
     {
     public:
       CrouzeixRaviartElement();

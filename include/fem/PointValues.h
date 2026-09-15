@@ -76,14 +76,25 @@ namespace chemfem{
     };
 
     /// Values of the basis function k of the element in (xi,eta) on the reference element
-    PointValues ReferenceValues(const Element&, int k, double xi, double eta);
+    PointValues ReferenceValues(const ScalarElement&, int k, double xi, double eta);
+
+    /**
+     * A vector valued shape function on the reference element, as the tabulation stores
+     * it. The divergence is not kept, it is the trace of the gradient.
+     */
+    struct ReferenceVector
+    {
+      chemfem::linalg::Vector2D value;
+      chemfem::linalg::Matrix2D gradient;
+    };
 
     /// Reference values of all basis functions in all points, stored as [q*NrDof + k]
-    std::vector<PointValues> TabulateReference(const Element&, const chemfem::linalg::Vector& Xi,
+    std::vector<PointValues> TabulateReference(const ScalarElement&,
+                                               const chemfem::linalg::Vector& Xi,
                                                const chemfem::linalg::Vector& Eta);
 
-    /// The same for an element whose reference basis functions are vector valued
-    std::vector<VectorRefValues> TabulateVectorReference(const Element&,
+    /// The same for an element whose shape functions are vectors
+    std::vector<ReferenceVector> TabulateVectorReference(const VectorElement&,
                                                          const chemfem::linalg::Vector& Xi,
                                                          const chemfem::linalg::Vector& Eta);
 
@@ -105,12 +116,12 @@ namespace chemfem{
      * Maps a vector valued reference basis function to a cell with the contravariant Piola
      * transform, s = (1/det J) J s_ref. The divergence transforms as div s = (1/det J) div
      * s_ref, which is why the flux of s through an edge equals the one of s_ref through the
-     * corresponding reference edge. The gradient is not provided.
+     * corresponding reference edge. The gradient transforms as J g J^-1 / det.
      *
      * The sign turns the reference flux of an edge DOF into the one of the globally fixed
      * normal of that edge, so that two neighbouring cells agree on it.
      */
-    VectorValues MapFromReference(const VectorRefValues&, const chemfem::linalg::Matrix2D& Jac,
+    VectorValues MapFromReference(const ReferenceVector&, const chemfem::linalg::Matrix2D& Jac,
                                   double det, double sign = 1.);
 
   };

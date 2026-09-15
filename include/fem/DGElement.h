@@ -13,7 +13,7 @@ namespace chemfem{
      * the pressure space of the lowest order Raviart-Thomas discretization, for which
      * div(RT_0) = P_0 holds exactly.
      */
-    class DGElement : public Element
+    class DGElement : public ScalarElement
     {
     public:
       DGElement(int degree);

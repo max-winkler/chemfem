@@ -159,7 +159,7 @@ namespace chemfem{
       // for every cell
       std::vector<PointValues> RefTest;
       if(HasIntegrands)
-	RefTest = TabulateReference(TestSpace.RefElement(), Xi, Eta);
+	RefTest = TabulateReference(*TestSpace.AsScalar(), Xi, Eta);
 
       std::vector<PointValues> TestValues(NrTest);
       std::vector<VectorValues> TestVectors(NrTest);
@@ -194,7 +194,7 @@ namespace chemfem{
 	      // Function value of test functions
 	      for(int k=0; k<NrTest; ++k)
 		TestFuncValue[k] = Terms.empty()
-			  ? 0. : TestSpace.RefElement().Value(k, *Xiq, *Etaq);
+			  ? 0. : TestSpace.AsScalar()->Value(k, *Xiq, *Etaq);
 
 	      // Iterate over all terms
 	      for(std::vector<FEExpression>::const_iterator Term = Terms.begin();
@@ -311,7 +311,7 @@ namespace chemfem{
 
 		  for(int i=0; i<NrTest; ++i)
 		    LocVec[i] += LineWeights[q] * CoeffVal
-		      * TestSpace.RefElement().Value(i, xi, eta) * length;
+		      * TestSpace.AsScalar()->Value(i, xi, eta) * length;
 		}
 	    }
 
@@ -357,8 +357,8 @@ namespace chemfem{
 	  const Matrix2D InvJac = Jac.Transpose().Invert();
 	  const double CellDet = mesh.Determinant(CellIndex);
 
-	  const bool Piola
-	    = TestSpace.RefElement().Mapping() == ContravariantPiola;
+	  const VectorElement* VecElement = TestSpace.AsVector();
+	  const bool Piola = VecElement != nullptr;
 
 	  Vector LocVec(NrTest);
 
@@ -377,11 +377,12 @@ namespace chemfem{
 		{
 		  if(Piola)
 		    TestVectors[i] = MapFromReference(
-		      TestSpace.RefElement().VectorReference(i, xi, eta), Jac, CellDet,
-		      TestSpace.LocalSign(CellIndex, i));
+		      ReferenceVector{VecElement->Value(i, xi, eta),
+				      VecElement->Gradient(i, xi, eta)},
+		      Jac, CellDet, TestSpace.LocalSign(CellIndex, i));
 		  else
 		    TestValues[i] = MapFromReference(
-		      ReferenceValues(TestSpace.RefElement(), i, xi, eta), InvJac);
+		      ReferenceValues(*TestSpace.AsScalar(), i, xi, eta), InvJac);
 		}
 
 	      for(size_t a=0; a<Active.size(); ++a)

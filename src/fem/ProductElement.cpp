@@ -9,8 +9,8 @@ using chemfem::linalg::Vector2D;
 namespace chemfem{
   namespace fem{
 
-    ProductElement::ProductElement(const Element& Scalar, int components)
-      : Element(Scalar.Type(), Scalar.Degree()), Scalar(Scalar)
+    ProductElement::ProductElement(const ScalarElement& Scalar, int components)
+      : ScalarElement(Scalar.Type(), Scalar.Degree()), Scalar(Scalar)
     {
       if(components < 1)
 	std::cerr << "Error: A product element needs at least one component.\n";
@@ -43,7 +43,7 @@ namespace chemfem{
       return Scalar.NodalPoint(ScalarIndex(k));
     }
 
-    const Element& ProductElement::ScalarElement() const
+    const ScalarElement& ProductElement::ScalarPart() const
     {
       return Scalar;
     }

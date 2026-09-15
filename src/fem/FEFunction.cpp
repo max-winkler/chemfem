@@ -57,11 +57,18 @@ namespace chemfem{
       if((CacheValid == VALUE_ONLY || CacheValid == EVERYTHING) && SamePoint(p, CachedPoint))
 	return CachedValues.value;
 
-      const Element& E = Space->RefElement();
+      const ScalarElement* E = Space->AsScalar();
+
+      if(!E)
+	{
+	  std::cerr << "Error: This space has vector valued shape functions, use "
+		    << "VectorValue.\n";
+	  return 0.;
+	}
 
       double value = 0.;
       for(size_t k=0; k<Space->NrLocalDof(); ++k)
-	value += Data[Space->GetGlobalIndex(p.cell, k)] * E.Value(k, p.xi, p.eta);
+	value += Data[Space->GetGlobalIndex(p.cell, k)] * E->Value(k, p.xi, p.eta);
 
       CachedValues.value = value;
       CachedPoint = p;
@@ -79,7 +86,7 @@ namespace chemfem{
 
       chemfem::linalg::Vector2D value;
 
-      if(E.Mapping() == ContravariantPiola)
+      if(const VectorElement* Vec = Space->AsVector())
 	{
 	  const chemfem::linalg::Matrix2D Jac = Space->GetMesh().Jacobian(p.cell);
 	  const double det = Space->GetMesh().Determinant(p.cell);
@@ -87,8 +94,9 @@ namespace chemfem{
 	  for(size_t k=0; k<Space->NrLocalDof(); ++k)
 	    {
 	      const chemfem::linalg::Vector2D basis
-		= MapFromReference(E.VectorReference(k, p.xi, p.eta), Jac, det,
-				   Space->LocalSign(p.cell, k)).value;
+		= MapFromReference(ReferenceVector{Vec->Value(k, p.xi, p.eta),
+						   Vec->Gradient(k, p.xi, p.eta)},
+				   Jac, det, Space->LocalSign(p.cell, k)).value;
 
 	      const double coeff = Data[Space->GetGlobalIndex(p.cell, k)];
 
@@ -99,7 +107,7 @@ namespace chemfem{
       else
 	for(size_t k=0; k<Space->NrLocalDof(); ++k)
 	  value[E.Component(k)] += Data[Space->GetGlobalIndex(p.cell, k)]
-	    * E.Value(k, p.xi, p.eta);
+	    * Space->AsScalar()->Value(k, p.xi, p.eta);
 
       CachedVector = value;
       CachedPoint = p;
@@ -113,7 +121,13 @@ namespace chemfem{
       if(CacheValid == EVERYTHING && SamePoint(p, CachedPoint))
 	return CachedValues;
 
-      const Element& E = Space->RefElement();
+      const ScalarElement* E = Space->AsScalar();
+
+      if(!E)
+	{
+	  std::cerr << "Error: Evaluate needs scalar shape functions.\n";
+	  return PointValues{0., chemfem::linalg::Vector2D(), chemfem::linalg::Matrix2D(), 0.};
+	}
 
       PointValues ref;
       ref.value = 0.;
@@ -122,9 +136,9 @@ namespace chemfem{
 	{
 	  const double coeff = Data[Space->GetGlobalIndex(p.cell, k)];
 
-	  ref.value += coeff * E.Value(k, p.xi, p.eta);
-	  ref.gradient += coeff * E.Gradient(k, p.xi, p.eta);
-	  ref.hessian += coeff * E.Hessian(k, p.xi, p.eta);
+	  ref.value += coeff * E->Value(k, p.xi, p.eta);
+	  ref.gradient += coeff * E->Gradient(k, p.xi, p.eta);
+	  ref.hessian += coeff * E->Hessian(k, p.xi, p.eta);
 	}
 
       const chemfem::linalg::Matrix2D InvJacT
@@ -157,7 +171,7 @@ namespace chemfem{
 	      double value = 0.;
 	      for(size_t k=0; k<Space->NrLocalDof(); ++k)
 		value += Data[Space->GetGlobalIndex(c, k)]
-		  * Space->RefElement().Value(k, Xi[q], Eta[q]);
+		  * Space->AsScalar()->Value(k, Xi[q], Eta[q]);
 
 	      integral += Weights[q] * value * det;
 	      area += Weights[q] * det;

@@ -7,7 +7,8 @@ using chemfem::linalg::Vector2D;
 namespace chemfem{
   namespace fem{
 
-    CrouzeixRaviartElement::CrouzeixRaviartElement() : Element(FEType::CrouzeixRaviart, 1)
+    CrouzeixRaviartElement::CrouzeixRaviartElement()
+      : ScalarElement(FEType::CrouzeixRaviart, 1)
     {
       nr_dof = 3;
       dofs_per_edge = 1;

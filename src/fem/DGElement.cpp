@@ -9,7 +9,7 @@ using chemfem::linalg::Vector2D;
 namespace chemfem{
   namespace fem{
 
-    DGElement::DGElement(int degree) : Element(FEType::DG, degree)
+    DGElement::DGElement(int degree) : ScalarElement(FEType::DG, degree)
     {
       switch(degree)
 	{

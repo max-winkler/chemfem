@@ -7,8 +7,13 @@ namespace chemfem{
     using chemfem::mesh::Mesh;
 
     FESpace::FESpace(Mesh& mesh, Element& element, BoundaryIndicator IsDirichlet)
-      : refElement(element), mesh(mesh), Dofs(mesh, element, IsDirichlet)
+      : refElement(element), scalar(dynamic_cast<const ScalarElement*>(&element)),
+	vector(dynamic_cast<const VectorElement*>(&element)),
+	mesh(mesh), Dofs(mesh, element, IsDirichlet)
     {
+      if(!scalar && !vector)
+	std::cerr << "Error: The element is neither a ScalarElement nor a VectorElement.\n";
+
       // Test if vertices are numbered correctly
       for(size_t i=0; i<mesh.Nodes.size(); ++i)
 	{
@@ -83,9 +88,19 @@ namespace chemfem{
       return Dofs.LocalSign(cell, local);
     }
 
+    const ScalarElement* FESpace::AsScalar() const
+    {
+      return scalar;
+    }
+
+    const VectorElement* FESpace::AsVector() const
+    {
+      return vector;
+    }
+
     bool FESpace::IsVectorValued() const
     {
-      return NrComponents() > 1 || refElement.Mapping() == ContravariantPiola;
+      return vector != nullptr || NrComponents() > 1;
     }
 
     bool FESpace::AllDofsInterior() const

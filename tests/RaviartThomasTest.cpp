@@ -81,7 +81,7 @@ int main()
                   double xi, eta;
                   EdgeToRefCoords(j, s[q], xi, eta);
 
-                  const VectorRefValues ref = E.VectorReference(k, xi, eta);
+                  const ReferenceVector ref{E.Value(k, xi, eta), E.Gradient(k, xi, eta)};
 
                   const Vector2D value = mapped
                     ? MapFromReference(ref, Jac, det).value : ref.value;
@@ -108,14 +108,15 @@ int main()
   // The Piola transform divides the divergence by the determinant
   for(int k=0; k<3; ++k)
     {
-      const VectorRefValues ref = E.VectorReference(k, 0.25, 0.25);
+      const ReferenceVector ref{E.Value(k, 0.25, 0.25), E.Gradient(k, 0.25, 0.25)};
+
+      const double reference = E.Divergence(k, 0.25, 0.25);
       const double divergence = MapFromReference(ref, Jac, det).divergence;
 
-      if(std::fabs(ref.divergence - 2.) > 1.e-14
-         || std::fabs(divergence - 2./det) > 1.e-14)
+      if(std::fabs(reference - 2.) > 1.e-14 || std::fabs(divergence - 2./det) > 1.e-14)
         {
           std::cerr << "ERROR: basis function " << k << " has reference divergence "
-                    << ref.divergence << " and mapped divergence " << divergence << ".\n";
+                    << reference << " and mapped divergence " << divergence << ".\n";
           ok = false;
         }
     }

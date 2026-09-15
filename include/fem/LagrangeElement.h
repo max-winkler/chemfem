@@ -9,7 +9,7 @@ namespace chemfem{
     /**
      * This class represents a Lagrange element of arbitrary order.
      */
-    class LagrangeElement : public Element
+    class LagrangeElement : public ScalarElement
     {
     public: 
       /**

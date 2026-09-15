@@ -41,7 +41,7 @@ namespace chemfem{
       // element, whose basis functions are vectors in themselves
       const FESpace& Space = u.GetFESpace();
 
-      if(Space.NrComponents() != 2 && Space.RefElement().Mapping() != ContravariantPiola)
+      if(Space.NrComponents() != 2 && !Space.AsVector())
         {
           std::cerr << "Error: The vector field " << name << " needs an FE function with two "
                     << "components.\n";
@@ -62,7 +62,8 @@ namespace chemfem{
 
       // A Piola mapped basis function contributes to both components, so the filter on the
       // component does not apply to it and its value needs the mapping of its cell
-      const bool Piola = Space.RefElement().Mapping() == ContravariantPiola;
+      const VectorElement* Vec = Space.AsVector();
+      const bool Piola = Vec != nullptr;
 
       for(size_t c=0; c<mesh.NrCells(); ++c)
         for(int v=0; v<3; ++v)
@@ -74,11 +75,11 @@ namespace chemfem{
                   continue;
 
                 const double basis = Piola
-                  ? MapFromReference(Space.RefElement().VectorReference(k, Vertex[v][0],
-                                                                        Vertex[v][1]),
+                  ? MapFromReference(ReferenceVector{Vec->Value(k, Vertex[v][0], Vertex[v][1]),
+                                                     Vec->Gradient(k, Vertex[v][0], Vertex[v][1])},
                                      mesh.Jacobian(c), mesh.Determinant(c),
                                      Space.LocalSign(c, k)).value[component]
-                  : Space.RefElement().Value(k, Vertex[v][0], Vertex[v][1]);
+                  : Space.AsScalar()->Value(k, Vertex[v][0], Vertex[v][1]);
 
                 value += u[Space.GetGlobalIndex(c, k)] * basis;
               }
@@ -116,7 +117,7 @@ namespace chemfem{
                 continue;
 
               value += u[Space.GetGlobalIndex(c, k)]
-                * Space.RefElement().Value(k, 1./3, 1./3);
+                * Space.AsScalar()->Value(k, 1./3, 1./3);
             }
 
           values[c] = value;

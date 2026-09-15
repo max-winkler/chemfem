@@ -22,10 +22,10 @@ namespace chemfem{
      * Elements whose basis functions are genuinely vector valued, like Raviart-Thomas or
      * Nedelec, do not fit this pattern. They need their own class with their own mapping.
      */
-    class ProductElement : public Element
+    class ProductElement : public ScalarElement
     {
     public:
-      ProductElement(const Element&, int components);
+      ProductElement(const ScalarElement&, int components);
 
       double Value(int, double, double) const;
 
@@ -36,10 +36,10 @@ namespace chemfem{
       chemfem::linalg::Coordinate NodalPoint(int) const;
 
       /// The scalar element the product is built from
-      const Element& ScalarElement() const;
+      const ScalarElement& ScalarPart() const;
 
     private:
-      const Element& Scalar;
+      const ScalarElement& Scalar;
     };
 
   };

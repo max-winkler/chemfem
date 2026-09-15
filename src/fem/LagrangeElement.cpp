@@ -11,7 +11,7 @@ using chemfem::linalg::Vector2D;
 namespace chemfem{
   namespace fem{
 
-    LagrangeElement::LagrangeElement(int degree) : Element(FEType::Lagrange, degree)
+    LagrangeElement::LagrangeElement(int degree) : ScalarElement(FEType::Lagrange, degree)
     {
       switch(degree)
 	{

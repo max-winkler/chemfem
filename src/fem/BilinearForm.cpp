@@ -232,24 +232,27 @@ namespace chemfem{
       const bool HasIntegrands = ScalarTest || VectorTest;
       const bool NeedsPoint = !PointVolumeTerms.empty() || !VectorPointTerms.empty();
 
-      const bool PiolaTest = TestSpace.RefElement().Mapping() == ContravariantPiola;
-      const bool PiolaTrial = TrialSpace.RefElement().Mapping() == ContravariantPiola;
+      const VectorElement* VecTest = TestSpace.AsVector();
+      const VectorElement* VecTrial = TrialSpace.AsVector();
+
+      const bool PiolaTest = VecTest != nullptr;
+      const bool PiolaTrial = VecTrial != nullptr;
 
       // The basis functions on the reference element in the quadrature points, the same
       // for every cell
       std::vector<PointValues> RefTest, RefTrial;
-      std::vector<VectorRefValues> VecRefTest, VecRefTrial;
+      std::vector<ReferenceVector> VecRefTest, VecRefTrial;
       if(HasIntegrands)
         {
           if(PiolaTest)
-            VecRefTest = TabulateVectorReference(TestSpace.RefElement(), Xi, Eta);
+            VecRefTest = TabulateVectorReference(*VecTest, Xi, Eta);
           else
-            RefTest = TabulateReference(TestSpace.RefElement(), Xi, Eta);
+            RefTest = TabulateReference(*TestSpace.AsScalar(), Xi, Eta);
 
           if(PiolaTrial)
-            VecRefTrial = TabulateVectorReference(TrialSpace.RefElement(), Xi, Eta);
+            VecRefTrial = TabulateVectorReference(*VecTrial, Xi, Eta);
           else
-            RefTrial = TabulateReference(TrialSpace.RefElement(), Xi, Eta);
+            RefTrial = TabulateReference(*TrialSpace.AsScalar(), Xi, Eta);
         }
 
       std::vector<PointValues> TestValues(NrTest), TrialValues(NrTrial);
@@ -288,14 +291,14 @@ namespace chemfem{
                 {
                   for(int k=0; k<NrTest; ++k)
                     {
-                      GradTest[k] = InvJac * TestSpace.RefElement().Gradient(k, *Xiq, *Etaq);
-                      ValueTest[k] = TestSpace.RefElement().Value(k, *Xiq, *Etaq);
+                      GradTest[k] = InvJac * TestSpace.AsScalar()->Gradient(k, *Xiq, *Etaq);
+                      ValueTest[k] = TestSpace.AsScalar()->Value(k, *Xiq, *Etaq);
                     }
 
                   for(int l=0; l<NrTrial; ++l)
                     {
-                      GradTrial[l] = InvJac * TrialSpace.RefElement().Gradient(l, *Xiq, *Etaq);
-                      ValueTrial[l] = TrialSpace.RefElement().Value(l, *Xiq, *Etaq);
+                      GradTrial[l] = InvJac * TrialSpace.AsScalar()->Gradient(l, *Xiq, *Etaq);
+                      ValueTrial[l] = TrialSpace.AsScalar()->Value(l, *Xiq, *Etaq);
                     }
                 }
 
@@ -491,11 +494,11 @@ namespace chemfem{
 
                   for(int k=0; k<NrTest; ++k)
                     TestValues[k] = MapFromReference(
-                      ReferenceValues(TestSpace.RefElement(), k, xi, eta), InvJac);
+                      ReferenceValues(*TestSpace.AsScalar(), k, xi, eta), InvJac);
 
                   for(int l=0; l<NrTrial; ++l)
                     TrialValues[l] = MapFromReference(
-                      ReferenceValues(TrialSpace.RefElement(), l, xi, eta), InvJac);
+                      ReferenceValues(*TrialSpace.AsScalar(), l, xi, eta), InvJac);
 
                   for(size_t a=0; a<Active.size(); ++a)
                     {

@@ -37,7 +37,8 @@ namespace chemfem{
       nr_dof = interior_offset + mesh.NrCells()*ni;
       DofMap.resize(mesh.NrCells()*nr_local_dof);
 
-      const bool piola = (element.Mapping() == ContravariantPiola);
+      // An edge DOF of a vector element is a flux through a globally fixed normal
+      const bool piola = (dynamic_cast<const VectorElement*>(&element) != nullptr);
 
       if(piola)
 	Sign.assign(mesh.NrCells()*nr_local_dof, 1.);

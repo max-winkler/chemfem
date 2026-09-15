@@ -44,14 +44,15 @@ namespace chemfem{
       const FESpace& Space = Solution.GetFESpace();
       const Mesh& mesh = Space.GetMesh();
 
-      // A Piola mapped basis function contributes to both components, and it has no
-      // gradient, so only the L2 norm is available for such a space
-      const bool Piola = Space.RefElement().Mapping() == ContravariantPiola;
+      // A vector shape function contributes to both components, so the filter on the
+      // component does not apply to it. The H1 branch below compares scalar gradients,
+      // which a vector valued solution has none of.
+      const VectorElement* Vec = Space.AsVector();
 
-      if(Piola && norm != L2)
+      if(Vec && norm != L2)
         {
-          std::cerr << "Error: Only the L2 norm is available on a space with a Piola "
-                    << "mapping.\n";
+          std::cerr << "Error: Only the L2 norm is available on a space whose shape "
+                    << "functions are vectors.\n";
           return 0.;
         }
 
@@ -93,13 +94,14 @@ namespace chemfem{
 		    {
 		      // On a vector valued space only the basis functions of the component
 		      // that is asked for contribute
-		      if(!Piola && Space.RefElement().Component(k) != component)
+		      if(!Vec && Space.RefElement().Component(k) != component)
 			continue;
 
-		      double form_value = Piola
-			? MapFromReference(Space.RefElement().VectorReference(k, *Xiq, *Etaq),
+		      double form_value = Vec
+			? MapFromReference(ReferenceVector{Vec->Value(k, *Xiq, *Etaq),
+							   Vec->Gradient(k, *Xiq, *Etaq)},
 					   Jac, det, Space.LocalSign(CellInd, k)).value[component]
-			: Space.RefElement().Value(k, *Xiq, *Etaq);
+			: Space.AsScalar()->Value(k, *Xiq, *Etaq);
 		      double dof_value = Solution[LocalDof[k]];
 		      fe_value += dof_value * form_value;
 		    }
@@ -116,11 +118,11 @@ namespace chemfem{
 		    {
 		      // On a vector valued space only the basis functions of the component
 		      // that is asked for contribute
-		      if(!Piola && Space.RefElement().Component(k) != component)
+		      if(!Vec && Space.RefElement().Component(k) != component)
 			continue;
 
 		      double dof_value = Solution[LocalDof[k]];
-		      fe_grad += dof_value * Space.RefElement().Gradient(k, *Xiq, *Etaq);
+		      fe_grad += dof_value * Space.AsScalar()->Gradient(k, *Xiq, *Etaq);
 		    }
 
 		  chemfem::linalg::Vector2D ex_grad = Gradient(XYq);
