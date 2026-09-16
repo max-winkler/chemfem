@@ -19,15 +19,15 @@ class HermiteElement : public ScalarElement {
   /**
    * Returns the function value of the ansatz function on the reference element.
    */
-  double Value(int, double, double) const;
+  double Value(int, double, double) const override;
 
-  Vector2D Gradient(int, double, double) const;
+  Vector2D Gradient(int, double, double) const override;
 
-  Matrix2D Hessian(int, double, double) const;
+  Matrix2D Hessian(int, double, double) const override;
 
-  chemfem::linalg::Coordinate NodalPoint(int) const;
+  chemfem::linalg::Coordinate NodalPoint(int) const override;
 
-  DofDescriptor Dof(int) const;
+  DofDescriptor Dof(int) const override;
 };
 
 }  // namespace fem

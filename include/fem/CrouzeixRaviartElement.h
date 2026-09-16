@@ -15,13 +15,13 @@ namespace chemfem{
     public:
       CrouzeixRaviartElement();
 
-      double Value(int, double, double) const;
+      double Value(int, double, double) const override;
 
-      Vector2D Gradient(int, double, double) const;
+      Vector2D Gradient(int, double, double) const override;
 
-      Matrix2D Hessian(int, double, double) const;
+      Matrix2D Hessian(int, double, double) const override;
 
-      chemfem::linalg::Coordinate NodalPoint(int) const;
+      chemfem::linalg::Coordinate NodalPoint(int) const override;
     };
   };
 };

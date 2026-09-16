@@ -62,6 +62,8 @@ namespace chemfem{
        */
       Element(FEType, int);
 
+      virtual ~Element() = default;
+
       /**
        * Returns the number of local degrees of freedom.
        */

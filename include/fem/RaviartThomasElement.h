@@ -22,16 +22,16 @@ namespace chemfem{
     public:
       RaviartThomasElement();
 
-      Vector2D Value(int, double, double) const;
+      Vector2D Value(int, double, double) const override;
 
       /// The identity for every basis function, they are all of the form x + const
-      Matrix2D Gradient(int, double, double) const;
+      Matrix2D Gradient(int, double, double) const override;
 
       /// Midpoint of the edge the DOF belongs to
-      chemfem::linalg::Coordinate NodalPoint(int) const;
+      chemfem::linalg::Coordinate NodalPoint(int) const override;
 
       /// The flux through the edge k, so an edge moment rather than a point value
-      DofDescriptor Dof(int) const;
+      DofDescriptor Dof(int) const override;
     };
   };
 };
