@@ -184,7 +184,7 @@ int main()
 
     UnitSquareMesh mesh(n);
     LagrangeElement element(1);
-    FESpace Space(mesh, element);
+    FESpace Space(mesh, element, WholeBoundary);
     FEFunction Zero(Space);
 
     GenericEstimator Area;
@@ -239,7 +239,7 @@ int main()
     for(int level=0; level<6; ++level)
       {
         LagrangeElement element(1);
-        FESpace Space(mesh, element);
+        FESpace Space(mesh, element, WholeBoundary);
 
         FEFunction Sol = Solve(Space);
 
@@ -265,7 +265,7 @@ int main()
     for(int level=0; level<8; ++level)
       {
         LagrangeElement element(1);
-        FESpace Space(mesh, element);
+        FESpace Space(mesh, element, WholeBoundary);
 
         FEFunction Sol = Solve(Space);
 

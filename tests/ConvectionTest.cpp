@@ -53,7 +53,7 @@ int main()
   for(int iter=0; iter<max_iter; ++iter)
     {
       LagrangeElement element(1);
-      FESpace Space(mesh, element);
+      FESpace Space(mesh, element, WholeBoundary);
 
       BilinearForm A(Space, Space);
       A.AddLaplaceTerm();

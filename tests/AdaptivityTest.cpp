@@ -170,7 +170,7 @@ int main()
     for(int level=0; level<nr_levels; ++level)
       {
         LagrangeElement element(Degree);
-        FESpace Space(mesh, element);
+        FESpace Space(mesh, element, WholeBoundary);
 
         FEFunction Sol = Solve(Space);
 
@@ -203,7 +203,7 @@ int main()
     for(int level=0; level<max_iter; ++level)
       {
         LagrangeElement element(Degree);
-        FESpace Space(mesh, element);
+        FESpace Space(mesh, element, WholeBoundary);
 
         FEFunction Sol = Solve(Space);
 

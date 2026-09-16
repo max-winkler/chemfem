@@ -66,7 +66,7 @@ bool Run(int degree, int levels)
       LagrangeElement scalar(degree);
       ProductElement element(scalar, 2);
 
-      FESpace V(mesh, element);
+      FESpace V(mesh, element, WholeBoundary);
 
       BilinearForm A(V, V);
       A.AddVolumeTerm(Stiffness);

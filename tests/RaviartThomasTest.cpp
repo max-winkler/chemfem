@@ -23,11 +23,6 @@ using namespace chemfem::mesh;
 const Coordinate Reference[3] = {{0., 0.}, {1., 0.}, {0., 1.}};
 const Coordinate Physical[3] = {{0., 0.}, {2., 0.}, {1., 3.}};
 
-bool Nowhere(const Coordinate&)
-{
-  return false;
-}
-
 /// Outward unit normal and length of the edge from V[j] to V[j+1] of a positive triangle
 void OutwardNormal(const Coordinate* V, int j, Vector2D& normal, double& length)
 {
@@ -126,7 +121,7 @@ int main()
   mesh.RefineUniform();
 
   RaviartThomasElement element;
-  FESpace Space(mesh, element, Nowhere);
+  FESpace Space(mesh, element);
 
   if(Space.NrDof() != mesh.NrEdges())
     {

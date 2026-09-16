@@ -17,7 +17,7 @@ int main() {
 
   chemfem::fem::HermiteElement element;
 
-  FESpace V(mesh, element);
+  FESpace V(mesh, element, WholeBoundary);
 
   BilinearForm a(V, V);
   a.AddLaplaceTerm();

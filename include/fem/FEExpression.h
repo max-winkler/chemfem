@@ -22,6 +22,9 @@ namespace chemfem{
     /// Returns true for the points of the boundary part it describes
     typedef std::function<bool(const chemfem::linalg::Coordinate&)> BoundaryIndicator;
 
+    /// A BoundaryIndicator that accepts the whole boundary
+    inline bool WholeBoundary(const chemfem::linalg::Coordinate&) { return true; }
+
     enum ExpressionType {SECOND_ORDER, FIRST_ORDER, ZERO_ORDER, VOLUME_FORCE, NEUMANN_BC};
 
     /**

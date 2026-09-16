@@ -53,7 +53,7 @@ bool CheckSystem(const std::string& caption, bool convection, bool with_cg)
   Mesh mesh = UnitSquareMesh(4);
 
   LagrangeElement element(2);
-  FESpace Space(mesh, element);
+  FESpace Space(mesh, element, WholeBoundary);
 
   BilinearForm A(Space, Space);
   A.AddLaplaceTerm();

@@ -39,7 +39,7 @@ int main()
   // Solve Poisson equation
   std::cout << "Setup function space\n";
   LagrangeElement element(3);
-  FESpace Space(mesh, element);
+  FESpace Space(mesh, element, WholeBoundary);
 
   std::cout << "Assemble matrices and vectors\n";
   BilinearForm Laplace(Space, Space);

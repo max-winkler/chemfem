@@ -22,13 +22,15 @@ namespace chemfem{
       friend class BilinearForm;
       friend class LinearForm;
       friend class DirichletValues;
+      friend class FEFunction;
 
     public:
       /**
        * Initialize the finite element space by a reference to the mesh and the finite
        * element. Homogeneous Dirichlet conditions are imposed on the boundary edges whose
-       * midpoint IsDirichlet accepts, on the whole boundary if it is omitted. All other
-       * boundary edges are Neumann edges.
+       * midpoint IsDirichlet accepts, every other boundary edge carries the natural
+       * condition. Without an indicator nothing is fixed at all, so pass WholeBoundary to
+       * put a homogeneous Dirichlet condition on the whole boundary.
        */
       FESpace(chemfem::mesh::Mesh&, Element&, BoundaryIndicator IsDirichlet = nullptr);
 
@@ -85,17 +87,6 @@ namespace chemfem{
       const VectorElement* AsVector() const;
 
       /**
-       * For a given vector representing the values at the free DOFs, this function returns
-       * a vector where also Dirichlet DOFs are incorporated.
-       */
-      Vector IncorporateBC(const Vector&) const;
-
-      /**
-       * The same, with the prescribed values at the Dirichlet DOFs instead of zero.
-       */
-      Vector IncorporateBC(const Vector&, const DirichletValues&) const;
-
-      /**
        * Returns a reference to the finite element mesh.
        */
       const chemfem::mesh::Mesh& GetMesh() const;
@@ -126,6 +117,14 @@ namespace chemfem{
       FEFunction Interpolate(ScalarFunction);
 
     private:
+      /**
+       * Expands a vector of the free DOFs to one over all of them, with zero or with the
+       * prescribed values at the Dirichlet DOFs. This is internal mechanics of
+       * FEFunction::CreateFunction, which is how an FE function is built from a solution.
+       */
+      Vector IncorporateBC(const Vector&) const;
+      Vector IncorporateBC(const Vector&, const DirichletValues&) const;
+
       Element& refElement;
 
       const ScalarElement* scalar;

@@ -215,7 +215,7 @@ int main()
   for(int level=0; level<6; ++level)
     {
       LagrangeElement element(1);
-      FESpace Space(mesh, element);
+      FESpace Space(mesh, element, WholeBoundary);
 
       // The very same functors the estimator holds drive the discretization
       BilinearForm A(Space, Space);

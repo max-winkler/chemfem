@@ -128,7 +128,7 @@ namespace chemfem{
 	  const chemfem::linalg::Coordinate midpoint{0.5*(P0.getX() + P1.getX()),
 						     0.5*(P0.getY() + P1.getY())};
 
-	  if(IsDirichlet && !IsDirichlet(midpoint))
+	  if(!IsDirichlet || !IsDirichlet(midpoint))
 	    continue;
 
 	  DirichletEdge[e] = true;

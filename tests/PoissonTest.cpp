@@ -62,7 +62,7 @@ int main()
   for(int level=0; level<levels; ++level)
     {
       LagrangeElement element(1);
-      FESpace Space(mesh, element);
+      FESpace Space(mesh, element, WholeBoundary);
 
       DirichletValues g(Space);
       g.Set(exact, Bottom);

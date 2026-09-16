@@ -50,11 +50,6 @@ bool InflowBoundary(const Coordinate& p)
   return p.x < 1.e-8;
 }
 
-bool Nowhere(const Coordinate&)
-{
-  return false;
-}
-
 /// Largest speed in the degrees of freedom of a vector valued function
 double MaxSpeed(const FEFunction& u)
 {
@@ -83,7 +78,7 @@ int main()
   LagrangeElement P2(2), P1(1);
   ProductElement Velocity(P2, 2);
 
-  FESpace V(mesh, Velocity, NoOutflow), Q(mesh, P1, Nowhere);
+  FESpace V(mesh, Velocity, NoOutflow), Q(mesh, P1);
 
   DirichletValues g(V);
   g.Set(Inflow, InflowBoundary);

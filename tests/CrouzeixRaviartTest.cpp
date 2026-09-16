@@ -50,7 +50,7 @@ int main()
   for(int level=0; level<levels; ++level)
     {
       CrouzeixRaviartElement element;
-      FESpace Space(mesh, element);
+      FESpace Space(mesh, element, WholeBoundary);
 
       if(Space.NrDof() != mesh.NrEdges())
         {

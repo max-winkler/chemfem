@@ -35,9 +35,9 @@ namespace chemfem{
     {
     public:
       /**
-       * Numbers the DOFs of the element on the mesh. Dirichlet conditions are imposed
-       * on the boundary edges whose midpoint IsDirichlet accepts, on the whole boundary
-       * if it is empty.
+       * Numbers the DOFs of the element on the mesh. Dirichlet conditions are imposed on the
+       * boundary edges whose midpoint IsDirichlet accepts. Without an indicator no edge
+       * carries one and every DOF stays free.
        */
       DofManager(const chemfem::mesh::Mesh&, const Element&, const BoundaryIndicator&);
 

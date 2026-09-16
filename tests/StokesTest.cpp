@@ -64,11 +64,6 @@ double Force(const QuadPoint& p, const VectorValues& v)
   return dot(f(p.x), v.value);
 }
 
-bool Nowhere(const Coordinate&)
-{
-  return false;
-}
-
 double Eoc(const std::vector<double>& e, size_t i)
 {
   return log2(e[i-1]/e[i]);
@@ -92,8 +87,8 @@ int main()
       LagrangeElement P2(2), P1(1);
       ProductElement Velocity(P2, 2);
 
-      FESpace V(mesh, Velocity);
-      FESpace Q(mesh, P1, Nowhere);
+      FESpace V(mesh, Velocity, WholeBoundary);
+      FESpace Q(mesh, P1);
 
       BilinearForm A(V, V);
       A.AddVolumeTerm(Viscous);

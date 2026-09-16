@@ -46,11 +46,6 @@ double flux_y(const Coordinate& p)
   return M_PI*sin(M_PI*p.x)*sin(M_PI*p.y);
 }
 
-bool Nowhere(const Coordinate&)
-{
-  return false;
-}
-
 int main()
 {
   const int levels = 5;
@@ -69,7 +64,7 @@ int main()
       RaviartThomasElement rt;
       DGElement dg(0);
 
-      FESpace V(mesh, rt, Nowhere), Q(mesh, dg, Nowhere);
+      FESpace V(mesh, rt), Q(mesh, dg);
 
       if(V.NrDof() != mesh.NrEdges() || Q.NrDof() != mesh.NrCells())
         {
