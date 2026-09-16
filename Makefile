@@ -55,6 +55,7 @@ OBJ = 	src/linalg/Vector.o \
 	src/fem/BilinearForm.o \
 	src/fem/PointValues.o \
 	src/fem/BlockSystem.o \
+	src/fem/LinearSystem.o \
 	src/fem/VtkOutput.o \
 	src/fem/ErrorNorm.o \
 	src/fem/GenericEstimator.o	
