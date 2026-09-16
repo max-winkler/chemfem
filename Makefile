@@ -45,6 +45,7 @@ OBJ = 	src/linalg/Vector.o \
 	src/fem/FEFunction.o \
 	src/fem/Element.o \
 	src/fem/LagrangeElement.o \
+	src/fem/HermiteElement.o \
 	src/fem/ProductElement.o \
 	src/fem/CrouzeixRaviartElement.o \
 	src/fem/DGElement.o \

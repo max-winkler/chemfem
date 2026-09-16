@@ -121,6 +121,9 @@ namespace chemfem{
 	case Lagrange:
 	  os << "Lagrange";
 	  break;
+	case Hermite:
+	  os << "Hermite";
+	  break;
 	case CrouzeixRaviart:
 	  os << "Crouzeix-Raviart";
 	  break;
