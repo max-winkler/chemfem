@@ -12,13 +12,17 @@ namespace chemfem{
      *
      * \code
      *   LinearSystem S(V);
-     *   S.Add(A);                   // a bilinear form, several of them add up
-     *   S.Add(F);                   // a linear form on the right hand side
+     *   S.AddLhs(A);                // a bilinear form, several of them add up
+     *   S.AddRhs(F);                // a linear form, several of them add up
      *   S.SetDirichletValues(g);    // named once, the lifting is taken care of
      *   S.AssembleMatrix();
      *
      *   FEFunction u = S.Extract(S.Solve(S.AssembleRhs()));
      * \endcode
+     *
+     * The system is a(u,v) = l(v), and both sides are added with a plus sign: -Laplace(u) = f
+     * is AddLaplaceTerm on the left and AddVolumeForce(f) on the right, there is no sign to
+     * flip. AssembleRhs subtracts the lifting of the prescribed values by itself.
      *
      * The prescribed values are named once here instead of once for the form, once for the
      * lifting of the right hand side and once for the solution. A space without a Dirichlet
@@ -31,11 +35,11 @@ namespace chemfem{
     public:
       explicit LinearSystem(const FESpace&);
 
-      /// Adds a bilinear form to the system, several forms add up
-      void Add(BilinearForm&);
+      /// Adds a bilinear form to the left hand side, several forms add up
+      void AddLhs(BilinearForm&);
 
       /// Adds a linear form to the right hand side, several forms add up
-      void Add(LinearForm&);
+      void AddRhs(LinearForm&);
 
       /**
        * Prescribes the Dirichlet values. They enter the right hand side as the lifting of

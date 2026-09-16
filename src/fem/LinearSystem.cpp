@@ -5,12 +5,12 @@ namespace chemfem{
 
     LinearSystem::LinearSystem(const FESpace& Space) : System({Space}) {}
 
-    void LinearSystem::Add(BilinearForm& a)
+    void LinearSystem::AddLhs(BilinearForm& a)
     {
       System.AddBlock(0, 0, a);
     }
 
-    void LinearSystem::Add(LinearForm& l)
+    void LinearSystem::AddRhs(LinearForm& l)
     {
       System.AddRhs(0, l);
     }
