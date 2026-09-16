@@ -52,13 +52,6 @@ namespace chemfem{
             if(d.vertex != v)
               continue;
 
-            if(d.type == DofType::EdgeNormalDerivative)
-              {
-                std::cerr << "Error: A normal derivative DOF at a vertex is not implemented "
-                          << "in the DOF transformation.\n";
-                return false;
-              }
-
             if(d.type != DofType::EdgeDirectionalDerivative)
               continue;
 
@@ -75,26 +68,44 @@ namespace chemfem{
     {
       const Element& E = Space.RefElement();
 
-      for(int k=0; k<E.NrDof(); ++k)
-        {
-          const DofType t = E.Dof(k).type;
+      bool directional = false, moment = false;
 
-          // An edge moment is oriented by a sign, which is applied to the basis function
-          // itself through FESpace::LocalSign. Folding that into this transformation is a
-          // separate step; doing both would apply it twice.
-          if(t == DofType::EdgeDirectionalDerivative || t == DofType::EdgeNormalDerivative)
-            return true;
+      for(int k=0; k<E.NrDof(); ++k)
+        switch(E.Dof(k).type)
+          {
+          case DofType::PointValue:
+            break;
+
+          case DofType::EdgeDirectionalDerivative:
+            directional = true;
+            break;
+
+          case DofType::EdgeNormalDerivative:
+            std::cerr << "Error: DOFs that measure a normal derivative are not implemented "
+                      << "yet, the assembled system would be wrong.\n";
+            return false;
+
+          case DofType::EdgeMoment:
+            moment = true;
+            break;
+          }
+
+      // An edge moment alone needs nothing here, it is oriented by the sign that
+      // FESpace::LocalSign applies to the basis function itself. Next to a directional
+      // derivative the two would have to be combined into one transformation.
+      if(directional && moment)
+        {
+          std::cerr << "Error: Elements with both directional derivative and edge moment "
+                    << "DOFs are not implemented yet, the assembled system would be wrong.\n";
+          return false;
         }
 
-      return false;
+      return directional;
     }
 
     void TransformLocalRows(DenseMatrix& LocalMatrix, int NrColumns, const FESpace& Space,
                             size_t /*cell*/, const Matrix2D& Jac)
     {
-      if(!NeedsDofTransform(Space))
-        return;
-
       const Element& E = Space.RefElement();
 
       for(int v=0; v<3; ++v)
@@ -120,9 +131,6 @@ namespace chemfem{
     void TransformLocalColumns(DenseMatrix& LocalMatrix, int NrRows, const FESpace& Space,
                                size_t /*cell*/, const Matrix2D& Jac)
     {
-      if(!NeedsDofTransform(Space))
-        return;
-
       const Element& E = Space.RefElement();
 
       for(int v=0; v<3; ++v)
@@ -148,9 +156,6 @@ namespace chemfem{
     void TransformLocalVector(Vector& LocalVector, const FESpace& Space, size_t /*cell*/,
                               const Matrix2D& Jac)
     {
-      if(!NeedsDofTransform(Space))
-        return;
-
       const Element& E = Space.RefElement();
 
       for(int v=0; v<3; ++v)

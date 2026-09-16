@@ -27,6 +27,12 @@ namespace chemfem{
      * inserted, A <- C_test^T A C_trial and b <- C_test^T b, and the coefficients when the
      * function is evaluated, c_local <- C c_global.
      */
+    /**
+     * Whether the space needs the transformation below, which the caller has to ask once per
+     * assembly. It also reports the DOF types that are not implemented yet and returns false
+     * for them, so an unusable element is named on the console instead of quietly producing a
+     * wrong system.
+     */
     bool NeedsDofTransform(const FESpace&);
 
     /// The test side of a local matrix, A <- C^T A. Does nothing without a transformation.
