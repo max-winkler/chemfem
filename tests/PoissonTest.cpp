@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "fem/LinearForm.h"
+#include "fem/LinearSystem.h"
 #include "fem/BilinearForm.h"
 #include "fem/DirichletValues.h"
 #include "fem/LagrangeElement.h"
@@ -70,18 +71,17 @@ int main()
       BilinearForm A(Space, Space);
       A.AddLaplaceTerm();
       A.AddReactionTerm(One);
-      A.SetDirichletValues(g);
-      A.Assemble();
 
       LinearForm F(Space);
       F.AddVolumeForce(f);
-      F.Assemble();
 
-      // The prescribed values move to the right hand side as the lifting A_fd g_d
-      const Vector Rhs = F.LoadVector() - A.DirichletRhs();
+      LinearSystem S(Space);
+      S.AddLhs(A);
+      S.AddRhs(F);
+      S.SetDirichletValues(g);
+      S.AssembleMatrix();
 
-      FEFunction Sol(Space);
-      Sol.CreateFunction(A.SystemMatrix().Solve(Rhs, LIN_SOLVER::UMFPACK), g);
+      FEFunction Sol = S.Extract(S.Solve(S.AssembleRhs()));
 
       ErrorNorm Error(exact, exact_grad);
 
