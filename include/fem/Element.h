@@ -14,7 +14,7 @@ namespace chemfem{
   namespace fem{
 
     /// Finite element type.
-    enum FEType {Lagrange, CrouzeixRaviart, DG, RaviartThomas};
+    enum FEType {Lagrange, Hermite, CrouzeixRaviart, DG, RaviartThomas};
 
     /**
      * What the coefficient of a degree of freedom measures. Together with the convention for
