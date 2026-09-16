@@ -62,45 +62,55 @@ namespace chemfem{
 
         return found == 2;
       }
+
+      /**
+       * Whether the element needs the transformation. Reports the DOF types that are not
+       * implemented yet only if asked to, so the places that run per cell stay quiet.
+       */
+      bool TransformNeeded(const Element& E, bool report)
+      {
+        bool directional = false, moment = false;
+
+        for(int k=0; k<E.NrDof(); ++k)
+          switch(E.Dof(k).type)
+            {
+            case DofType::PointValue:
+              break;
+
+            case DofType::EdgeDirectionalDerivative:
+              directional = true;
+              break;
+
+            case DofType::EdgeNormalDerivative:
+              if(report)
+                std::cerr << "Error: DOFs that measure a normal derivative are not "
+                          << "implemented yet, the assembled system would be wrong.\n";
+              return false;
+
+            case DofType::EdgeMoment:
+              moment = true;
+              break;
+            }
+
+        // An edge moment alone needs nothing here, it is oriented by the sign that
+        // FESpace::LocalSign applies to the basis function itself. Next to a directional
+        // derivative the two would have to be combined into one transformation.
+        if(directional && moment)
+          {
+            if(report)
+              std::cerr << "Error: Elements with both directional derivative and edge "
+                        << "moment DOFs are not implemented yet, the assembled system "
+                        << "would be wrong.\n";
+            return false;
+          }
+
+        return directional;
+      }
     }
 
     bool NeedsDofTransform(const FESpace& Space)
     {
-      const Element& E = Space.RefElement();
-
-      bool directional = false, moment = false;
-
-      for(int k=0; k<E.NrDof(); ++k)
-        switch(E.Dof(k).type)
-          {
-          case DofType::PointValue:
-            break;
-
-          case DofType::EdgeDirectionalDerivative:
-            directional = true;
-            break;
-
-          case DofType::EdgeNormalDerivative:
-            std::cerr << "Error: DOFs that measure a normal derivative are not implemented "
-                      << "yet, the assembled system would be wrong.\n";
-            return false;
-
-          case DofType::EdgeMoment:
-            moment = true;
-            break;
-          }
-
-      // An edge moment alone needs nothing here, it is oriented by the sign that
-      // FESpace::LocalSign applies to the basis function itself. Next to a directional
-      // derivative the two would have to be combined into one transformation.
-      if(directional && moment)
-        {
-          std::cerr << "Error: Elements with both directional derivative and edge moment "
-                    << "DOFs are not implemented yet, the assembled system would be wrong.\n";
-          return false;
-        }
-
-      return directional;
+      return TransformNeeded(Space.RefElement(), true);
     }
 
     void TransformLocalRows(DenseMatrix& LocalMatrix, int NrColumns, const FESpace& Space,
@@ -172,6 +182,42 @@ namespace chemfem{
 
           LocalVector[p] = dir[0].x*bp + dir[1].x*bq;
           LocalVector[q] = dir[0].y*bp + dir[1].y*bq;
+        }
+    }
+
+    void GatherLocalCoefficients(const FESpace& Space, const Vector& Data, size_t cell,
+                                 std::vector<double>& Local)
+    {
+      const size_t n = Space.NrLocalDof();
+
+      if(Local.size() != n)
+        Local.resize(n);
+
+      for(size_t k=0; k<n; ++k)
+        Local[k] = Data[Space.GetGlobalIndex(cell, k)];
+
+      const Element& E = Space.RefElement();
+
+      if(!TransformNeeded(E, false))
+        return;
+
+      const Matrix2D Jac = Space.GetMesh().Jacobian(cell);
+
+      for(int v=0; v<3; ++v)
+        {
+          int slot[2];
+          Vector2D dir[2];
+
+          if(!VertexBlock(E, v, Jac, slot, dir))
+            continue;
+
+          const int p = slot[0], q = slot[1];
+          const double cp = Local[p], cq = Local[q];
+
+          // C, not its transpose: the local DOF p measures the derivative along dir[0],
+          // which is that combination of the two global derivatives at the vertex
+          Local[p] = dir[0].x*cp + dir[0].y*cq;
+          Local[q] = dir[1].x*cp + dir[1].y*cq;
         }
     }
 

@@ -1,7 +1,9 @@
 #include <cmath>
+#include <vector>
 
 #include "fem/FEFunction.h"
 #include "fem/DirichletValues.h"
+#include "fem/DofTransform.h"
 
 #include "quadrature/QuadFormula.h"
 
@@ -24,6 +26,11 @@ namespace chemfem{
     const double& FEFunction::operator[](size_t k) const
     {
       return Data[k];
+    }
+
+    const Vector& FEFunction::Coefficients() const
+    {
+      return Data;
     }
 
     void FEFunction::CreateFunction(const Vector& FreeDof)
@@ -66,9 +73,12 @@ namespace chemfem{
 	  return 0.;
 	}
 
+      std::vector<double> Coeff;
+      GatherLocalCoefficients(*Space, Data, p.cell, Coeff);
+
       double value = 0.;
       for(size_t k=0; k<Space->NrLocalDof(); ++k)
-	value += Data[Space->GetGlobalIndex(p.cell, k)] * E->Value(k, p.xi, p.eta);
+	value += Coeff[k] * E->Value(k, p.xi, p.eta);
 
       CachedValues.value = value;
       CachedPoint = p;
@@ -86,6 +96,9 @@ namespace chemfem{
 
       chemfem::linalg::Vector2D value;
 
+      std::vector<double> Coeff;
+      GatherLocalCoefficients(*Space, Data, p.cell, Coeff);
+
       if(const VectorElement* Vec = Space->AsVector())
 	{
 	  const chemfem::linalg::Matrix2D Jac = Space->GetMesh().Jacobian(p.cell);
@@ -98,7 +111,7 @@ namespace chemfem{
 						   Vec->Gradient(k, p.xi, p.eta)},
 				   Jac, det, Space->LocalSign(p.cell, k)).value;
 
-	      const double coeff = Data[Space->GetGlobalIndex(p.cell, k)];
+	      const double coeff = Coeff[k];
 
 	      value[0] += coeff * basis[0];
 	      value[1] += coeff * basis[1];
@@ -106,7 +119,7 @@ namespace chemfem{
 	}
       else
 	for(size_t k=0; k<Space->NrLocalDof(); ++k)
-	  value[E.Component(k)] += Data[Space->GetGlobalIndex(p.cell, k)]
+	  value[E.Component(k)] += Coeff[k]
 	    * Space->AsScalar()->Value(k, p.xi, p.eta);
 
       CachedVector = value;
@@ -129,12 +142,15 @@ namespace chemfem{
 	  return PointValues{0., chemfem::linalg::Vector2D(), chemfem::linalg::Matrix2D(), 0.};
 	}
 
+      std::vector<double> Coeff;
+      GatherLocalCoefficients(*Space, Data, p.cell, Coeff);
+
       PointValues ref;
       ref.value = 0.;
 
       for(size_t k=0; k<Space->NrLocalDof(); ++k)
 	{
-	  const double coeff = Data[Space->GetGlobalIndex(p.cell, k)];
+	  const double coeff = Coeff[k];
 
 	  ref.value += coeff * E->Value(k, p.xi, p.eta);
 	  ref.gradient += coeff * E->Gradient(k, p.xi, p.eta);
@@ -162,15 +178,19 @@ namespace chemfem{
 
       double integral = 0., area = 0.;
 
+      std::vector<double> Coeff;
+
       for(size_t c=0; c<mesh.NrCells(); ++c)
 	{
 	  const double det = std::fabs(mesh.Determinant(c));
+
+	  GatherLocalCoefficients(*Space, Data, c, Coeff);
 
 	  for(size_t q=0; q<Weights.size(); ++q)
 	    {
 	      double value = 0.;
 	      for(size_t k=0; k<Space->NrLocalDof(); ++k)
-		value += Data[Space->GetGlobalIndex(c, k)]
+		value += Coeff[k]
 		  * Space->AsScalar()->Value(k, Xi[q], Eta[q]);
 
 	      integral += Weights[q] * value * det;
@@ -214,6 +234,14 @@ namespace chemfem{
 
     void FEFunction::WriteVtk(const std::string& filename) const
     {
+      if(Space->RefElement().DofsPerVertex() != 1)
+	{
+	  std::cerr << "Error: This writes the first coefficient of every node, which is the "
+		    << "value in that vertex only for an element with one DOF per vertex. Use "
+		    << "VtkOutput for this space.\n";
+	  return;
+	}
+
       Space->GetMesh().WriteVtk(filename, Data);
     }
   }

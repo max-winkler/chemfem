@@ -40,6 +40,9 @@ namespace chemfem{
        */
       const double& operator[](size_t) const;
 
+      /// All coefficients, indexed by the global DOF
+      const Vector& Coefficients() const;
+
       /**
        * Build an FE function from the vector of the values of the free degrees of freedom.
        * The degrees of freedom at Dirichlet nodes are taken from the FE space.

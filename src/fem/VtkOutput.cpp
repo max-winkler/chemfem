@@ -1,5 +1,7 @@
 #include "fem/VtkOutput.h"
 
+#include "fem/DofTransform.h"
+
 #include "Verbosity.h"
 
 #include <fstream>
@@ -65,7 +67,12 @@ namespace chemfem{
       const VectorElement* Vec = Space.AsVector();
       const bool Piola = Vec != nullptr;
 
+      std::vector<double> Coeff;
+
       for(size_t c=0; c<mesh.NrCells(); ++c)
+      {
+        GatherLocalCoefficients(Space, u.Coefficients(), c, Coeff);
+
         for(int v=0; v<3; ++v)
           {
             double value = 0.;
@@ -81,13 +88,14 @@ namespace chemfem{
                                      Space.LocalSign(c, k)).value[component]
                   : Space.AsScalar()->Value(k, Vertex[v][0], Vertex[v][1]);
 
-                value += u[Space.GetGlobalIndex(c, k)] * basis;
+                value += Coeff[k] * basis;
               }
 
             const size_t node = mesh.Cells[c].LocNode[v];
             sum[node] += value;
             ++count[node];
           }
+      }
 
       for(size_t n=0; n<sum.size(); ++n)
         if(count[n] > 0)
@@ -106,9 +114,12 @@ namespace chemfem{
       const FESpace& Space = u.GetFESpace();
 
       std::vector<double> values(mesh.NrCells(), 0.);
+      std::vector<double> Coeff;
 
       for(size_t c=0; c<mesh.NrCells(); ++c)
         {
+          GatherLocalCoefficients(Space, u.Coefficients(), c, Coeff);
+
           double value = 0.;
 
           for(size_t k=0; k<Space.NrLocalDof(); ++k)
@@ -116,7 +127,7 @@ namespace chemfem{
               if(Space.RefElement().Component(k) != component)
                 continue;
 
-              value += u[Space.GetGlobalIndex(c, k)]
+              value += Coeff[k]
                 * Space.AsScalar()->Value(k, 1./3, 1./3);
             }
 

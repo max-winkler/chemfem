@@ -1,5 +1,7 @@
 #include <cmath>
+#include <vector>
 
+#include "fem/DofTransform.h"
 #include "fem/ErrorNorm.h"
 #include "quadrature/QuadFormula.h"
 
@@ -60,6 +62,8 @@ namespace chemfem{
       Vector Weights, Xi, Eta;
       quad.FormulaData(Weights, Xi, Eta);
       
+      std::vector<double> Coeff;
+
       std::vector<Cell>::const_iterator it_cell;
       size_t CellInd;
         for(it_cell = mesh.GetCellList().begin(), CellInd = 0;
@@ -77,7 +81,7 @@ namespace chemfem{
 	  
 	  double loc_error = 0.;
 	  
-	  const size_t* LocalDof = Space.GetLocalDofMap(CellInd);
+	  GatherLocalCoefficients(Space, Solution.Coefficients(), CellInd, Coeff);
 	  	  
 	  Vector::const_iterator Xiq, Etaq, Wq;
 	  for(Xiq = Xi.begin(), Etaq = Eta.begin(), Wq = Weights.begin();
@@ -102,7 +106,7 @@ namespace chemfem{
 							   Vec->Gradient(k, *Xiq, *Etaq)},
 					   Jac, det, Space.LocalSign(CellInd, k)).value[component]
 			: Space.AsScalar()->Value(k, *Xiq, *Etaq);
-		      double dof_value = Solution[LocalDof[k]];
+		      double dof_value = Coeff[k];
 		      fe_value += dof_value * form_value;
 		    }
 		  // Value of exact solution
@@ -121,7 +125,7 @@ namespace chemfem{
 		      if(!Vec && Space.RefElement().Component(k) != component)
 			continue;
 
-		      double dof_value = Solution[LocalDof[k]];
+		      double dof_value = Coeff[k];
 		      fe_grad += dof_value * Space.AsScalar()->Gradient(k, *Xiq, *Etaq);
 		    }
 

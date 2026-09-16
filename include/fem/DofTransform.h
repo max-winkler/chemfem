@@ -1,6 +1,8 @@
 #ifndef _DOF_TRANSFORM_H_
 #define _DOF_TRANSFORM_H_
 
+#include <vector>
+
 #include "fem/FESpace.h"
 
 #include "linalg/DenseMatrix.h"
@@ -46,6 +48,18 @@ namespace chemfem{
     /// A local load vector, b <- C^T b
     void TransformLocalVector(chemfem::linalg::Vector&, const FESpace&, size_t cell,
                               const chemfem::linalg::Matrix2D& Jac);
+
+    /**
+     * The coefficients of a cell in terms of its local DOFs, c_local = C c_global. Every
+     * place that evaluates an FE function needs these rather than the global coefficients
+     * themselves: a local shape function belongs to a local DOF, and only for an element
+     * whose DOFs are point values are the two the same.
+     *
+     * Note that this applies C, while a matrix and a load vector take C^T. Local is resized
+     * when needed, so a caller that hoists it out of a loop over the cells allocates once.
+     */
+    void GatherLocalCoefficients(const FESpace&, const chemfem::linalg::Vector& Data,
+                                 size_t cell, std::vector<double>& Local);
 
   };
 };
