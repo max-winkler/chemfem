@@ -216,6 +216,15 @@ namespace chemfem{
       FEFunction Function(*this);
       Vector Vec(NrDof());
 
+      for(int k=0; k<refElement.NrDof(); ++k)
+	if(refElement.Dof(k).type != DofType::PointValue)
+	  {
+	    std::cerr << "Error: Interpolation sets every DOF to a function value, which is "
+		      << "wrong for an element whose DOFs are derivatives or edge moments. "
+		      << "The zero function is returned.\n";
+	    return Function;
+	  }
+
       for(size_t c=0; c<mesh.NrCells(); ++c)
 	{
 	  const Node& x0 = mesh.Nodes[mesh.Cells[c].LocNode[0]];

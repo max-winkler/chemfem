@@ -1,5 +1,6 @@
 #include "fem/DofManager.h"
 
+#include <cmath>
 #include <iostream>
 
 namespace chemfem{
@@ -90,6 +91,30 @@ namespace chemfem{
 
       Free.assign(nr_dof, true);
       DirichletEdge.assign(mesh.NrEdges(), false);
+      Frames.assign(mesh.NrNodes(), NodeFrame{Vector2D(1., 0.), Vector2D(0., 1.)});
+
+      // Which DOF of a vertex is its value and which are its derivatives. The derivatives
+      // are numbered like the frame directions they are taken along.
+      int value_dof = -1, deriv_dof[2] = {-1, -1};
+      int nr_deriv = 0;
+
+      for(size_t j=0; j<nv; ++j)
+	{
+	  const DofDescriptor d = element.Dof(int(j));
+
+	  if(d.type == DofType::PointValue && value_dof < 0)
+	    value_dof = int(j);
+	  else if(d.type == DofType::EdgeDirectionalDerivative && nr_deriv < 2)
+	    deriv_dof[nr_deriv++] = int(j);
+	}
+
+      // The restriction of such an element to an edge is determined by the value and the
+      // derivative along that edge at its two endpoints, so u = 0 on a straight side leaves
+      // the normal derivative free. Without derivative DOFs every DOF of the vertex is fixed.
+      const bool turn = (nr_deriv == 2 && value_dof >= 0);
+
+      std::vector<Vector2D> tangent(mesh.NrNodes(), Vector2D(0., 0.));
+      std::vector<int> rank(mesh.NrNodes(), 0);
 
       for(size_t e=0; e<mesh.NrEdges(); ++e)
 	{
@@ -108,15 +133,63 @@ namespace chemfem{
 
 	  DirichletEdge[e] = true;
 
-	  for(size_t j=0; j<nv; ++j)
-	    {
-	      Free[edge.Node0*nv + j] = false;
-	      Free[edge.Node1*nv + j] = false;
-	    }
-
 	  for(size_t j=0; j<ne; ++j)
 	    Free[edge_offset + e*ne + j] = false;
+
+	  if(!turn)
+	    {
+	      for(size_t j=0; j<nv; ++j)
+		{
+		  Free[edge.Node0*nv + j] = false;
+		  Free[edge.Node1*nv + j] = false;
+		}
+
+	      continue;
+	    }
+
+	  Vector2D t(P1.getX() - P0.getX(), P1.getY() - P0.getY());
+	  const double len = t.Norm();
+
+	  if(len > 0.)
+	    t *= 1./len;
+
+	  const size_t ends[2] = {edge.Node0, edge.Node1};
+
+	  for(int i=0; i<2; ++i)
+	    {
+	      const size_t n = ends[i];
+
+	      // Two sides that are not parallel fix the whole gradient. The tolerance is
+	      // tight on purpose: a shallow corner counts as a corner, which is the
+	      // condition the exact solution on the polygon satisfies there.
+	      if(rank[n] == 0)
+		{
+		  tangent[n] = t;
+		  rank[n] = 1;
+		}
+	      else if(rank[n] == 1
+		      && std::fabs(tangent[n].x*t.y - tangent[n].y*t.x) > 1.e-12)
+		rank[n] = 2;
+	    }
 	}
+
+      if(turn)
+	for(size_t n=0; n<mesh.NrNodes(); ++n)
+	  {
+	    if(rank[n] == 0)
+	      continue;
+
+	    Free[n*nv + value_dof] = false;
+	    Free[n*nv + deriv_dof[0]] = false;
+
+	    if(rank[n] == 2)
+	      {
+		Free[n*nv + deriv_dof[1]] = false;
+		continue;
+	      }
+
+	    Frames[n] = NodeFrame{tangent[n], Vector2D(-tangent[n].y, tangent[n].x)};
+	  }
 
       // Free and Dirichlet DOFs are numbered separately, both in ascending order
       Reduced.resize(nr_dof);
@@ -161,6 +234,11 @@ namespace chemfem{
     bool DofManager::IsEdgeReversed(size_t cell, int local_edge) const
     {
       return Reversed[3*cell + local_edge];
+    }
+
+    const NodeFrame& DofManager::Frame(size_t node) const
+    {
+      return Frames[node];
     }
 
     bool DofManager::IsFree(size_t dof) const

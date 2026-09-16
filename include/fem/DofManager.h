@@ -11,6 +11,18 @@ namespace chemfem{
   namespace fem{
 
     /**
+     * The directions that the two derivative DOFs of a node measure along, in the order of
+     * their local index. Cartesian everywhere except at a node in the interior of a straight
+     * Dirichlet side, where it is turned into the tangent and the normal of that side: u = 0
+     * there fixes the value and the tangential DOF and leaves the normal one free. Always
+     * orthonormal, which is what makes a row of C the frame components of an edge vector.
+     */
+    struct NodeFrame
+    {
+      Vector2D r1, r2;
+    };
+
+    /**
      * Numbers the degrees of freedom of a finite element space and separates the free
      * ones from those fixed by Dirichlet conditions.
      *
@@ -69,6 +81,9 @@ namespace chemfem{
       /// True for the boundary edges with a Dirichlet condition
       bool IsDirichletEdge(size_t) const;
 
+      /// The frame the derivative DOFs of a node are taken along, see NodeFrame
+      const NodeFrame& Frame(size_t node) const;
+
     private:
       void CreateDofMap(const chemfem::mesh::Mesh&, const Element&);
 
@@ -89,6 +104,9 @@ namespace chemfem{
       std::vector<bool> Free;
       std::vector<size_t> Reduced;
       std::vector<bool> DirichletEdge;
+
+      /// One per node, the identity unless a straight Dirichlet side turns it
+      std::vector<NodeFrame> Frames;
     };
 
   };

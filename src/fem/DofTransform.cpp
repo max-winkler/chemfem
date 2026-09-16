@@ -37,12 +37,19 @@ namespace chemfem{
       }
 
       /**
-       * The two derivative DOFs of the vertex v, in the order of their index, and the edge
-       * vectors they are taken along. Returns false if the vertex has none.
+       * The two derivative DOFs of the vertex v and the rows of C that belong to them.
+       * Returns false if the vertex has no such pair.
+       *
+       * The global derivative DOFs of a node measure the derivatives along its frame, so the
+       * row of a local DOF holds the frame components of the edge vector it is taken along.
+       * For the Cartesian frame of an interior node these are the components themselves.
        */
-      bool VertexBlock(const Element& E, int v, const Matrix2D& Jac,
-                       int slot[2], Vector2D dir[2])
+      bool VertexBlock(const FESpace& Space, size_t cell, int v, const Matrix2D& Jac,
+                       int slot[2], Vector2D crow[2])
       {
+        const Element& E = Space.RefElement();
+
+        Vector2D dir[2];
         int found = 0;
 
         for(int k=0; k<E.NrDof() && found<2; ++k)
@@ -60,7 +67,15 @@ namespace chemfem{
             ++found;
           }
 
-        return found == 2;
+        if(found != 2)
+          return false;
+
+        const NodeFrame frame = Space.VertexFrame(cell, v);
+
+        for(int i=0; i<2; ++i)
+          crow[i] = Vector2D(dot(dir[i], frame.r1), dot(dir[i], frame.r2));
+
+        return true;
       }
 
       /**
@@ -114,16 +129,14 @@ namespace chemfem{
     }
 
     void TransformLocalRows(DenseMatrix& LocalMatrix, int NrColumns, const FESpace& Space,
-                            size_t /*cell*/, const Matrix2D& Jac)
+                            size_t cell, const Matrix2D& Jac)
     {
-      const Element& E = Space.RefElement();
-
       for(int v=0; v<3; ++v)
         {
           int slot[2];
-          Vector2D dir[2];
+          Vector2D crow[2];
 
-          if(!VertexBlock(E, v, Jac, slot, dir))
+          if(!VertexBlock(Space, cell, v, Jac, slot, crow))
             continue;
 
           const int p = slot[0], q = slot[1];
@@ -132,23 +145,21 @@ namespace chemfem{
             {
               const double ap = LocalMatrix[p][l], aq = LocalMatrix[q][l];
 
-              LocalMatrix[p][l] = dir[0].x*ap + dir[1].x*aq;
-              LocalMatrix[q][l] = dir[0].y*ap + dir[1].y*aq;
+              LocalMatrix[p][l] = crow[0].x*ap + crow[1].x*aq;
+              LocalMatrix[q][l] = crow[0].y*ap + crow[1].y*aq;
             }
         }
     }
 
     void TransformLocalColumns(DenseMatrix& LocalMatrix, int NrRows, const FESpace& Space,
-                               size_t /*cell*/, const Matrix2D& Jac)
+                               size_t cell, const Matrix2D& Jac)
     {
-      const Element& E = Space.RefElement();
-
       for(int v=0; v<3; ++v)
         {
           int slot[2];
-          Vector2D dir[2];
+          Vector2D crow[2];
 
-          if(!VertexBlock(E, v, Jac, slot, dir))
+          if(!VertexBlock(Space, cell, v, Jac, slot, crow))
             continue;
 
           const int p = slot[0], q = slot[1];
@@ -157,31 +168,29 @@ namespace chemfem{
             {
               const double ap = LocalMatrix[k][p], aq = LocalMatrix[k][q];
 
-              LocalMatrix[k][p] = dir[0].x*ap + dir[1].x*aq;
-              LocalMatrix[k][q] = dir[0].y*ap + dir[1].y*aq;
+              LocalMatrix[k][p] = crow[0].x*ap + crow[1].x*aq;
+              LocalMatrix[k][q] = crow[0].y*ap + crow[1].y*aq;
             }
         }
     }
 
-    void TransformLocalVector(Vector& LocalVector, const FESpace& Space, size_t /*cell*/,
+    void TransformLocalVector(Vector& LocalVector, const FESpace& Space, size_t cell,
                               const Matrix2D& Jac)
     {
-      const Element& E = Space.RefElement();
-
       for(int v=0; v<3; ++v)
         {
           int slot[2];
-          Vector2D dir[2];
+          Vector2D crow[2];
 
-          if(!VertexBlock(E, v, Jac, slot, dir))
+          if(!VertexBlock(Space, cell, v, Jac, slot, crow))
             continue;
 
           const int p = slot[0], q = slot[1];
 
           const double bp = LocalVector[p], bq = LocalVector[q];
 
-          LocalVector[p] = dir[0].x*bp + dir[1].x*bq;
-          LocalVector[q] = dir[0].y*bp + dir[1].y*bq;
+          LocalVector[p] = crow[0].x*bp + crow[1].x*bq;
+          LocalVector[q] = crow[0].y*bp + crow[1].y*bq;
         }
     }
 
@@ -206,9 +215,9 @@ namespace chemfem{
       for(int v=0; v<3; ++v)
         {
           int slot[2];
-          Vector2D dir[2];
+          Vector2D crow[2];
 
-          if(!VertexBlock(E, v, Jac, slot, dir))
+          if(!VertexBlock(Space, cell, v, Jac, slot, crow))
             continue;
 
           const int p = slot[0], q = slot[1];
@@ -216,8 +225,8 @@ namespace chemfem{
 
           // C, not its transpose: the local DOF p measures the derivative along dir[0],
           // which is that combination of the two global derivatives at the vertex
-          Local[p] = dir[0].x*cp + dir[0].y*cq;
-          Local[q] = dir[1].x*cp + dir[1].y*cq;
+          Local[p] = crow[0].x*cp + crow[0].y*cq;
+          Local[q] = crow[1].x*cp + crow[1].y*cq;
         }
     }
 

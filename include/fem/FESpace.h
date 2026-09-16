@@ -115,6 +115,12 @@ namespace chemfem{
       bool IsEdgeReversed(size_t cell, int local_edge) const;
 
       /**
+       * The frame the derivative DOFs of a vertex are taken along, see NodeFrame. Asked for
+       * by the cell and the local vertex, because the DOF transformation works per cell.
+       */
+      NodeFrame VertexFrame(size_t cell, int local_vertex) const;
+
+      /**
        * Interpolates a smooth function into the finite element space
        */
       FEFunction Interpolate(ScalarFunction);

@@ -93,6 +93,11 @@ namespace chemfem{
       return Dofs.IsEdgeReversed(cell, local_edge);
     }
 
+    NodeFrame FESpace::VertexFrame(size_t cell, int local_vertex) const
+    {
+      return Dofs.Frame(mesh.Cells[cell].LocNode[local_vertex]);
+    }
+
     const ScalarElement* FESpace::AsScalar() const
     {
       return scalar;

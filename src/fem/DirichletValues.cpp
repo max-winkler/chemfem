@@ -37,6 +37,18 @@ namespace chemfem{
             return false;
           }
 
+        const Element& E = Space.RefElement();
+
+        for(int k=0; k<E.NrDof(); ++k)
+          if(E.Dof(k).type == DofType::EdgeDirectionalDerivative)
+            {
+              std::cerr << "Error: Some DOFs of this space are derivatives. Prescribing "
+                        << "u = g on the boundary would have to prescribe the derivative of "
+                        << "g along it as well, which is not implemented yet. Homogeneous "
+                        << "conditions need no prescribed values and do work.\n";
+              return false;
+            }
+
         return true;
       }
     }
