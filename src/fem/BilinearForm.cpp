@@ -1,4 +1,6 @@
 #include "fem/BilinearForm.h"
+
+#include "fem/DofTransform.h"
 #include "linalg/SparseMatrixInserter.h"
 #include "linalg/DenseMatrix.h"
 #include "mesh/Mesh.h"
@@ -258,6 +260,11 @@ namespace chemfem{
       std::vector<PointValues> TestValues(NrTest), TrialValues(NrTrial);
       std::vector<VectorValues> TestVectors(NrTest), TrialVectors(NrTrial);
 
+      // Asked once, like the tabulation above, so the cell loop does not walk the DOFs of
+      // every element again only to learn that there is nothing to transform
+      const bool TransformTest = NeedsDofTransform(TestSpace);
+      const bool TransformTrial = NeedsDofTransform(TrialSpace);
+
       // Iterate over all cells
       int CellInd;
       std::vector<Cell>::const_iterator cell;
@@ -436,6 +443,11 @@ namespace chemfem{
                 }
             } // loop over quadrature points
 
+          if(TransformTest)
+            TransformLocalRows(LocMatrix, NrTrial, TestSpace, CellInd, Jac);
+          if(TransformTrial)
+            TransformLocalColumns(LocMatrix, NrTest, TrialSpace, CellInd, Jac);
+
           InsertLocalMatrix(Ins, Places, CellInd, LocMatrix);
 
         } // loop over cells
@@ -515,6 +527,13 @@ namespace chemfem{
                           }
                     }
                 }
+
+              const Matrix2D CellJac = mesh.Jacobian(CellIndex);
+
+              if(TransformTest)
+                TransformLocalRows(LocMatrix, NrTrial, TestSpace, CellIndex, CellJac);
+              if(TransformTrial)
+                TransformLocalColumns(LocMatrix, NrTest, TrialSpace, CellIndex, CellJac);
 
               InsertLocalMatrix(Ins, Places, CellIndex, LocMatrix);
             }

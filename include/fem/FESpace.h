@@ -111,6 +111,9 @@ namespace chemfem{
        */
       double LocalSign(size_t cell, size_t local) const;
 
+      /// True if the cell runs through its local edge against that edge's own direction
+      bool IsEdgeReversed(size_t cell, int local_edge) const;
+
       /**
        * Interpolates a smooth function into the finite element space
        */

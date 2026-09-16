@@ -2,7 +2,9 @@
 #define _ELEMENT_H_
 
 #include "linalg/Coordinate.h"
+#include "linalg/DenseMatrix.h"
 #include "linalg/Matrix2D.h"
+#include "linalg/Vector.h"
 #include "linalg/Vector2D.h"
 
 using chemfem::linalg::Matrix2D;
@@ -13,6 +15,38 @@ namespace chemfem{
 
     /// Finite element type.
     enum FEType {Lagrange, CrouzeixRaviart, DG, RaviartThomas};
+
+    /**
+     * What the coefficient of a degree of freedom measures. Together with the convention for
+     * the global DOFs this determines how a local DOF is expressed in terms of the global
+     * ones, so an element describes its DOFs and does not implement that transformation
+     * itself. A scoped enum because there is already a struct PointValues next door.
+     */
+    enum class DofType
+    {
+      /// The function value in NodalPoint(k)
+      PointValue,
+      /// The derivative along one edge, taken at one of its endpoints, as Hermite has
+      EdgeDirectionalDerivative,
+      /// The derivative normal to one edge, as Argyris and Morley have
+      EdgeNormalDerivative,
+      /// An integral over one edge, such as the flux of a Raviart-Thomas element
+      EdgeMoment
+    };
+
+    /**
+     * What a local DOF measures and which entities of the cell it belongs to. A directional
+     * derivative needs both: the vertex fixes which global derivative pair it contributes to,
+     * the edge fixes the direction. Entities that do not apply are -1, and index counts the
+     * DOFs of the same kind on the same entity.
+     */
+    struct DofDescriptor
+    {
+      DofType type;
+      int vertex;
+      int edge;
+      int index;
+    };
 
 
     /**
@@ -71,6 +105,28 @@ namespace chemfem{
        * of a Raviart-Thomas element, it is the point its edge is represented by.
        */
       virtual chemfem::linalg::Coordinate NodalPoint(int) const = 0;
+
+      /**
+       * What the local DOF k measures and where it sits. The default reports a point value on
+       * the entity that the numbering of DofManager puts it on, which is correct for every
+       * element whose coefficients are function values. An element with other functionals
+       * overrides it.
+       */
+      virtual DofDescriptor Dof(int k) const
+      {
+        const int nv = 3*dofs_per_vertex;
+        const int ne = 3*dofs_per_edge;
+
+        if(k < nv)
+          return DofDescriptor{DofType::PointValue, k/dofs_per_vertex, -1,
+                               k%dofs_per_vertex};
+
+        if(k < nv + ne)
+          return DofDescriptor{DofType::PointValue, -1, (k - nv)/dofs_per_edge,
+                               (k - nv)%dofs_per_edge};
+
+        return DofDescriptor{DofType::PointValue, -1, -1, k - nv - ne};
+      }
 
     protected:
 

@@ -1,5 +1,7 @@
 #include "fem/LinearForm.h"
 
+#include "fem/DofTransform.h"
+
 #include "quadrature/QuadFormula.h"
 
 using chemfem::linalg::Vector;
@@ -164,6 +166,9 @@ namespace chemfem{
       std::vector<PointValues> TestValues(NrTest);
       std::vector<VectorValues> TestVectors(NrTest);
 
+      // Asked once, like the tabulation above
+      const bool TransformTest = NeedsDofTransform(TestSpace);
+
       // Iterate over all cells
       int CellInd;
       std::vector<Cell>::const_iterator cell;
@@ -258,6 +263,9 @@ namespace chemfem{
 		    }
 		}
 	    } // loop over quadrature points
+	  if(TransformTest)
+	    TransformLocalVector(LocVec, TestSpace, CellInd, Jac);
+
 	  for(int k=0; k<NrTest; ++k)
 	    {
 	      size_t GlobalIndex = TestSpace.GetGlobalIndex(CellInd, k);
@@ -314,6 +322,9 @@ namespace chemfem{
 		      * TestSpace.AsScalar()->Value(i, xi, eta) * length;
 		}
 	    }
+
+	  if(TransformTest)
+	    TransformLocalVector(LocVec, TestSpace, CellIndex, mesh.Jacobian(CellIndex));
 
 	  for(int i=0; i<NrTest; ++i)
 	    {
@@ -400,6 +411,9 @@ namespace chemfem{
 		    }
 		}
 	    }
+
+	  if(TransformTest)
+	    TransformLocalVector(LocVec, TestSpace, CellIndex, Jac);
 
 	  for(int i=0; i<NrTest; ++i)
 	    {

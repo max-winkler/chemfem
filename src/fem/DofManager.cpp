@@ -36,6 +36,7 @@ namespace chemfem{
 
       nr_dof = interior_offset + mesh.NrCells()*ni;
       DofMap.resize(mesh.NrCells()*nr_local_dof);
+      Reversed.assign(3*mesh.NrCells(), false);
 
       // An edge DOF of a vector element is a flux through a globally fixed normal
       const bool piola = (dynamic_cast<const VectorElement*>(&element) != nullptr);
@@ -59,6 +60,8 @@ namespace chemfem{
 	      // The edge DOFs are numbered from Node0 to Node1 of the edge, a cell that
 	      // runs through the edge the other way takes them in reverse order
 	      const bool reversed = (mesh.Edges[e].Node0 != cell.LocNode[k]);
+
+	      Reversed[3*c + k] = reversed;
 
 	      for(size_t j=0; j<ne; ++j)
 		{
@@ -153,6 +156,11 @@ namespace chemfem{
     double DofManager::LocalSign(size_t cell, size_t local) const
     {
       return Sign.empty() ? 1. : Sign[cell*nr_local_dof + local];
+    }
+
+    bool DofManager::IsEdgeReversed(size_t cell, int local_edge) const
+    {
+      return Reversed[3*cell + local_edge];
     }
 
     bool DofManager::IsFree(size_t dof) const

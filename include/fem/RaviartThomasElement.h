@@ -29,6 +29,9 @@ namespace chemfem{
 
       /// Midpoint of the edge the DOF belongs to
       chemfem::linalg::Coordinate NodalPoint(int) const;
+
+      /// The flux through the edge k, so an edge moment rather than a point value
+      DofDescriptor Dof(int) const;
     };
   };
 };

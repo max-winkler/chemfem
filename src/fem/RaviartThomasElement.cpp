@@ -50,5 +50,10 @@ namespace chemfem{
       return Coordinate{xi, eta};
     }
 
+    DofDescriptor RaviartThomasElement::Dof(int k) const
+    {
+      return DofDescriptor{DofType::EdgeMoment, -1, k, 0};
+    }
+
   }
 }

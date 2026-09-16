@@ -35,6 +35,9 @@ namespace chemfem{
 
       chemfem::linalg::Coordinate NodalPoint(int) const;
 
+      /// The DOF of the scalar element behind it, on the same entity
+      DofDescriptor Dof(int) const;
+
       /// The scalar element the product is built from
       const ScalarElement& ScalarPart() const;
 

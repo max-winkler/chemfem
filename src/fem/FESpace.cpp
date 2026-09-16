@@ -88,6 +88,11 @@ namespace chemfem{
       return Dofs.LocalSign(cell, local);
     }
 
+    bool FESpace::IsEdgeReversed(size_t cell, int local_edge) const
+    {
+      return Dofs.IsEdgeReversed(cell, local_edge);
+    }
+
     const ScalarElement* FESpace::AsScalar() const
     {
       return scalar;

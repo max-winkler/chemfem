@@ -43,6 +43,17 @@ namespace chemfem{
       return Scalar.NodalPoint(ScalarIndex(k));
     }
 
+    DofDescriptor ProductElement::Dof(int k) const
+    {
+      // The kind and the entity are the ones of the scalar element, only the running index
+      // within the entity is multiplied by the components
+      DofDescriptor d = Scalar.Dof(ScalarIndex(k));
+
+      d.index = d.index*nr_components + Component(k);
+
+      return d;
+    }
+
     const ScalarElement& ProductElement::ScalarPart() const
     {
       return Scalar;

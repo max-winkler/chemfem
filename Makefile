@@ -41,6 +41,7 @@ OBJ = 	src/linalg/Vector.o \
 	src/fem/FESpace.o \
 	src/fem/DirichletValues.o \
 	src/fem/DofManager.o \
+	src/fem/DofTransform.o \
 	src/fem/FEFunction.o \
 	src/fem/Element.o \
 	src/fem/LagrangeElement.o \

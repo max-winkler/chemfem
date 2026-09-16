@@ -53,6 +53,13 @@ namespace chemfem{
        */
       double LocalSign(size_t cell, size_t local) const;
 
+      /**
+       * True if the cell runs through its local edge against the direction Node0 to Node1 of
+       * that edge. The numbering fixes this convention, so it is reported here rather than
+       * recomputed wherever an edge DOF has to be oriented.
+       */
+      bool IsEdgeReversed(size_t cell, int local_edge) const;
+
       /// False if the DOF is fixed by a Dirichlet condition
       bool IsFree(size_t) const;
 
@@ -75,6 +82,9 @@ namespace chemfem{
 
       /// Signs of the local DOFs, laid out like DofMap. Empty unless the element needs them.
       std::vector<double> Sign;
+
+      /// Three entries per cell, one per local edge
+      std::vector<bool> Reversed;
 
       std::vector<bool> Free;
       std::vector<size_t> Reduced;
