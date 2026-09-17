@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <sstream>
 #include <cmath>
+#include <vector>
 
 #include "fem/BlockSystem.h"
 #include "fem/DirichletValues.h"
@@ -36,13 +37,29 @@ using namespace chemfem::mesh;
 // the forms that use it and must not be replaced, only refreshed.
 
 const double Height = 0.41;
-const double MaxInflow = 1.5;
+const double Diameter = 0.1;
+
+/// Maximum of the parabolic inflow profile, its mean value is two thirds of it
+const double MaxInflow = 4.5;
 
 const double nu = 0.001;
-const double T = 1.0;
-const int steps = 200;
 
-const double NewtonTolerance = 1.e-10;
+const double MeanInflow = 2.*MaxInflow/3.;
+const double Reynolds = MeanInflow*Diameter/nu;
+
+// The shedding frequency grows with the velocity, so at Re = 300 the period is only about
+// 0.16 s and T covers roughly twelve of them. The implicit Euler method is unconditionally
+// stable and puts no restriction on tau at all, but it is of first order and damps, so the
+// step is chosen to resolve the oscillation, not to satisfy a CFL condition: tau = 0.0025
+// gives about 64 steps per period.
+const double T = 2.0;
+const int steps = 800;
+
+// Newton converges quadratically, so the last step usually overshoots the tolerance by
+// orders of magnitude: with 1e-10 the steps that took four iterations ended at 1e-14, while
+// three iterations already reached 1e-11. That fourth iteration buys accuracy far below the
+// error of the first order time discretization, so it is wasted work.
+const double NewtonTolerance = 1.e-8;
 const int MaxNewton = 12;
 
 /// Parabolic profile of the inflow, its mean value is 2/3 of MaxInflow
@@ -143,6 +160,16 @@ int main()
   G.AddVolumeTerm([&Velocity](const QuadPoint& p, const PointValues& q)
                   { return Velocity.EvaluateVector(p).divergence * q.value; });
 
+  // On an affine cell every integrand here is a polynomial, so these degrees integrate
+  // exactly: the convection (u_k.grad u, v) has 2+1+2 = 5, the mass term 4, the divergence
+  // block only 1+1 = 2. The default formula of degree 7 spends 16 points on all of them,
+  // and its constants are tabulated too coarsely to be the more accurate choice anyway.
+  A.SetQuadratureDegree(5);
+  B.SetQuadratureDegree(2);
+  M.SetQuadratureDegree(4);
+  F.SetQuadratureDegree(5);
+  G.SetQuadratureDegree(2);
+
   BlockSystem S({V, Q});
   S.AddBlock(0, 0, A);
   S.AddBlock(1, 0, B);
@@ -168,11 +195,17 @@ int main()
   Pressure.CreateFunction(PressureDof);
 
   std::cout << "Navier-Stokes around a cylinder, " << mesh.NrCells() << " cells, "
-            << S.NrDof() << " unknowns, Re = 100\n"
+            << S.NrDof() << " unknowns, Re = " << Reynolds << "\n"
             << std::setw(8) << "step" << std::setw(8) << "Newton"
             << std::setw(14) << "last update" << std::setw(14) << "max speed" << std::endl;
 
   bool ok = true;
+
+  // How many Newton steps each time step needed. A line every ten steps would only sample
+  // this, and the interesting moment is the onset of the vortex shedding, where the solution
+  // changes faster in time, the guess from the previous step gets worse and the count rises.
+  std::vector<int> NewtonHistogram(MaxNewton+1, 0);
+  int worst_step = 0, worst_iterations = 0, previous_iterations = 0;
 
   for(int n=1; n<=steps; ++n)
     {
@@ -233,24 +266,50 @@ int main()
           break;
         }
 
-      if(n % 10 == 0)
+      ++NewtonHistogram[iteration+1];
+
+      if(iteration+1 > worst_iterations)
+        {
+          worst_iterations = iteration+1;
+          worst_step = n;
+        }
+
+      // Every tenth step, and every step where the count changes, so no rise is missed
+      const bool changed = (iteration+1 != previous_iterations);
+      previous_iterations = iteration+1;
+
+      if(n % 10 == 0 || changed)
         std::cout << std::setw(8) << n << std::setw(8) << iteration+1
                   << std::scientific << std::setprecision(3) << std::setw(14) << update
                   << std::fixed << std::setprecision(4) << std::setw(14) << speed
                   << std::endl;
 
-      if(n % 4 == 0)
-        {
-          std::ostringstream name;
-          name << "navier_stokes_" << std::setw(4) << std::setfill('0') << n/4 << ".vtk";
-          out.Write(name.str());
-        }
+      std::ostringstream name;
+      name << "navier_stokes_" << std::setw(4) << std::setfill('0') << n << ".vtk";
+      out.Write(name.str());
     }
+
+  std::cout << "\nNewton steps per time step\n" << std::string(34, '=') << std::endl;
+
+  int total = 0, counted = 0;
+  for(size_t k=0; k<NewtonHistogram.size(); ++k)
+    if(NewtonHistogram[k] > 0)
+      {
+        std::cout << std::setw(8) << k << " iterations" << std::setw(8)
+                  << NewtonHistogram[k] << " time steps" << std::endl;
+        total += int(k)*NewtonHistogram[k];
+        counted += NewtonHistogram[k];
+      }
+
+  if(counted > 0)
+    std::cout << std::setw(8) << std::fixed << std::setprecision(2)
+              << double(total)/counted << " on average, worst " << worst_iterations
+              << " in step " << worst_step << std::endl;
 
   if(!ok)
     return 1;
 
-  std::cout << "\nNavierStokesTest was successful, " << steps/4
+  std::cout << "\nNavierStokesTest was successful, " << steps
             << " frames written to navier_stokes_*.vtk.\n";
   return 0;
 }
