@@ -180,7 +180,6 @@ namespace chemfem{
     void BilinearForm::Assemble()
     {
       Matrix = SparseMatrix(TestSpace.NrFreeDof(), TrialSpace.NrFreeDof());
-      DirichletTerm = Vector(TestSpace.NrFreeDof());
 
       SparseMatrixInserter Ins(Matrix);
 
@@ -204,6 +203,10 @@ namespace chemfem{
                     << "not implemented yet\n";
           return;
         }
+
+      // A form may be assembled more than once, as it is in a Newton iteration, so the
+      // lifting of the prescribed values starts from zero instead of accumulating
+      DirichletTerm = Vector(TestSpace.NrFreeDof());
 
       const Mesh& mesh = TestSpace.mesh;
 
