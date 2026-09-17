@@ -31,6 +31,25 @@ namespace chemfem{
       SparseMatrix(const SparseMatrix&);
 
       /**
+       * Frees the three arrays of the compressed row format. Without it every assembly of a
+       * form leaks its whole matrix, which nobody noticed as long as a system was assembled
+       * once, and which a Newton iteration turns into gigabytes.
+       */
+      ~SparseMatrix();
+
+      /**
+       * Copies a matrix over an existing one, freeing what it held before
+       */
+      SparseMatrix& operator=(const SparseMatrix&);
+
+      /**
+       * Takes the arrays over from a temporary instead of copying them. This is the case of
+       * Matrix = SparseMatrix(n, n), which every assembly of a block system starts with.
+       */
+      SparseMatrix(SparseMatrix&&) noexcept;
+      SparseMatrix& operator=(SparseMatrix&&) noexcept;
+
+      /**
        * Used to print the matrix to the console or write into a file.
        */
       friend std::ostream& operator<<(std::ostream&, const SparseMatrix&);

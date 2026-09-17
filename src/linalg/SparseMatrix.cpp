@@ -11,13 +11,98 @@ namespace chemfem{
 
     SparseMatrix::SparseMatrix(const SparseMatrix& M) : m(M.m), n(M.n), nnz(M.nnz)
     {
-      Col = new size_t[nnz];
-      Row = new size_t[m+1];
-      Entry = new double[nnz];
+      // A matrix that has not been built yet holds null pointers, copying from those would
+      // read from nowhere
+      if(M.Col && nnz)
+	{
+	  Col = new size_t[nnz];
+	  Entry = new double[nnz];
 
-      std::copy(M.Col, M.Col+nnz, Col);
-      std::copy(M.Row, M.Row+m+1, Row);
-      std::copy(M.Entry, M.Entry+nnz, Entry);
+	  std::copy(M.Col, M.Col+nnz, Col);
+	  std::copy(M.Entry, M.Entry+nnz, Entry);
+	}
+
+      if(M.Row)
+	{
+	  Row = new size_t[m+1];
+	  std::copy(M.Row, M.Row+m+1, Row);
+	}
+    }
+
+    SparseMatrix::~SparseMatrix()
+    {
+      delete[] Col;
+      delete[] Row;
+      delete[] Entry;
+    }
+
+    SparseMatrix& SparseMatrix::operator=(const SparseMatrix& M)
+    {
+      if(this == &M)
+	return *this;
+
+      delete[] Col;
+      delete[] Row;
+      delete[] Entry;
+
+      Col = NULL;
+      Row = NULL;
+      Entry = NULL;
+
+      m = M.m;
+      n = M.n;
+      nnz = M.nnz;
+
+      if(M.Col && nnz)
+	{
+	  Col = new size_t[nnz];
+	  Entry = new double[nnz];
+
+	  std::copy(M.Col, M.Col+nnz, Col);
+	  std::copy(M.Entry, M.Entry+nnz, Entry);
+	}
+
+      if(M.Row)
+	{
+	  Row = new size_t[m+1];
+	  std::copy(M.Row, M.Row+m+1, Row);
+	}
+
+      return *this;
+    }
+
+    SparseMatrix::SparseMatrix(SparseMatrix&& M) noexcept
+      : Col(M.Col), Row(M.Row), Entry(M.Entry), m(M.m), n(M.n), nnz(M.nnz)
+    {
+      M.Col = NULL;
+      M.Row = NULL;
+      M.Entry = NULL;
+      M.nnz = 0;
+    }
+
+    SparseMatrix& SparseMatrix::operator=(SparseMatrix&& M) noexcept
+    {
+      if(this == &M)
+	return *this;
+
+      delete[] Col;
+      delete[] Row;
+      delete[] Entry;
+
+      Col = M.Col;
+      Row = M.Row;
+      Entry = M.Entry;
+
+      m = M.m;
+      n = M.n;
+      nnz = M.nnz;
+
+      M.Col = NULL;
+      M.Row = NULL;
+      M.Entry = NULL;
+      M.nnz = 0;
+
+      return *this;
     }
 
     Vector SparseMatrix::operator*(const Vector& x) const

@@ -14,6 +14,17 @@ namespace chemfem{
     
     void SparseMatrixInserter::Build()
     {
+      // Building over a matrix that already holds a pattern would drop its arrays and count
+      // the non-zeros on top of the old ones
+      delete[] M.Col;
+      delete[] M.Row;
+      delete[] M.Entry;
+
+      M.Col = NULL;
+      M.Row = NULL;
+      M.Entry = NULL;
+      M.nnz = 0;
+
       // Sort entries
       std::sort(Entries.begin(), Entries.end());
 
