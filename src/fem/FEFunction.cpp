@@ -92,6 +92,9 @@ namespace chemfem{
       if(CacheValid == VECTOR_ONLY && SamePoint(p, CachedPoint))
 	return CachedVector;
 
+      if(CacheValid == VECTOR_EVERYTHING && SamePoint(p, CachedPoint))
+	return CachedVectorValues.value;
+
       const Element& E = Space->RefElement();
 
       chemfem::linalg::Vector2D value;
@@ -127,6 +130,66 @@ namespace chemfem{
       CacheValid = VECTOR_ONLY;
 
       return value;
+    }
+
+    VectorValues FEFunction::EvaluateVector(const QuadPoint& p) const
+    {
+      if(CacheValid == VECTOR_EVERYTHING && SamePoint(p, CachedPoint))
+	return CachedVectorValues;
+
+      const Element& E = Space->RefElement();
+
+      VectorValues values{chemfem::linalg::Vector2D(), chemfem::linalg::Matrix2D(), 0., 0.};
+
+      std::vector<double> Coeff;
+      GatherLocalCoefficients(*Space, Data, p.cell, Coeff);
+
+      if(const VectorElement* Vec = Space->AsVector())
+	{
+	  const chemfem::linalg::Matrix2D Jac = Space->GetMesh().Jacobian(p.cell);
+	  const double det = Space->GetMesh().Determinant(p.cell);
+
+	  for(size_t k=0; k<Space->NrLocalDof(); ++k)
+	    {
+	      const VectorValues basis
+		= MapFromReference(ReferenceVector{Vec->Value(k, p.xi, p.eta),
+						   Vec->Gradient(k, p.xi, p.eta)},
+				   Jac, det, Space->LocalSign(p.cell, k));
+
+	      const double coeff = Coeff[k];
+
+	      values.value += coeff * basis.value;
+	      values.gradient += coeff * basis.gradient;
+	      values.divergence += coeff * basis.divergence;
+	      values.curl += coeff * basis.curl;
+	    }
+	}
+      else
+	{
+	  const chemfem::linalg::Matrix2D InvJacT
+	    = Space->GetMesh().Jacobian(p.cell).Transpose().Invert();
+
+	  for(size_t k=0; k<Space->NrLocalDof(); ++k)
+	    {
+	      // The basis function is the scalar one in its component and zero in the others
+	      const VectorValues basis
+		= MapFromReference(ReferenceValues(*Space->AsScalar(), int(k), p.xi, p.eta),
+				   InvJacT, E.Component(int(k)));
+
+	      const double coeff = Coeff[k];
+
+	      values.value += coeff * basis.value;
+	      values.gradient += coeff * basis.gradient;
+	      values.divergence += coeff * basis.divergence;
+	      values.curl += coeff * basis.curl;
+	    }
+	}
+
+      CachedVectorValues = values;
+      CachedPoint = p;
+      CacheValid = VECTOR_EVERYTHING;
+
+      return values;
     }
 
     PointValues FEFunction::Evaluate(const QuadPoint& p) const
@@ -234,6 +297,44 @@ namespace chemfem{
 
 	  for(size_t k=0; k<NrLocalDof(); ++k)
 	    Vec[GetGlobalIndex(c, k)] = u(b + Jac*refElement.NodalPoint(k));
+	}
+
+      Function.SetCoefficients(Vec);
+
+      return Function;
+    }
+
+    FEFunction FESpace::Interpolate(VectorFunction u)
+    {
+      FEFunction Function(*this);
+      Vector Vec(NrDof());
+
+      if(refElement.NrComponents() != 2)
+	{
+	  std::cerr << "Error: A vector valued interpolant needs a space with two components. "
+		    << "The zero function is returned.\n";
+	  return Function;
+	}
+
+      for(int k=0; k<refElement.NrDof(); ++k)
+	if(refElement.Dof(k).type != DofType::PointValue)
+	  {
+	    std::cerr << "Error: Interpolation sets every DOF to a function value, which is "
+		      << "wrong for an element whose DOFs are derivatives or edge moments. "
+		      << "The zero function is returned.\n";
+	    return Function;
+	  }
+
+      for(size_t c=0; c<mesh.NrCells(); ++c)
+	{
+	  const Node& x0 = mesh.Nodes[mesh.Cells[c].LocNode[0]];
+	  const chemfem::linalg::Coordinate b{x0.getX(), x0.getY()};
+
+	  const chemfem::linalg::Matrix2D Jac = mesh.Jacobian(c);
+
+	  for(size_t k=0; k<NrLocalDof(); ++k)
+	    Vec[GetGlobalIndex(c, k)]
+	      = u(b + Jac*refElement.NodalPoint(int(k)))[refElement.Component(int(k))];
 	}
 
       Function.SetCoefficients(Vec);

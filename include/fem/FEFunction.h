@@ -78,6 +78,13 @@ namespace chemfem{
        */
       chemfem::linalg::Vector2D VectorValue(const QuadPoint&) const;
 
+      /**
+       * Value, gradient, divergence and rotation of a vector valued FE function in a
+       * quadrature point, e.g. of the velocity of the last Newton step inside the integrand
+       * of a form. VectorValue is cheaper where only the value is needed.
+       */
+      VectorValues EvaluateVector(const QuadPoint&) const;
+
       /// Integral of the function over the domain, divided by the area of the domain
       double Mean() const;
 
@@ -96,15 +103,16 @@ namespace chemfem{
 
       /**
        * What the cache below holds: nothing, the function value only, the value of a vector
-       * valued function, or all of PointValues
+       * valued function, all of VectorValues, or all of PointValues
        */
-      enum CacheContent {NOTHING, VALUE_ONLY, VECTOR_ONLY, EVERYTHING};
+      enum CacheContent {NOTHING, VALUE_ONLY, VECTOR_ONLY, VECTOR_EVERYTHING, EVERYTHING};
 
       /// The last point that was evaluated and its result. An integrand is called once per
       /// basis function in the same point, so this saves the repeated work.
       mutable QuadPoint CachedPoint;
       mutable PointValues CachedValues;
       mutable chemfem::linalg::Vector2D CachedVector;
+      mutable VectorValues CachedVectorValues;
       mutable CacheContent CacheValid = NOTHING;
       
     };

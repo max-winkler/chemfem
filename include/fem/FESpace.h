@@ -116,6 +116,12 @@ namespace chemfem{
        */
       FEFunction Interpolate(ScalarFunction);
 
+      /**
+       * The same for a vector valued space: each DOF takes the component of the value that
+       * belongs to it, e.g. to lay an initial velocity into the space.
+       */
+      FEFunction Interpolate(VectorFunction);
+
     private:
       /**
        * Expands a vector of the free DOFs to one over all of them, with zero or with the

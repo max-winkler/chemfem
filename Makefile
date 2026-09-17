@@ -81,7 +81,8 @@ TESTS = tests/SparseMatrixTest.o \
 	tests/RaviartThomasTest.o \
 	tests/MixedPoissonTest.o \
 	tests/HermiteTest.o \
-	tests/ReassembleTest.o
+	tests/ReassembleTest.o \
+	tests/EvaluateVectorTest.o
 
 TESTS_BIN = $(TESTS:.o=)
 
