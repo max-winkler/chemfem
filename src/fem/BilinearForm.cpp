@@ -27,20 +27,10 @@ namespace chemfem{
 
     double Identity(const Coordinate&) {return 1.;}
 
-    BilinearForm::BilinearForm(const FESpace& TrialSpace, const FESpace& TestSpace)
+    BilinearForm::BilinearForm(const FESpace& TrialSpace, const FESpace& TestSpace,
+			       int QuadratureDegree)
       : TrialSpace(TrialSpace), TestSpace(TestSpace), Matrix(0,0),
-	DirichletTerm(TestSpace.NrFreeDof()) {}
-
-    void BilinearForm::SetQuadratureDegree(int degree)
-    {
-      if(degree < 0)
-        {
-          std::cerr << "Error: The quadrature degree cannot be negative.\n";
-          return;
-        }
-
-      QuadDegree = degree;
-    }
+	DirichletTerm(TestSpace.NrFreeDof()), QuadDegree(QuadratureDegree) {}
 
     void BilinearForm::SetDirichletValues(const DirichletValues& g)
     {
@@ -224,7 +214,7 @@ namespace chemfem{
       const int NrTest = TestSpace.NrLocalDof();
       const int NrTrial = TrialSpace.NrLocalDof();
 
-      // Without a degree from SetQuadratureDegree the formula of degree 7 is used
+      // Without a degree from the constructor the formula of degree 7 is used
       QuadratureFormula QuadFormula = QuadDegree < 0
         ? QuadratureFormula(QUAD_FORMULA::GAUSS_7) : QuadratureFormula(QuadDegree);
 

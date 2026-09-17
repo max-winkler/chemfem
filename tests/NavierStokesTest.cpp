@@ -119,7 +119,11 @@ int main()
   // declared before them and refreshed in place.
   FEFunction Velocity(V), Pressure(Q);
 
-  BilinearForm A(V, V), B(V, Q), M(V, V);
+  // On an affine cell every integrand here is a polynomial, so these degrees integrate
+  // exactly: the convection (u_k.grad u, v) has 2+1+2 = 5, the mass term 4, the divergence
+  // block only 1+1 = 2. The default formula of degree 7 spends 16 points on all of them,
+  // and its constants are tabulated too coarsely to be the more accurate choice anyway.
+  BilinearForm A(V, V, 5), B(V, Q, 2), M(V, V, 4);
 
   // The linear part of the Jacobian, as in the Stokes case
   A.AddVolumeTerm([tau](const VectorValues& u, const VectorValues& v)
@@ -144,7 +148,7 @@ int main()
 
   // The residual of the momentum equation, without the terms that the matrix and the mass
   // term already cover. The sign is the one of the right hand side.
-  LinearForm F(V);
+  LinearForm F(V, 5);
   F.AddVolumeTerm([&Velocity, &Pressure](const QuadPoint& p, const VectorValues& v)
                   {
                     const VectorValues w = Velocity.EvaluateVector(p);
@@ -156,19 +160,9 @@ int main()
                   });
 
   // The residual of the continuity equation
-  LinearForm G(Q);
+  LinearForm G(Q, 2);
   G.AddVolumeTerm([&Velocity](const QuadPoint& p, const PointValues& q)
                   { return Velocity.EvaluateVector(p).divergence * q.value; });
-
-  // On an affine cell every integrand here is a polynomial, so these degrees integrate
-  // exactly: the convection (u_k.grad u, v) has 2+1+2 = 5, the mass term 4, the divergence
-  // block only 1+1 = 2. The default formula of degree 7 spends 16 points on all of them,
-  // and its constants are tabulated too coarsely to be the more accurate choice anyway.
-  A.SetQuadratureDegree(5);
-  B.SetQuadratureDegree(2);
-  M.SetQuadratureDegree(4);
-  F.SetQuadratureDegree(5);
-  G.SetQuadratureDegree(2);
 
   BlockSystem S({V, Q});
   S.AddBlock(0, 0, A);

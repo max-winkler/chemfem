@@ -23,7 +23,8 @@ using chemfem::quadrature::QUAD_FORMULA;
 namespace chemfem{
   namespace fem{
 
-    LinearForm::LinearForm(const FESpace& TestSpace) : TestSpace(TestSpace) {}
+    LinearForm::LinearForm(const FESpace& TestSpace, int QuadratureDegree)
+      : QuadDegree(QuadratureDegree), TestSpace(TestSpace) {}
 
     void LinearForm::AddVolumeForce(ScalarFunction F)
     {
@@ -126,17 +127,6 @@ namespace chemfem{
 		  << "is scalar.\n";
     }
 
-    void LinearForm::SetQuadratureDegree(int degree)
-    {
-      if(degree < 0)
-        {
-          std::cerr << "Error: The quadrature degree cannot be negative.\n";
-          return;
-        }
-
-      QuadDegree = degree;
-    }
-
     Vector& LinearForm::LoadVector()
     {
       return Vec;
@@ -155,7 +145,7 @@ namespace chemfem{
       const DofManager& Dofs = TestSpace.Dofs;
       const int NrTest = TestSpace.NrLocalDof();
 
-      // Without a degree from SetQuadratureDegree the formula of degree 7 is used
+      // Without a degree from the constructor the formula of degree 7 is used
       QuadratureFormula QuadFormula = QuadDegree < 0
         ? QuadratureFormula(QUAD_FORMULA::GAUSS_7) : QuadratureFormula(QuadDegree);
 

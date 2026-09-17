@@ -67,8 +67,17 @@ namespace chemfem{
       /**
        * Constructor which initializes an empty bilinear form for a given
        * trial and test space.
+       *
+       * The quadrature degree is the one of the integrand, so the sum of the degrees of its
+       * factors: a mass term on P2 needs 4, and (u_k.grad u, v) with a P2 velocity needs 5.
+       * The cheapest formula that is exact for that degree is then used. A negative degree,
+       * which is the default, keeps the formula of degree 7 the assembly used before.
+       *
+       * The degree is asked for and never guessed from the elements, because an integrand
+       * may carry a coefficient or an FE function whose degree the form cannot know. Too low
+       * a degree integrates wrongly without saying so.
        */
-      BilinearForm(const FESpace&, const FESpace&);
+      BilinearForm(const FESpace&, const FESpace&, int QuadratureDegree = -1);
 
       /// Adds a Laplace term (\nabla u,\nabla v) to the bilinear form
       void AddLaplaceTerm();
@@ -122,15 +131,6 @@ namespace chemfem{
        * indicator is true, over the whole boundary if it is omitted
        */
       void AddBoundaryTerm(BoundaryIntegrand, BoundaryIndicator = nullptr);
-
-      /**
-       * Integrates with the cheapest formula that is exact for polynomials of the given
-       * degree, instead of the formula of degree 7 the assembly uses otherwise. The degree
-       * is the one of the integrand, so the sum of the degrees of the factors: a mass term
-       * on P2 needs 4, and (u_k.grad u, v) with a P2 velocity needs 5. Too low a degree
-       * silently integrates wrongly, so it is asked for and never guessed.
-       */
-      void SetQuadratureDegree(int);
 
       /**
        * Sets the values prescribed on the Dirichlet boundary. They enter the right hand side

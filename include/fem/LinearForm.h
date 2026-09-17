@@ -51,8 +51,14 @@ namespace chemfem{
 
       /**
        * Constructor which associates the linear form with a function space.
+       *
+       * The quadrature degree is the one of the integrand, so the sum of the degrees of its
+       * factors. The cheapest formula that is exact for it is then used, and a negative
+       * degree, which is the default, keeps the formula of degree 7 the assembly used
+       * before. A right hand side that is not a polynomial, as most volume forces are, is
+       * never integrated exactly at all, and lowering the degree lowers its accuracy.
        */
-      LinearForm(const FESpace&);
+      LinearForm(const FESpace&, int QuadratureDegree = -1);
 
       /**
        * Adds a volume force. This is a function handle to the function defining the right-hand
@@ -95,16 +101,6 @@ namespace chemfem{
        * indicator is true, over the whole boundary if it is omitted
        */
       void AddBoundaryTerm(VectorBoundaryIntegrand, BoundaryIndicator = nullptr);
-
-      /**
-       * Integrates with the cheapest formula that is exact for polynomials of the given
-       * degree, instead of the formula of degree 7 the assembly uses otherwise. The degree
-       * is the one of the integrand, so the sum of the degrees of the factors. Too low a
-       * degree silently integrates wrongly, so it is asked for and never guessed. A right
-       * hand side that is not a polynomial, as most volume forces are, is never integrated
-       * exactly at all, and lowering the degree lowers its accuracy.
-       */
-      void SetQuadratureDegree(int);
 
       /**
        * Assembles the load vector. Before calling this routine all terms that are required should be
