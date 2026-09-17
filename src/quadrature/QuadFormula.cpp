@@ -1,3 +1,4 @@
+#include <cmath>
 #include <iostream>
 #include <string>
 
@@ -53,6 +54,40 @@ namespace chemfem{
 	  Xi[1] = .5; Eta[1] = .5;
 	  Xi[2] = 0.; Eta[2] = .5;
 
+	  break;
+
+	case GAUSS_5:
+	  {
+	    // The seven point formula of Radon, exact up to degree 5. The three points of a
+	    // group are the permutations of the barycentric coordinates (a, a, 1-2a).
+	    Points = 7;
+
+	    Weights = Vector(7);
+	    Xi = Vector(7);
+	    Eta = Vector(7);
+
+	    const double r = std::sqrt(15.);
+
+	    const double a1 = (6. - r)/21., b1 = 1. - 2.*a1;
+	    const double a2 = (6. + r)/21., b2 = 1. - 2.*a2;
+
+	    const double w1 = (155. - r)/1200.;
+	    const double w2 = (155. + r)/1200.;
+
+	    Xi[0] = 1./3;  Eta[0] = 1./3;  Weights[0] = 9./40;
+
+	    Xi[1] = a1;    Eta[1] = a1;    Weights[1] = w1;
+	    Xi[2] = b1;    Eta[2] = a1;    Weights[2] = w1;
+	    Xi[3] = a1;    Eta[3] = b1;    Weights[3] = w1;
+
+	    Xi[4] = a2;    Eta[4] = a2;    Weights[4] = w2;
+	    Xi[5] = b2;    Eta[5] = a2;    Weights[5] = w2;
+	    Xi[6] = a2;    Eta[6] = b2;    Weights[6] = w2;
+
+	    // Tabulated for the weight sum 1, the reference triangle has area 1/2
+	    for(int i=0; i<Points; ++i)
+	      Weights[i] *= 0.5;
+	  }
 	  break;
 
 	case GAUSS_7:
@@ -128,10 +163,28 @@ namespace chemfem{
 	}
     }
 
-    QuadratureFormula::QuadratureFormula(int degree)
-    {
-      std::cerr << "Initialization of quadrature formula by degree not implemented yet\n";
+    namespace {
+
+      /// The cheapest formula on the triangle that is exact for the given degree
+      QUAD_FORMULA FormulaForDegree(int degree)
+      {
+	if(degree <= 1)
+	  return MIDPOINT;
+	if(degree <= 2)
+	  return GAUSS_EDGE;
+	if(degree <= 5)
+	  return GAUSS_5;
+
+	if(degree > 7)
+	  std::cerr << "Warning: No formula on the triangle is exact for degree " << degree
+		    << ", the one of degree 7 is used.\n";
+
+	return GAUSS_7;
+      }
     }
+
+    QuadratureFormula::QuadratureFormula(int degree)
+      : QuadratureFormula(FormulaForDegree(degree)) {}
 
     size_t QuadratureFormula::NrQuadPoints()
     {

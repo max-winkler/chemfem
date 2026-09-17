@@ -126,6 +126,17 @@ namespace chemfem{
 		  << "is scalar.\n";
     }
 
+    void LinearForm::SetQuadratureDegree(int degree)
+    {
+      if(degree < 0)
+        {
+          std::cerr << "Error: The quadrature degree cannot be negative.\n";
+          return;
+        }
+
+      QuadDegree = degree;
+    }
+
     Vector& LinearForm::LoadVector()
     {
       return Vec;
@@ -144,8 +155,9 @@ namespace chemfem{
       const DofManager& Dofs = TestSpace.Dofs;
       const int NrTest = TestSpace.NrLocalDof();
 
-      // TODO: Select correct quadrature formula once it is implemented
-      QuadratureFormula QuadFormula(QUAD_FORMULA::GAUSS_7);
+      // Without a degree from SetQuadratureDegree the formula of degree 7 is used
+      QuadratureFormula QuadFormula = QuadDegree < 0
+        ? QuadratureFormula(QUAD_FORMULA::GAUSS_7) : QuadratureFormula(QuadDegree);
 
       Vector Xi, Eta, Weights;
       QuadFormula.FormulaData(Weights, Xi, Eta);

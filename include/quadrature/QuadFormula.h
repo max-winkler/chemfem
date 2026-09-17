@@ -8,8 +8,14 @@ using chemfem::linalg::Vector;
 namespace chemfem{
   namespace quadrature{
 
-    enum QUAD_FORMULA {MIDPOINT, VERTEX, GAUSS_EDGE, GAUSS_7, LINE_GAUSS_5};
-    
+    /**
+     * The formulas on the triangle and the degree of polynomials they integrate exactly:
+     * MIDPOINT 1 point, degree 1; VERTEX 3 points, degree 1; GAUSS_EDGE 3 points, degree 2;
+     * GAUSS_5 7 points, degree 5; GAUSS_7 16 points, degree 7. LINE_GAUSS_5 has 5 points on
+     * [0,1] and is exact up to degree 9.
+     */
+    enum QUAD_FORMULA {MIDPOINT, VERTEX, GAUSS_EDGE, GAUSS_5, GAUSS_7, LINE_GAUSS_5};
+
     /**
      * This class stores all information on a certain quadratue formula. The formulas on
      * the reference triangle have the weight sum 1/2, its area, and the line formulas

@@ -31,6 +31,17 @@ namespace chemfem{
       : TrialSpace(TrialSpace), TestSpace(TestSpace), Matrix(0,0),
 	DirichletTerm(TestSpace.NrFreeDof()) {}
 
+    void BilinearForm::SetQuadratureDegree(int degree)
+    {
+      if(degree < 0)
+        {
+          std::cerr << "Error: The quadrature degree cannot be negative.\n";
+          return;
+        }
+
+      QuadDegree = degree;
+    }
+
     void BilinearForm::SetDirichletValues(const DirichletValues& g)
     {
       if(&g.GetFESpace() != &TrialSpace)
@@ -213,8 +224,9 @@ namespace chemfem{
       const int NrTest = TestSpace.NrLocalDof();
       const int NrTrial = TrialSpace.NrLocalDof();
 
-      // TODO: Select correct quadrature formula once it is implemented
-      QuadratureFormula QuadFormula(QUAD_FORMULA::GAUSS_7);
+      // Without a degree from SetQuadratureDegree the formula of degree 7 is used
+      QuadratureFormula QuadFormula = QuadDegree < 0
+        ? QuadratureFormula(QUAD_FORMULA::GAUSS_7) : QuadratureFormula(QuadDegree);
 
       Vector Xi, Eta, Weights;
       QuadFormula.FormulaData(Weights, Xi, Eta);

@@ -124,6 +124,15 @@ namespace chemfem{
       void AddBoundaryTerm(BoundaryIntegrand, BoundaryIndicator = nullptr);
 
       /**
+       * Integrates with the cheapest formula that is exact for polynomials of the given
+       * degree, instead of the formula of degree 7 the assembly uses otherwise. The degree
+       * is the one of the integrand, so the sum of the degrees of the factors: a mass term
+       * on P2 needs 4, and (u_k.grad u, v) with a P2 velocity needs 5. Too low a degree
+       * silently integrates wrongly, so it is asked for and never guessed.
+       */
+      void SetQuadratureDegree(int);
+
+      /**
        * Sets the values prescribed on the Dirichlet boundary. They enter the right hand side
        * as the lifting A_fd g_d, which DirichletRhs() returns after the assembly and which
        * has to be subtracted from the load vector. Without them the values are zero.
@@ -192,6 +201,9 @@ namespace chemfem{
       Vector DirichletTerm;
 
       const DirichletValues* PrescribedValues = nullptr;
+
+      /// Degree the quadrature has to be exact for, negative for the default formula
+      int QuadDegree = -1;
 
       std::vector<FEExpression> Terms;
 
